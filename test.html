@@ -1,0 +1,1731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payroll & Attendance System</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for Inter font and general container */
+        body { font-family: 'Inter', sans-serif; background-color: #f3ffec; }
+        .tab-button.active { border-color: #10b981; color: #10b981; font-weight: 600; background-color: #ecfdf5; }
+        .card { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.06); }
+        .attendance-btn-in { background-color: #3b82f6; }
+        .attendance-btn-out { background-color: #ef4444; }
+        .task-detail-card { transition: all 0.3s ease; }
+    </style>
+</head>
+<body>
+
+    <div id="app" class="min-h-screen flex items-start justify-center p-4 sm:p-8">
+        <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden">
+            
+            <!-- Header and Navigation -->
+            <header class="bg-emerald-600 p-4 text-white text-center rounded-t-xl">
+                <h1 class="text-2xl font-bold">Payroll and Attendance System (Local Data)</h1>
+                <p id="user-id-display" class="text-xs mt-1 text-emerald-100">Data stored only in your browser's Local Storage.</p>
+            </header>
+
+            <nav class="flex border-b border-gray-200 bg-emerald-50">
+                <button onclick="showTab('home')" class="tab-button active flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="home">
+                    Dashboard
+                </button>
+				<button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
+                    Tasks (Job Costing)
+                </button>
+                <button onclick="showTab('employees')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="employees">
+                    Employees
+                </button>
+                <button onclick="showTab('attendance')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="attendance">
+                    Attendance
+                </button>
+                <button onclick="showTab('payments')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="payments">
+                    Payments (Payroll)
+                </button>
+				
+                 <button onclick="showTab('reports')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="reports">
+                    Reports
+                </button>
+                
+            </nav>
+
+            <!-- Main Content Area -->
+            <main class="p-6">
+                <!-- Home Tab (Default Content) -->
+                <div id="homeTab" class="tab-content">
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">System Overview & Data Management</h2>
+                    <p class="text-gray-600 mb-6">
+                        This version uses **Local Storage**. Please manage your data carefully using the options below.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                            <p class="text-sm font-medium text-emerald-700">Total Payments Recorded:</p>
+                            <p id="total-payments-count" class="text-3xl font-extrabold text-emerald-800 mt-1">0</p>
+                        </div>
+                        <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
+                            <p class="text-sm font-medium text-emerald-700">Active Employees:</p>
+                            <p id="total-employees-count" class="text-3xl font-extrabold text-emerald-800 mt-1">0</p>
+                        </div>
+                    </div>
+
+                    <!-- Import/Export Functionality (NEW) -->
+                    <div class="card p-5 bg-gray-100 rounded-xl">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Data Import / Export</h3>
+
+                        <!-- Export Section -->
+                        <div class="mb-6 p-4 border rounded-lg bg-white">
+                            <p class="font-medium text-gray-700 mb-2">Export Data (Backup)</p>
+                            <button onclick="exportData()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out shadow-md">
+                                Export All Data to JSON
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2">Downloads a single JSON file containing all employees, attendance, payments, and tasks.</p>
+                        </div>
+
+                        <!-- Import Section -->
+                        <div class="p-4 border rounded-lg bg-white">
+                            <p class="font-medium text-gray-700 mb-2">Import Data (Non-Destructive Merge)</p>
+                            <input type="file" id="importFile" accept=".json" class="w-full p-3 border border-gray-300 rounded-lg text-sm mb-3">
+                            <button onclick="handleImport()" class="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition duration-150 ease-in-out shadow-md">
+                                Import Data (Merge)
+                            </button>
+                             <p class="text-xs text-gray-500 mt-2">Imports new records from a JSON file. Existing records are NOT overwritten.</p>
+                             <p id="import-message" class="mt-3 text-sm text-center text-red-500"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Employees Tab -->
+                <div id="employeesTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Employee Management</h2>
+
+                    <!-- Add Employee Form -->
+                    <div class="card p-5 bg-yellow-50 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="md:col-span-3">
+                            <h3 class="text-xl font-semibold text-yellow-800 mb-4">Add/Update Employee Details</h3>
+                        </div>
+                        <form id="employeeForm" class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label for="employeeName" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Employee Name
+                                </label>
+                                <input type="text" id="employeeName" name="employeeName" required placeholder="E.g., Jane Doe" class="w-full p-3 border border-yellow-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150 text-lg">
+                            </div>
+                            <div class="sm:col-span-1">
+                                <label for="hourlyRate" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Hourly Rate (₹)
+                                </label>
+                                <input type="number" id="hourlyRate" name="hourlyRate" step="0.01" min="0.01" required placeholder="500.00" class="w-full p-3 border border-yellow-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150 text-lg">
+                            </div>
+                            <div class="sm:col-span-1 flex items-end">
+                                <button type="submit" class="w-full py-3 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 transition duration-150 ease-in-out shadow-md">
+                                    Add Employee
+                                </button>
+                            </div>
+                            <p id="employee-form-message" class="mt-3 text-sm text-center text-red-500 md:col-span-3"></p>
+                        </form>
+                    </div>
+
+                    <!-- Employee List -->
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Current Staff List (Rate/ID)</h3>
+                    <div id="employeeList" class="space-y-3">
+                        <p id="employee-loading-message" class="text-gray-500 text-center">Loading employees...</p>
+                        <!-- Employees will be injected here -->
+                    </div>
+                </div>
+                
+                <!-- Attendance Tab -->
+                <div id="attendanceTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Employee Attendance Tracking</h2>
+
+                    <!-- Check In/Out Interface -->
+                    <div class="card p-5 bg-blue-50 rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-blue-800 mb-4">Record Daily Time</h3>
+                        <label for="attendanceEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Employee for Attendance
+                        </label>
+                        <select 
+                            id="attendanceEmployeeSelect" 
+                            class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-lg mb-6"
+                            onchange="updateAttendanceStatus()"
+                        >
+                            <option value="" disabled selected>--- Select an Employee ---</option>
+                            <!-- Options will be dynamically populated by setupEmployeeListener -->
+                        </select>
+                        
+                        <div id="attendance-status" class="text-center mb-4 p-3 rounded-lg bg-gray-100 text-gray-600">
+                            Please select an employee.
+                        </div>
+
+                        <!-- NEW: Timestamp Override Inputs -->
+                        <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label for="checkInTimeInput" class="block text-sm font-medium text-blue-700 mb-2">
+                                    Override Check In Time (Optional)
+                                </label>
+                                <input type="datetime-local" id="checkInTimeInput" class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150">
+                                <p class="text-xs text-gray-500 mt-1">Leave empty to use current time.</p>
+                            </div>
+                            <div>
+                                <label for="checkOutTimeInput" class="block text-sm font-medium text-red-700 mb-2">
+                                    Override Check Out Time (Optional)
+                                </label>
+                                <input type="datetime-local" id="checkOutTimeInput" class="w-full p-3 border border-red-300 rounded-lg focus:ring-red-500 focus:border-red-500 transition duration-150">
+                                <p class="text-xs text-gray-500 mt-1">Used when checking out.</p>
+                            </div>
+                        </div>
+
+                        <div class="flex space-x-4">
+                            <button id="checkInButton" onclick="handleCheckIn()" disabled class="flex-1 py-3 text-white font-bold rounded-lg transition duration-150 shadow-md attendance-btn-in hover:bg-blue-700 disabled:opacity-50" style="pointer-events: auto;">
+                                Check In
+                            </button>
+                            <button id="checkOutButton" onclick="handleCheckOut()" disabled class="flex-1 py-3 text-white font-bold rounded-lg transition duration-150 shadow-md attendance-btn-out hover:bg-red-600 disabled:opacity-50" style="pointer-events: auto;">
+                                Check Out
+                            </button>
+                        </div>
+                        <p id="attendance-form-message" class="mt-3 text-sm text-center text-red-500"></p>
+                    </div>
+                    
+                    <!-- Attendance List -->
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Recent Attendance Records</h3>
+                    <div id="attendanceList" class="space-y-3">
+                        <p id="attendance-loading-message" class="text-gray-500 text-center">Loading attendance...</p>
+                    </div>
+                </div>
+
+                <!-- Payments Tab (Now Payroll Calculation) -->
+                <div id="paymentsTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Payroll Calculation & Payment</h2>
+
+                    <!-- Payment Calculation Interface -->
+                    <div class="card p-5 bg-emerald-50 rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-emerald-800 mb-4">Calculate Hours & Pay</h3>
+                        <label for="payrollEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                            Select Employee for Payroll
+                        </label>
+                        <select 
+                            id="payrollEmployeeSelect" 
+                            class="w-full p-3 border border-emerald-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 text-lg mb-4"
+                            onchange="calculatePayrollOwed()"
+                        >
+                            <option value="" disabled selected>--- Select an Employee ---</option>
+                        </select>
+                        
+                        <!-- Calculation Results Display -->
+                        <div class="bg-white p-4 rounded-lg border border-emerald-300 mb-4">
+                            <p class="text-sm font-medium text-gray-700">Total Unpaid Hours:</p>
+                            <p id="total-hours-owed" class="text-3xl font-bold text-emerald-600">0.00</p>
+                            <p class="text-sm font-medium text-gray-700 mt-3">Total Amount Due (₹):</p>
+                            <p id="total-amount-owed" class="text-3xl font-bold text-emerald-700">₹0.00</p>
+                            <p id="payroll-calculation-note" class="text-xs text-gray-500 mt-2">
+                                Calculation based on total hours worked minus hours already paid.
+                            </p>
+                        </div>
+                        
+                        <!-- NEW: Custom Payment Input -->
+                        <div class="mb-4">
+                             <label for="customPaymentAmount" class="block text-sm font-medium text-gray-700 mb-2">
+                                Amount to Pay Now (₹)
+                            </label>
+                            <input type="number" id="customPaymentAmount" step="0.01" min="0.01" placeholder="Enter amount (e.g., 1000.00)" class="w-full p-3 border border-emerald-300 rounded-lg focus:ring-emerald-500 focus:border-emerald-500 transition duration-150 text-lg">
+                             <p class="text-xs text-gray-500 mt-1">If empty, the full amount due will be paid.</p>
+                        </div>
+
+                        <button 
+                            id="payEmployeeButton"
+                            onclick="handlePaymentSubmit()"
+                            disabled
+                            class="w-full mt-4 py-3 bg-emerald-600 text-white font-bold rounded-lg hover:bg-emerald-700 transition duration-150 ease-in-out shadow-md disabled:opacity-50"
+                        >
+                            Record Payroll Payment
+                        </button>
+                        <p id="payment-form-message" class="mt-3 text-sm text-center text-red-500"></p>
+                    </div>
+
+                    <!-- Payment List -->
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Recent Payroll Transactions</h3>
+                    <div id="paymentsList" class="space-y-3">
+                        <p id="payment-loading-message" class="text-gray-500 text-center">Loading payments...</p>
+                        <!-- Payments will be injected here -->
+                    </div>
+                </div>
+
+                <!-- Reports Tab -->
+                <div id="reportsTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">System Reports</h2>
+                    
+                    <!-- Employee Report Section -->
+                    <div class="card p-5 bg-blue-50 rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-blue-800 mb-4 border-b pb-2">Employee Payroll Report</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label for="reportEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Employee
+                                </label>
+                                <select 
+                                    id="reportEmployeeSelect" 
+                                    class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-lg" 
+                                    onchange="generateEmployeeReport()"
+                                >
+                                    <option value="" disabled selected>--- Select an Employee ---</option>
+                                    <!-- Options populated by setupEmployeeListener -->
+                                </select>
+                            </div>
+                            <div>
+                                <label for="reportMonthSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Month
+                                </label>
+                                <select 
+                                    id="reportMonthSelect" 
+                                    class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-lg" 
+                                    onchange="generateEmployeeReport()"
+                                >
+                                    <!-- Options populated by populateReportMonthDropdown -->
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="generateEmployeeReport()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Employee Report Output -->
+                    <div id="employeeReportOutput" class="card p-5 bg-white rounded-xl border border-gray-200 mb-8">
+                        <p class="text-gray-500 text-center">Select an employee and a month to generate a payroll report.</p>
+                    </div>
+                    
+                    <!-- Task Report Section (NEW) -->
+                     <div class="card p-5 bg-fuchsia-50 rounded-xl">
+                        <h3 class="text-xl font-semibold text-fuchsia-800 mb-4 border-b pb-2">Task Profit/Loss Report</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="md:col-span-2">
+                                <label for="reportTaskSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Task/Job
+                                </label>
+                                <select 
+                                    id="reportTaskSelect" 
+                                    class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150 text-lg" 
+                                    onchange="generateTaskReport()"
+                                >
+                                    <option value="" disabled selected>--- Select a Task ---</option>
+                                    <!-- Options populated by setupTaskListener -->
+                                </select>
+                            </div>
+                            <div class="flex items-end">
+                                <button onclick="generateTaskReport()" class="w-full py-3 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700 transition duration-150 shadow-md">
+                                    Generate Report
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Task Report Output (NEW) -->
+                    <div id="taskReportOutput" class="card p-5 bg-white rounded-xl border border-gray-200 mt-8">
+                        <p class="text-gray-500 text-center">Select a task to generate a profit/loss report.</p>
+                    </div>
+
+                    <p id="report-message" class="mt-3 text-sm text-center text-red-500"></p>
+                </div>
+                
+                <!-- Tasks Tab (NEW) -->
+                <div id="tasksTab" class="tab-content hidden">
+                    <h2 class="text-2xl font-semibold mb-6 text-gray-800">Tasks & Job Costing</h2>
+                    
+                    <!-- Create Task Form -->
+                    <div class="card p-5 bg-fuchsia-50 rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-fuchsia-800 mb-4">Create New Task/Job</h3>
+                        <form id="taskForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div class="lg:col-span-3">
+                                <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">Task Name</label>
+                                <input type="text" id="taskName" required placeholder="E.g., Client Alpha Website" class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 text-lg">
+                            </div>
+                            <div>
+                                <label for="estimatedHours" class="block text-sm font-medium text-gray-700 mb-2">Estimated Hours</label>
+                                <input type="number" id="estimatedHours" min="0" step="0.5" value="0" required class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150 text-lg">
+                            </div>
+                            <div class="lg:col-span-2">
+                                <label for="assignedEmployees" class="block text-sm font-medium text-gray-700 mb-2">Assign Employees (Hold CTRL/CMD to select multiple)</label>
+                                <select id="assignedEmployees" multiple size="3" class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 text-lg">
+                                    <!-- Options populated by setupEmployeeListener -->
+                                </select>
+                            </div>
+                            <div class="lg:col-span-3 flex items-end">
+                                <button type="submit" class="w-full py-3 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700 transition duration-150 ease-in-out shadow-md">
+                                    Create Task
+                                </button>
+                            </div>
+                            <p id="task-form-message" class="mt-3 text-sm text-center text-red-500 lg:col-span-3"></p>
+                        </form>
+                    </div>
+
+                    <!-- Task List & Details -->
+                    <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Active Tasks & Profit/Loss</h3>
+                    <div id="taskList" class="space-y-4">
+                        <p class="text-gray-500 text-center">Loading tasks...</p>
+                        <!-- Tasks and details will be injected here -->
+                    </div>
+                </div>
+                
+            </main>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- Local Storage Configuration ---
+        const LOCAL_STORAGE_KEY = 'payroll_system_data';
+        const emptyDataStructure = {
+            employees: [],
+            attendance: [],
+            payments: [],
+            tasks: []
+        };
+        
+        // Global variables updated from local storage
+        let employeesState = {}; // Stores { docId: { name, hourlyRate, created } }
+        let currentAttendanceId = null; // Used to track an open shift
+        let lastCalculatedAmountDue = 0; // Stores the amount calculated by calculatePayrollOwed
+        let taskState = {}; // Global store for task data
+        let activeTaskDetailsId = null; // Tracks which task's details are currently expanded
+        
+        const FULL_DAY_EQUIVALENT_HOURS = 8; // Define constant for full day attendance
+
+        // --- Local Storage Persistence Functions ---
+
+        /**
+         * Generates a unique ID (simulating Firestore document ID format).
+         */
+        const generateUUID = () => {
+            return Date.now().toString(36) + Math.random().toString(36).substring(2, 9);
+        };
+
+        /**
+         * Loads all data from local storage.
+         */
+        const loadLocalData = () => {
+            const data = localStorage.getItem(LOCAL_STORAGE_KEY);
+            try {
+                return data ? JSON.parse(data) : emptyDataStructure;
+            } catch (e) {
+                console.error("Error parsing local storage data:", e);
+                return emptyDataStructure;
+            }
+        };
+
+        /**
+         * Saves the entire data object back to local storage.
+         */
+        const saveLocalData = (data) => {
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+        };
+        
+        /**
+         * Helper to save an array, then re-run all listeners (simulating real-time update).
+         */
+        const updateAndRerender = (collectionKey, newArray) => {
+            const data = loadLocalData();
+            data[collectionKey] = newArray;
+            saveLocalData(data);
+            runAllListeners();
+        };
+
+        // --- Utility Functions ---
+
+        /**
+         * Converts a JS time (ms) to a readable string.
+         */
+        const formatTimestamp = (timestamp) => {
+            if (!timestamp) return 'N/A';
+            const date = new Date(timestamp);
+            const options = { 
+                year: 'numeric', month: 'short', day: 'numeric', 
+                hour: '2-digit', minute: '2-digit', second: '2-digit', 
+                hour12: true 
+            };
+            return date.toLocaleString('en-US', options);
+        };
+        
+        /**
+         * Converts milliseconds into hours (with 2 decimal places).
+         */
+        const msToHours = (ms) => (ms / (1000 * 60 * 60)).toFixed(2);
+        
+        /**
+         * Helper to format currency consistently (INR).
+         */
+        const formatCurrency = (amount) => {
+            return `₹${parseFloat(amount).toFixed(2)}`;
+        };
+
+        /**
+         * Shows a message in a specific form area.
+         */
+        const showFormMessage = (elId, message, isError = true) => {
+            const formMessageEl = document.getElementById(elId);
+            formMessageEl.textContent = message;
+            formMessageEl.className = `mt-3 text-sm text-center ${isError ? 'text-red-500' : 'text-green-600'}`;
+            
+            setTimeout(() => {
+                formMessageEl.textContent = '';
+            }, 3000); // Clear message after 3 seconds
+        };
+
+        /**
+         * Creates a Date object from a datetime-local string, or falls back to Date.now().
+         */
+        const getTimestampFromInput = (datetimeString) => {
+            return datetimeString ? new Date(datetimeString).getTime() : Date.now();
+        };
+        
+        /**
+         * Populates the month dropdown for reports (Current month + 11 past months).
+         */
+        const populateReportMonthDropdown = () => {
+            const selectEl = document.getElementById('reportMonthSelect');
+            selectEl.innerHTML = '';
+            
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = now.getMonth(); 
+            
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+            for (let i = 0; i < 12; i++) {
+                let currentMonth = month - i;
+                let currentYear = year;
+                
+                if (currentMonth < 0) {
+                    currentMonth += 12;
+                    currentYear--;
+                }
+                
+                const monthName = monthNames[currentMonth];
+                const monthValue = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+                const option = document.createElement('option');
+                
+                option.value = monthValue;
+                option.textContent = `${monthName} ${currentYear}`;
+                
+                if (i === 0) {
+                    option.selected = true;
+                }
+                
+                selectEl.appendChild(option);
+            }
+        };
+
+        // --- App Initialization ---
+
+        window.onload = function() {
+            // No Firebase needed, just load initial data and run listeners
+            loadLocalData(); 
+            populateReportMonthDropdown();
+            runAllListeners();
+        };
+
+        /**
+         * Re-runs all listener/rendering functions to simulate data update.
+         */
+        const runAllListeners = () => {
+             // Use a quick timeout to let the DOM stabilize
+            setTimeout(() => {
+                setupEmployeeListener();
+                setupPaymentListener();
+                setupAttendanceListener();
+                setupTaskListener();
+            }, 50);
+        };
+        
+        // --- Employee Logic (LOCAL STORAGE) ---
+
+        const handleEmployeeSubmit = (e) => {
+            e.preventDefault();
+            
+            const employeeNameInput = document.getElementById('employeeName');
+            const hourlyRateInput = document.getElementById('hourlyRate');
+            
+            const name = employeeNameInput.value.trim();
+            const rate = parseFloat(hourlyRateInput.value);
+
+            if (name.length < 2 || isNaN(rate) || rate <= 0) {
+                showFormMessage("employee-form-message", "Please enter a valid name and an hourly rate greater than zero.", true);
+                return;
+            }
+
+            try {
+                const newEmployee = {
+                    id: generateUUID(),
+                    name: name,
+                    hourlyRate: rate,
+                    created: Date.now(),
+                };
+
+                const data = loadLocalData();
+                data.employees.push(newEmployee);
+                
+                updateAndRerender('employees', data.employees);
+
+                showFormMessage("employee-form-message", `${name} added successfully with rate ${formatCurrency(rate)}/hr!`, false);
+                employeeNameInput.value = ''; 
+                hourlyRateInput.value = '';
+
+            } catch (error) {
+                console.error("Error adding employee: ", error);
+                showFormMessage("employee-form-message", "Failed to add employee. Try again.", true);
+            }
+        };
+
+        const setupEmployeeListener = () => {
+            const data = loadLocalData();
+            const employees = data.employees.sort((a, b) => a.created - b.created); // Sort by created asc
+
+            const employeeListEl = document.getElementById('employeeList');
+            const attendanceSelectEl = document.getElementById('attendanceEmployeeSelect');
+            const payrollSelectEl = document.getElementById('payrollEmployeeSelect');
+            const reportEmployeeSelectEl = document.getElementById('reportEmployeeSelect'); 
+            const taskAssignSelectEl = document.getElementById('assignedEmployees'); 
+            const totalCountEl = document.getElementById('total-employees-count');
+            
+            let listHtml = '';
+            let selectHtml = '<option value="" disabled selected>--- Select an Employee ---</option>';
+            let taskAssignHtml = '';
+            employeesState = {};
+            
+            if (employees.length === 0) {
+                listHtml = '<p class="text-gray-500 text-center p-4 bg-gray-50 rounded-lg">No employees added yet.</p>';
+            } else {
+                employees.forEach((emp) => {
+                    employeesState[emp.id] = {...emp, id: emp.id};
+                    
+                    listHtml += `
+                        <div class="p-4 bg-white border border-gray-200 rounded-lg flex justify-between items-center transition duration-150 hover:bg-gray-50">
+                            <span class="text-lg font-medium text-gray-800">${emp.name}</span>
+                            <span class="text-sm text-gray-500">Rate: ${formatCurrency(emp.hourlyRate)}/hr | ID: ${emp.id.substring(0, 8)}...</span>
+                        </div>
+                    `;
+
+                    selectHtml += `<option value="${emp.id}">${emp.name} (${formatCurrency(emp.hourlyRate)}/hr)</option>`;
+                    taskAssignHtml += `<option value="${emp.id}">${emp.name}</option>`;
+                });
+            }
+            
+            employeeListEl.innerHTML = listHtml;
+            attendanceSelectEl.innerHTML = selectHtml;
+            payrollSelectEl.innerHTML = selectHtml;
+            reportEmployeeSelectEl.innerHTML = selectHtml;
+            taskAssignSelectEl.innerHTML = taskAssignHtml;
+            totalCountEl.textContent = employees.length;
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const employeeForm = document.getElementById('employeeForm');
+            if (employeeForm) {
+                employeeForm.addEventListener('submit', handleEmployeeSubmit);
+            }
+        });
+
+
+        // --- Attendance Logic (LOCAL STORAGE) ---
+        
+        window.updateAttendanceStatus = () => {
+            const data = loadLocalData();
+            const attendance = data.attendance;
+
+            const employeeId = document.getElementById('attendanceEmployeeSelect').value;
+            const statusEl = document.getElementById('attendance-status');
+            const checkInBtn = document.getElementById('checkInButton');
+            const checkOutBtn = document.getElementById('checkOutButton');
+
+            if (!employeeId) {
+                statusEl.textContent = "Please select an employee.";
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = true;
+                return;
+            }
+
+            // Find all open shifts for this employee (where checkOut is null)
+            let openShifts = attendance.filter(log => log.employeeId === employeeId && log.checkOut === null);
+
+            // Sort open shifts by checkIn time descending to find the most recent open shift
+            openShifts.sort((a, b) => b.checkIn - a.checkIn);
+            
+            if (openShifts.length > 0) {
+                const mostRecentShift = openShifts[0];
+                currentAttendanceId = mostRecentShift.id;
+                const checkInTime = formatTimestamp(mostRecentShift.checkIn);
+                
+                statusEl.innerHTML = `<span class="font-bold text-red-600">Currently Checked In</span> since ${checkInTime}.`;
+                statusEl.classList.remove('bg-gray-100', 'text-gray-600');
+                statusEl.classList.add('bg-red-100', 'text-red-700');
+                
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = false;
+            } else {
+                currentAttendanceId = null;
+                statusEl.textContent = "Currently Checked Out. Ready for Check In.";
+                statusEl.classList.remove('bg-red-100', 'text-red-700');
+                statusEl.classList.add('bg-gray-100', 'text-gray-600');
+                
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = true;
+            }
+        };
+
+        window.handleCheckIn = () => {
+            const employeeId = document.getElementById('attendanceEmployeeSelect').value;
+            if (!employeeId) return;
+
+            const checkInInput = document.getElementById('checkInTimeInput').value;
+            const checkInTime = getTimestampFromInput(checkInInput);
+            
+            try {
+                const data = loadLocalData();
+                data.attendance.push({
+                    id: generateUUID(),
+                    employeeId: employeeId,
+                    checkIn: checkInTime,
+                    checkOut: null, 
+                });
+                
+                updateAndRerender('attendance', data.attendance);
+
+                showFormMessage("attendance-form-message", "Check In recorded!", false);
+                document.getElementById('checkInTimeInput').value = ''; 
+                updateAttendanceStatus(); 
+            } catch (error) {
+                console.error("Error checking in:", error);
+                showFormMessage("attendance-form-message", "Failed to check in.", true);
+            }
+        };
+        
+        window.handleCheckOut = () => {
+            if (!currentAttendanceId) return;
+
+            const checkOutInput = document.getElementById('checkOutTimeInput').value;
+            const checkOutTime = getTimestampFromInput(checkOutInput);
+
+            try {
+                const data = loadLocalData();
+                const index = data.attendance.findIndex(log => log.id === currentAttendanceId);
+                
+                if (index !== -1 && data.attendance[index].checkIn < checkOutTime) {
+                    data.attendance[index].checkOut = checkOutTime;
+                    
+                    updateAndRerender('attendance', data.attendance);
+
+                    showFormMessage("attendance-form-message", "Check Out recorded!", false);
+                    document.getElementById('checkOutTimeInput').value = '';
+                    currentAttendanceId = null; 
+                    updateAttendanceStatus(); 
+                } else {
+                    showFormMessage("attendance-form-message", "Check Out time must be after Check In time.", true);
+                }
+            } catch (error) {
+                console.error("Error checking out:", error);
+                showFormMessage("attendance-form-message", "Failed to check out.", true);
+            }
+        };
+
+        const setupAttendanceListener = () => {
+            const data = loadLocalData();
+            const attendance = data.attendance;
+
+            const attendanceListEl = document.getElementById('attendanceList');
+            
+            // Sort by checkIn descending and limit to 20
+            const recentAttendance = attendance.sort((a, b) => b.checkIn - a.checkIn).slice(0, 20);
+
+            let htmlContent = '';
+            
+            if (recentAttendance.length === 0) {
+                htmlContent = '<p class="text-gray-500 text-center p-4 bg-gray-50 rounded-lg">No attendance records found.</p>';
+            } else {
+                recentAttendance.forEach((data) => {
+                    const employeeName = employeesState[data.employeeId] ? employeesState[data.employeeId].name : 'Unknown';
+                    const checkInTime = formatTimestamp(data.checkIn);
+                    const checkOutTime = data.checkOut ? formatTimestamp(data.checkOut) : '--- OPEN SHIFT ---';
+                    
+                    let hoursWorked = 'N/A';
+                    let rowClass = 'bg-white';
+                    
+                    if (data.checkIn && data.checkOut) {
+                        const durationMs = data.checkOut - data.checkIn;
+                        hoursWorked = msToHours(durationMs);
+                        rowClass = 'bg-green-50';
+                    } else {
+                        rowClass = 'bg-red-50'; // Highlight open shifts
+                    }
+
+                    htmlContent += `
+                        <div class="p-4 ${rowClass} border border-gray-200 rounded-lg grid grid-cols-4 gap-4 text-sm">
+                            <span class="font-semibold text-gray-800 col-span-4 sm:col-span-1">${employeeName}</span>
+                            <span class="text-blue-600 col-span-2 sm:col-span-1">IN: ${checkInTime}</span>
+                            <span class="text-red-500 col-span-2 sm:col-span-1">OUT: ${checkOutTime}</span>
+                            <span class="font-bold text-gray-700 col-span-4 sm:col-span-1 text-right">${hoursWorked} hrs</span>
+                        </div>
+                    `;
+                });
+            }
+            
+            attendanceListEl.innerHTML = htmlContent;
+        };
+
+
+        // --- Payroll/Payment Logic (LOCAL STORAGE) ---
+        
+        window.calculatePayrollOwed = () => {
+            const data = loadLocalData();
+            const employeeId = document.getElementById('payrollEmployeeSelect').value;
+            const hoursOwedEl = document.getElementById('total-hours-owed');
+            const amountOwedEl = document.getElementById('total-amount-owed');
+            const payButton = document.getElementById('payEmployeeButton');
+            const customInput = document.getElementById('customPaymentAmount');
+
+            hoursOwedEl.textContent = '0.00';
+            amountOwedEl.textContent = '₹0.00';
+            payButton.disabled = true;
+            lastCalculatedAmountDue = 0; 
+
+            if (!employeeId) return;
+
+            const employee = employeesState[employeeId];
+            if (!employee) return;
+            const hourlyRate = employee.hourlyRate;
+
+            try {
+                // 1. Calculate Total Hours Paid To Date (Cumulative Balance)
+                const payments = data.payments.filter(p => p.employeeId === employeeId);
+                let totalHoursPaidToDate = 0;
+                
+                payments.forEach(p => {
+                    if (p.hoursPaid) {
+                        totalHoursPaidToDate += parseFloat(p.hoursPaid);
+                    }
+                });
+                
+                // 2. Calculate Total Hours Worked To Date (Cumulative Balance)
+                const attendance = data.attendance.filter(log => log.employeeId === employeeId);
+                let totalHoursWorkedToDate = 0;
+                
+                attendance.forEach(log => {
+                    if (log.checkOut && log.checkIn) {
+                        if (log.checkOut > log.checkIn) {
+                            const durationMs = log.checkOut - log.checkIn;
+                            totalHoursWorkedToDate += durationMs / (1000 * 60 * 60);
+                        }
+                    }
+                });
+                
+                // 3. Calculate Unpaid Balance
+                const rawUnpaidHours = totalHoursWorkedToDate - totalHoursPaidToDate;
+                const totalUnpaidHours = Math.max(0, rawUnpaidHours);
+                
+                const hoursRounded = parseFloat(totalUnpaidHours.toFixed(2));
+                const totalAmountOwed = hoursRounded * hourlyRate;
+                
+                hoursOwedEl.textContent = hoursRounded.toFixed(2);
+                amountOwedEl.textContent = formatCurrency(totalAmountOwed);
+                lastCalculatedAmountDue = totalAmountOwed;
+
+                if (parseFloat(customInput.value) > totalAmountOwed || totalAmountOwed === 0) {
+                    customInput.value = '';
+                }
+
+                if (totalAmountOwed > 0) {
+                    payButton.disabled = false;
+                } else {
+                    payButton.disabled = true;
+                }
+                
+                document.getElementById('payroll-calculation-note').textContent = 
+                    `Calculation based on total ${totalHoursWorkedToDate.toFixed(2)} hrs worked minus ${totalHoursPaidToDate.toFixed(2)} hrs paid.`;
+
+            } catch (error) {
+                console.error("Error calculating payroll:", error);
+                showFormMessage("payment-form-message", "Error calculating payroll. Check console.", true);
+            }
+        };
+
+        window.handlePaymentSubmit = () => {
+            const data = loadLocalData();
+            const employeeId = document.getElementById('payrollEmployeeSelect').value;
+            const customInputEl = document.getElementById('customPaymentAmount');
+            
+            if (!employeeId) return;
+
+            const amountDue = lastCalculatedAmountDue;
+            let paymentAmount = amountDue; 
+            
+            const customAmount = parseFloat(customInputEl.value);
+
+            if (!isNaN(customAmount) && customAmount > 0) {
+                if (customAmount > amountDue) {
+                    showFormMessage("payment-form-message", `Payment amount (${formatCurrency(customAmount)}) cannot exceed amount due (${formatCurrency(amountDue)}).`, true);
+                    return;
+                }
+                paymentAmount = customAmount;
+            } else if (amountDue <= 0) {
+                showFormMessage("payment-form-message", "No payment due and no custom amount entered.", true);
+                return;
+            }
+            
+            const employeeRate = employeesState[employeeId].hourlyRate;
+            const hoursPaid = paymentAmount / employeeRate;
+
+            try {
+                const newPayment = {
+                    id: generateUUID(),
+                    employeeId: employeeId,
+                    amount: paymentAmount,
+                    hourlyRate: employeeRate,
+                    hoursPaid: parseFloat(hoursPaid.toFixed(2)),
+                    timestamp: Date.now(),
+                };
+
+                data.payments.push(newPayment);
+                updateAndRerender('payments', data.payments);
+                
+                showFormMessage("payment-form-message", `${formatCurrency(paymentAmount)} payroll recorded for ${employeesState[employeeId]?.name || 'Employee'}!`, false);
+                
+                customInputEl.value = '';
+                calculatePayrollOwed();
+
+            } catch (error) {
+                console.error("Error adding payment: ", error);
+                showFormMessage("payment-form-message", "Failed to save payment. Please try again.", true);
+            }
+        };
+
+        const setupPaymentListener = () => {
+            const data = loadLocalData();
+            const payments = data.payments;
+
+            const paymentsListEl = document.getElementById('paymentsList');
+            const totalCountEl = document.getElementById('total-payments-count');
+            
+            // Sort by timestamp descending
+            const recentPayments = payments.sort((a, b) => b.timestamp - a.timestamp);
+
+            let htmlContent = '';
+            let totalCount = 0;
+            
+            if (recentPayments.length === 0) {
+                htmlContent = '<p class="text-gray-500 text-center p-4 bg-gray-50 rounded-lg">No payroll payments recorded yet.</p>';
+            } else {
+                recentPayments.forEach((data) => {
+                    totalCount++;
+                    
+                    const employeeName = employeesState[data.employeeId] ? employeesState[data.employeeId].name : 'Unknown Employee';
+
+                    const amount = formatCurrency(data.amount);
+                    const hoursPaid = parseFloat(data.hoursPaid || 0).toFixed(2);
+                    const formattedDate = formatTimestamp(data.timestamp);
+
+                    htmlContent += `
+                        <div class="p-4 bg-white border border-emerald-200 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center transition duration-150 hover:bg-emerald-50">
+                            <div class="text-lg font-medium text-gray-800">
+                                <span class="font-bold text-emerald-600">${amount}</span> paid to 
+                                <span class="font-semibold text-gray-700">${employeeName}</span>
+                            </div>
+                            <div class="text-sm text-gray-500 text-left sm:text-right mt-2 sm:mt-0">
+                                <span class="block font-semibold">Hours Covered: ${hoursPaid} hrs</span>
+                                <span class="block">Recorded At: ${formattedDate}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            }
+            
+            paymentsListEl.innerHTML = htmlContent;
+            totalCountEl.textContent = totalCount;
+        };
+
+        // --- Reports Logic (LOCAL STORAGE) ---
+        
+        window.generateEmployeeReport = () => {
+            const data = loadLocalData();
+            const employeeId = document.getElementById('reportEmployeeSelect').value;
+            const monthYear = document.getElementById('reportMonthSelect').value; 
+            const outputEl = document.getElementById('employeeReportOutput');
+            const messageEl = document.getElementById('report-message');
+
+            outputEl.innerHTML = `<p class="text-gray-500 text-center">Generating payroll report...</p>`;
+            messageEl.textContent = '';
+            
+            if (!employeeId || !monthYear) {
+                outputEl.innerHTML = `<p class="text-gray-500 text-center">Select an employee and a month to generate a payroll report.</p>`;
+                return;
+            }
+            
+            const employee = employeesState[employeeId];
+            if (!employee) {
+                outputEl.innerHTML = `<p class="text-red-500 text-center">Error: Employee data not found.</p>`;
+                return;
+            }
+            
+            const [year, month] = monthYear.split('-').map(Number);
+            
+            const periodStart = new Date(year, month - 1, 1).getTime();
+            const periodEnd = new Date(year, month, 0, 23, 59, 59, 999).getTime();
+            
+            const totalDaysInMonth = new Date(year, month, 0).getDate(); 
+
+            let hoursWorkedInPeriod = 0; // Total Attendance Hours (Denominator for Utilization)
+            const dailyHoursMap = {}; // Tracks total hours logged per day
+            let totalAmountPaidInPeriod = 0;
+            
+            // Process Attendance (Filter by period)
+            data.attendance.filter(log => log.employeeId === employeeId).forEach(data => {
+                if (data.checkIn && data.checkOut) {
+                    if (data.checkIn >= periodStart && data.checkIn <= periodEnd) {
+                        const durationMs = data.checkOut - data.checkIn;
+                        if (durationMs > 0) {
+                            const hours = durationMs / (1000 * 60 * 60);
+                            hoursWorkedInPeriod += hours;
+                            
+                            // Track daily totals for Full Day Equivalence
+                            const dateKey = new Date(data.checkIn).toISOString().substring(0, 10);
+                            dailyHoursMap[dateKey] = (dailyHoursMap[dateKey] || 0) + hours;
+                        }
+                    }
+                }
+            });
+            
+            // Calculate Days Worked (Full Day Equivalence: >= 8 hours)
+            let daysWorkedFullEquivalent = 0;
+            for (const date in dailyHoursMap) {
+                if (dailyHoursMap[date] >= FULL_DAY_EQUIVALENT_HOURS) {
+                    daysWorkedFullEquivalent++;
+                }
+            }
+
+
+            // Process Payments (Filter by period)
+            data.payments.filter(p => p.employeeId === employeeId).forEach(data => {
+                if (data.timestamp >= periodStart && data.timestamp <= periodEnd) {
+                    totalAmountPaidInPeriod += data.amount || 0;
+                }
+            });
+
+            // --- NEW METRICS CALCULATION ---
+            let totalTaskHoursLoggedByEmployeeInPeriod = 0;
+            
+            // 1. Calculate Total Task Hours Logged
+            data.tasks.forEach(task => {
+                (task.laborLogs || []).forEach(log => {
+                    if (log.employeeId === employeeId) {
+                        const logDate = log.date; 
+                        if (logDate >= periodStart && logDate <= periodEnd) {
+                            totalTaskHoursLoggedByEmployeeInPeriod += parseFloat(log.hours || 0);
+                        }
+                    }
+                });
+            });
+
+            // 2. Utilization Rate
+            const hoursRounded = parseFloat(hoursWorkedInPeriod.toFixed(2));
+            const utilizationRate = hoursWorkedInPeriod > 0 
+                ? (totalTaskHoursLoggedByEmployeeInPeriod / hoursWorkedInPeriod) * 100 
+                : 0;
+            
+            // 3. Time-Log Discrepancy
+            const timeLogDiscrepancyHours = hoursWorkedInPeriod - totalTaskHoursLoggedByEmployeeInPeriod;
+            
+            // --- END NEW METRICS CALCULATION ---
+
+
+            // Final Calculations (Payroll)
+            const earnedAmount = hoursRounded * employee.hourlyRate;
+            const daysAbsent = totalDaysInMonth - daysWorkedFullEquivalent;
+            
+            const periodBalance = earnedAmount - totalAmountPaidInPeriod;
+            
+            // Render Report
+            let reportHtml = `
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">${employee.name}'s Payroll Report - ${monthYear}</h3>
+                
+                <h4 class="text-xl font-semibold mb-3 text-gray-700">Financial Summary</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p class="text-sm font-medium text-blue-700">Days Worked (8+ hr equiv.)</p>
+                        <p class="text-3xl font-extrabold text-blue-800">${daysWorkedFullEquivalent}</p>
+                        <p class="text-xs text-gray-500 mt-1">out of ${totalDaysInMonth} days in month</p>
+                    </div>
+                     <div class="p-3 bg-red-50 rounded-lg border border-red-200">
+                        <p class="text-sm font-medium text-red-700">Days Below 8hr Equiv.</p>
+                        <p class="text-3xl font-extrabold text-red-800">${daysAbsent}</p>
+                        <p class="text-xs text-gray-500 mt-1">Days without ${FULL_DAY_EQUIVALENT_HOURS}+ hours attendance</p>
+                    </div>
+                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <p class="text-sm font-medium text-yellow-700">Gross Earned (Period)</p>
+                        <p class="text-3xl font-extrabold text-yellow-800">${formatCurrency(earnedAmount)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Based on ${hoursRounded} total hours worked</p>
+                    </div>
+                    <div class="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                        <p class="text-sm font-medium text-emerald-700">Amount Paid in Period</p>
+                        <p class="text-3xl font-extrabold text-emerald-800">${formatCurrency(totalAmountPaidInPeriod)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Total transactions this month</p>
+                    </div>
+                </div>
+                
+                <div class="p-4 rounded-lg bg-white border mb-6">
+                    <p class="text-sm font-medium text-gray-700">Period Balance (${monthYear})</p>
+                    <p class="text-3xl font-bold ${periodBalance >= 0 ? 'text-blue-600' : 'text-red-600'}">
+                        ${formatCurrency(periodBalance)}
+                    </p>
+                    <p class="text-xs text-gray-500 mt-1">${periodBalance >= 0 ? 'Surplus Earned / Underpaid' : 'Overpaid / Debt'}</p>
+                </div>
+                
+                <h4 class="text-xl font-semibold mb-3 text-gray-700 border-t pt-3">Productivity Metrics</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-purple-50 rounded-lg border border-purple-200">
+                        <p class="text-sm font-medium text-purple-700">Utilization Rate</p>
+                        <p class="text-3xl font-bold text-purple-800">${utilizationRate.toFixed(1)}%</p>
+                        <p class="text-xs text-gray-500 mt-1">Task hours logged (${totalTaskHoursLoggedByEmployeeInPeriod.toFixed(2)} hrs) vs. total attendance hours (${hoursRounded} hrs).</p>
+                    </div>
+                    <div class="p-4 ${timeLogDiscrepancyHours > 0.5 ? 'bg-orange-100 border-orange-300' : 'bg-green-50 border-green-200'} rounded-lg border">
+                        <p class="text-sm font-medium text-gray-700">Time Log Discrepancy</p>
+                        <p class="text-3xl font-bold ${timeLogDiscrepancyHours > 0.5 ? 'text-orange-700' : 'text-green-700'}">${timeLogDiscrepancyHours.toFixed(2)} hrs</p>
+                        <p class="text-xs text-gray-500 mt-1">Unaccounted hours (Attendance time not logged to a task).</p>
+                    </div>
+                </div>
+            `;
+
+            outputEl.innerHTML = reportHtml;
+        };
+
+        window.generateTaskReport = () => {
+            const taskId = document.getElementById('reportTaskSelect').value;
+            const outputEl = document.getElementById('taskReportOutput');
+            
+            outputEl.innerHTML = `<p class="text-gray-500 text-center">Generating task report...</p>`;
+            
+            if (!taskId) {
+                outputEl.innerHTML = `<p class="text-gray-500 text-center">Select a task to generate a profit/loss report.</p>`;
+                return;
+            }
+
+            const task = taskState[taskId];
+            if (!task) {
+                 outputEl.innerHTML = `<p class="text-red-500 text-center">Error: Task data not found.</p>`;
+                return;
+            }
+
+            const pL = calculateTaskProfitLoss(task);
+            const profitLossColor = pL.netProfitLossValue >= 0 ? 'text-emerald-600' : 'text-red-600';
+            const profitLossBg = pL.netProfitLossValue >= 0 ? 'bg-emerald-50' : 'bg-red-50';
+            const profitLossLabel = pL.netProfitLossValue >= 0 ? 'Net Profit' : 'Net Loss';
+            
+            const assignedNames = (task.assignedEmployees || []).map(id => employeesState[id]?.name || 'Unknown').join(', ');
+            
+            const reportHtml = `
+                <h3 class="text-2xl font-bold mb-4 text-gray-800">${task.name} - Profit/Loss Report</h3>
+                <p class="text-gray-600 mb-4">Assigned Employees: <span class="font-semibold">${assignedNames || 'None'}</span></p>
+
+                <h4 class="text-xl font-semibold mb-3 text-gray-700">Performance Metrics</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    
+                    <!-- Hours -->
+                    <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                        <p class="text-sm font-medium text-blue-700">Estimated Hours</p>
+                        <p class="text-3xl font-extrabold text-blue-800">${task.estimatedHours.toFixed(2)} hrs</p>
+                    </div>
+                     <div class="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                        <p class="text-sm font-medium text-indigo-700">Actual Labor Hours</p>
+                        <p class="text-3xl font-extrabold text-indigo-800">${pL.totalActualHours} hrs</p>
+                    </div>
+                    
+                    <!-- TPI (NEW) -->
+                    <div class="p-3 ${pL.tpi >= 100 ? 'bg-emerald-100 border-emerald-300' : 'bg-red-100 border-red-300'} rounded-lg border lg:col-span-2">
+                        <p class="text-sm font-medium text-gray-700">Task Performance Index (TPI)</p>
+                        <p class="text-3xl font-extrabold ${pL.tpi >= 100 ? 'text-emerald-700' : 'text-red-700'}">${pL.tpi}%</p>
+                        <p class="text-xs text-gray-500 mt-1">${pL.tpi >= 100 ? 'Ahead of estimate (Faster)' : 'Behind estimate (Slower)'}</p>
+                    </div>
+
+                    <!-- Revenue -->
+                    <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 lg:col-span-4">
+                        <p class="text-sm font-medium text-yellow-700">Total Revenue Received</p>
+                        <p class="text-3xl font-extrabold text-yellow-800">${formatCurrency(pL.totalRevenue)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Advance: ${formatCurrency(task.advanceReceived)} | Final: ${formatCurrency(task.finalReceived)}</p>
+                    </div>
+                </div>
+
+                <h4 class="text-xl font-semibold mb-3 text-gray-700 border-b pb-2">Cost Breakdown & Efficiency</h4>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-sm font-medium text-gray-700">Material Cost</p>
+                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(task.materialCost)}</p>
+                    </div>
+                    <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
+                        <p class="text-sm font-medium text-gray-700">Other Labor Cost</p>
+                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(task.otherLaborCost)}</p>
+                    </div>
+                    <div class="p-3 bg-red-100 rounded-lg border border-red-300">
+                        <p class="text-sm font-medium text-red-700">Employee Labor Cost</p>
+                        <p class="text-2xl font-bold text-red-800">${formatCurrency(pL.totalEmployeeLaborCost)}</p>
+                    </div>
+                    
+                    <!-- LER (NEW) -->
+                    <div class="p-3 bg-yellow-100 rounded-lg border border-yellow-300">
+                        <p class="text-sm font-medium text-yellow-700">Labor Efficiency Ratio (LER)</p>
+                        <p class="text-2xl font-bold text-yellow-800">${pL.ler}</p>
+                        <p class="text-xs text-gray-500 mt-1">Revenue generated per ₹1 of employee labor cost.</p>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-lg ${profitLossBg} border ${pL.netProfitLossValue >= 0 ? 'border-emerald-400' : 'border-red-400'} text-center">
+                    <p class="text-xl font-medium text-gray-700">TOTAL NET RESULT</p>
+                    <p class="text-4xl font-extrabold ${profitLossColor} mt-1">${profitLossLabel}: ${formatCurrency(pL.netProfitLoss)}</p>
+                </div>
+            `;
+
+            outputEl.innerHTML = reportHtml;
+
+        };
+
+
+        // --- Task Logic (LOCAL STORAGE) ---
+        
+        const calculateTaskProfitLoss = (task) => {
+            const material = parseFloat(task.materialCost || 0);
+            const otherLabor = parseFloat(task.otherLaborCost || 0);
+            const advance = parseFloat(task.advanceReceived || 0);
+            const final = parseFloat(task.finalReceived || 0);
+            
+            let totalEmployeeLaborCost = 0;
+            let totalActualHours = 0;
+            
+            if (task.laborLogs && Array.isArray(task.laborLogs)) {
+                task.laborLogs.forEach(log => {
+                    const employee = employeesState[log.employeeId];
+                    if (employee) {
+                        const hours = parseFloat(log.hours || 0);
+                        const rate = parseFloat(employee.hourlyRate || 0);
+                        totalEmployeeLaborCost += (hours * rate);
+                        totalActualHours += hours;
+                    }
+                });
+            }
+
+            const totalRevenue = advance + final;
+            const totalCost = material + otherLabor + totalEmployeeLaborCost;
+            const netProfitLoss = totalRevenue - totalCost;
+
+            // --- NEW METRICS ---
+            // Task Performance Index (TPI) = (Estimated Hours / Actual Hours) * 100
+            const tpiValue = totalActualHours > 0 ? (task.estimatedHours / totalActualHours) * 100 : 0;
+            
+            // Labor Efficiency Ratio (LER) = (Total Revenue - Non-Labor Costs) / Total Employee Labor Cost
+            const nonLaborCosts = material + otherLabor;
+            const numerator = totalRevenue - nonLaborCosts;
+            const lerValue = totalEmployeeLaborCost > 0 ? numerator / totalEmployeeLaborCost : 0;
+
+            return {
+                totalActualHours: totalActualHours.toFixed(2),
+                totalEmployeeLaborCost: totalEmployeeLaborCost.toFixed(2),
+                totalRevenue: totalRevenue.toFixed(2),
+                totalCost: totalCost.toFixed(2),
+                netProfitLoss: netProfitLoss.toFixed(2),
+                netProfitLossValue: netProfitLoss,
+                tpi: tpiValue.toFixed(1), // NEW
+                ler: lerValue.toFixed(2), // NEW
+            };
+        };
+        
+        window.viewTaskDetails = (taskId) => {
+            const detailsEl = document.getElementById(`task-details-${taskId}`);
+            
+            if (activeTaskDetailsId === taskId) {
+                detailsEl.classList.add('hidden');
+                activeTaskDetailsId = null;
+            } else {
+                if (activeTaskDetailsId) {
+                     document.getElementById(`task-details-${activeTaskDetailsId}`).classList.add('hidden');
+                }
+                detailsEl.classList.remove('hidden');
+                activeTaskDetailsId = taskId;
+                const task = activeTaskDetailsId ? taskState[activeTaskDetailsId] : null;
+                if(task) renderTaskDetailsContent(taskId, task);
+            }
+        };
+        
+        /**
+         * Utility to get the current selected assigned employees from the multi-select.
+         * Used for re-rendering the task form after an update.
+         */
+        const getAssignedEmployeeIds = (taskId) => {
+            const selectEl = document.getElementById('assignedEmployees');
+            if (taskId) {
+                const task = taskState[taskId];
+                if (task) {
+                    return task.assignedEmployees || [];
+                }
+            }
+            // If viewing the creation form or task not found, return an empty array
+            return Array.from(selectEl.options)
+                .filter(option => option.selected)
+                .map(option => option.value);
+        };
+        
+        const renderTaskDetailsContent = (taskId, task) => {
+            const detailsContentEl = document.getElementById(`task-details-content-${taskId}`);
+            if (!detailsContentEl) return;
+            
+            const pL = calculateTaskProfitLoss(task);
+            const profitLossColor = pL.netProfitLossValue >= 0 ? 'text-emerald-600' : 'text-red-600';
+            const profitLossLabel = pL.netProfitLossValue >= 0 ? 'Profit' : 'Loss';
+            
+            const logEmployeeOptions = (task.assignedEmployees || []).map(id => {
+                const name = employeesState[id]?.name || id.substring(0, 8);
+                return `<option value="${id}">${name} (${formatCurrency(employeesState[id]?.hourlyRate || 0)}/hr)</option>`;
+            }).join('');
+            
+            const laborLogsHtml = (task.laborLogs || [])
+                .sort((a, b) => b.date - a.date)
+                .slice(0, 5)
+                .map(log => {
+                    const empName = employeesState[log.employeeId]?.name || 'Unknown';
+                    return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${empName} - ${log.hours} hrs</span><span class="text-xs text-gray-500">${formatTimestamp(log.date)}</span></li>`;
+                }).join('');
+            
+            const assignedEmployeesHtml = Object.values(employeesState).map(emp => {
+                const isAssigned = (task.assignedEmployees || []).includes(emp.id);
+                return `
+                    <label class="flex items-center space-x-2">
+                        <input type="checkbox" data-employee-id="${emp.id}" ${isAssigned ? 'checked' : ''} onchange="handleAssignEmployeeChange('${taskId}', this.checked, '${emp.id}')" class="rounded text-fuchsia-600">
+                        <span>${emp.name}</span>
+                    </label>
+                `;
+            }).join('');
+                
+            detailsContentEl.innerHTML = `
+                <div class="p-4 space-y-4">
+                    <h4 class="text-xl font-bold text-gray-800 border-b pb-2">Task: ${task.name}</h4>
+                    
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="p-3 bg-white border rounded-lg">
+                            <p class="text-sm text-gray-500">Total Revenue</p>
+                            <p class="text-xl font-bold text-blue-600">${formatCurrency(pL.totalRevenue)}</p>
+                        </div>
+                        <div class="p-3 bg-white border rounded-lg">
+                            <p class="text-sm text-gray-500">Total Cost</p>
+                            <p class="text-xl font-bold text-red-600">${formatCurrency(pL.totalCost)}</p>
+                        </div>
+                        <div class="p-3 bg-white border rounded-lg col-span-2">
+                            <p class="text-sm text-gray-500">Net ${profitLossLabel}</p>
+                            <p class="text-3xl font-extrabold ${profitLossColor}">
+                                ${formatCurrency(pL.netProfitLoss)}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <!-- Employee Assignment (FIXED) -->
+                    <div class="space-y-3 pt-3 border-t border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-700">Manage Assigned Employees</h5>
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-fuchsia-100 rounded-lg">
+                           ${assignedEmployeesHtml || '<p class="col-span-3 text-sm text-gray-600">No employees available.</p>'}
+                        </div>
+                    </div>
+
+                    <!-- Cost/Revenue Inputs -->
+                    <div class="space-y-3 pt-3 border-t border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-700">Financial Inputs (₹)</h5>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Advance Received</label>
+                                <input type="number" step="0.01" value="${task.advanceReceived || 0}" onchange="updateTaskField('${taskId}', 'advanceReceived', this.value)" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Final Received</label>
+                                <input type="number" step="0.01" value="${task.finalReceived || 0}" onchange="updateTaskField('${taskId}', 'finalReceived', this.value)" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Material Cost</label>
+                                <input type="number" step="0.01" value="${task.materialCost || 0}" onchange="updateTaskField('${taskId}', 'materialCost', this.value)" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700">Other Labor Cost</label>
+                                <input type="number" step="0.01" value="${task.otherLaborCost || 0}" onchange="updateTaskField('${taskId}', 'otherLaborCost', this.value)" class="w-full p-2 border rounded-lg">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Labor Logging -->
+                    <div class="space-y-3 pt-3 border-t border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-700">Employee Labor Tracking (Total: ${pL.totalActualHours} hrs | Cost: ${formatCurrency(pL.totalEmployeeLaborCost)})</h5>
+                        <form onsubmit="handleLogTaskHours(event, '${taskId}')" class="grid grid-cols-2 gap-3">
+                            <select id="task-labor-employee-${taskId}" required class="w-full p-2 border rounded-lg col-span-2">
+                                <option value="" disabled selected>--- Select Assigned Employee ---</option>
+                                ${logEmployeeOptions}
+                            </select>
+                            <div>
+                                <input type="number" id="task-labor-hours-${taskId}" min="0.25" step="0.25" placeholder="Hours Worked (e.g., 8.00)" required class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <input type="date" id="task-labor-date-${taskId}" required value="${new Date().toISOString().substring(0, 10)}" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div class="col-span-2">
+                                <button type="submit" class="w-full py-2 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700">
+                                    Log Hours for Task
+                                </button>
+                            </div>
+                        </form>
+                        
+                        <div class="pt-2">
+                            <h6 class="text-md font-medium text-gray-600">Recent Logs:</h6>
+                            <ul class="space-y-1">${laborLogsHtml}</ul>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+        
+        /**
+         * UPDATED: Handles adding/removing an employee from a task's assigned list.
+         */
+        window.handleAssignEmployeeChange = (taskId, isChecked, employeeId) => {
+             try {
+                const data = loadLocalData();
+                const taskIndex = data.tasks.findIndex(t => t.id === taskId);
+                
+                if (taskIndex !== -1) {
+                    let assigned = data.tasks[taskIndex].assignedEmployees || [];
+                    
+                    if (isChecked && !assigned.includes(employeeId)) {
+                        assigned.push(employeeId);
+                    } else if (!isChecked && assigned.includes(employeeId)) {
+                        assigned = assigned.filter(id => id !== employeeId);
+                    }
+                    
+                    data.tasks[taskIndex].assignedEmployees = assigned;
+                    data.tasks[taskIndex].updatedAt = Date.now();
+                    
+                    updateAndRerender('tasks', data.tasks);
+                    
+                    // Re-render to update log select box options
+                    if (activeTaskDetailsId === taskId) {
+                        const updatedTask = data.tasks[taskIndex];
+                        renderTaskDetailsContent(taskId, updatedTask);
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating assigned employees:", error);
+                showFormMessage("task-form-message", `Failed to update assignment. Check console.`, true);
+            }
+        };
+
+        window.updateTaskField = (taskId, field, value) => {
+            const floatValue = parseFloat(value || 0);
+
+            try {
+                const data = loadLocalData();
+                const index = data.tasks.findIndex(t => t.id === taskId);
+
+                if (index !== -1) {
+                    data.tasks[index][field] = floatValue;
+                    data.tasks[index].updatedAt = Date.now();
+                    
+                    updateAndRerender('tasks', data.tasks);
+                    
+                    // Re-render task details if currently open
+                    if (activeTaskDetailsId === taskId) {
+                        renderTaskDetailsContent(taskId, data.tasks[index]);
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating task field:", error);
+                showFormMessage("report-message", `Failed to update task. Check console.`, true);
+            }
+        };
+
+        window.handleLogTaskHours = (event, taskId) => {
+            event.preventDefault();
+            
+            const employeeId = document.getElementById(`task-labor-employee-${taskId}`).value;
+            // Hours input now uses step="0.25" to enforce 15-minute increments
+            const hours = parseFloat(document.getElementById(`task-labor-hours-${taskId}`).value); 
+            const dateInput = document.getElementById(`task-labor-date-${taskId}`).value;
+            
+            if (!employeeId || isNaN(hours) || hours <= 0 || !dateInput) return;
+            
+            const task = taskState[taskId];
+            if (!task) return;
+
+            // Enforce 15-minute increments manually if needed, though step attribute should cover it.
+            if (hours * 100 % 25 !== 0) {
+                 showFormMessage("task-form-message", "Hours must be logged in 15-minute increments (e.g., 1.00, 1.25, 1.50).", true);
+                 return;
+            }
+
+            const newLog = {
+                employeeId: employeeId,
+                hours: hours,
+                date: new Date(dateInput).getTime(),
+                loggedAt: Date.now()
+            };
+
+            try {
+                const data = loadLocalData();
+                const index = data.tasks.findIndex(t => t.id === taskId);
+                
+                if (index !== -1) {
+                    const currentLogs = data.tasks[index].laborLogs || [];
+                    data.tasks[index].laborLogs = [...currentLogs, newLog];
+                    data.tasks[index].updatedAt = Date.now();
+
+                    updateAndRerender('tasks', data.tasks);
+
+                    document.getElementById(`task-labor-hours-${taskId}`).value = '';
+                    document.getElementById(`task-labor-date-${taskId}`).value = new Date().toISOString().substring(0, 10);
+                    
+                    showFormMessage("task-form-message", `Logged ${hours} hours for ${employeesState[employeeId]?.name || 'Employee'} on ${task.name}.`, false);
+                }
+
+            } catch (error) {
+                console.error("Error logging task hours:", error);
+                showFormMessage("task-form-message", "Failed to log hours. Try again.", true);
+            }
+        };
+
+        const handleTaskSubmit = (e) => {
+            e.preventDefault();
+            
+            const taskName = document.getElementById('taskName').value.trim();
+            const estimatedHours = parseFloat(document.getElementById('estimatedHours').value);
+            const assignedSelect = document.getElementById('assignedEmployees');
+            
+            // Collect all selected employees
+            const assignedEmployees = Array.from(assignedSelect.options)
+                .filter(option => option.selected)
+                .map(option => option.value);
+
+            if (taskName.length < 3 || isNaN(estimatedHours) || estimatedHours < 0) {
+                showFormMessage("task-form-message", "Please enter a valid task name and estimated hours.", true);
+                return;
+            }
+
+            try {
+                const newTask = {
+                    id: generateUUID(),
+                    name: taskName,
+                    estimatedHours: estimatedHours,
+                    assignedEmployees: assignedEmployees,
+                    status: 'In Progress',
+                    materialCost: 0,
+                    otherLaborCost: 0,
+                    advanceReceived: 0,
+                    finalReceived: 0,
+                    laborLogs: [],
+                    createdAt: Date.now(),
+                };
+
+                const data = loadLocalData();
+                data.tasks.push(newTask);
+                
+                updateAndRerender('tasks', data.tasks);
+                
+                showFormMessage("task-form-message", `${taskName} created successfully!`, false);
+                document.getElementById('taskForm').reset();
+
+            } catch (error) {
+                console.error("Error adding task: ", error);
+                showFormMessage("task-form-message", "Failed to add task. Try again.", true);
+            }
+        };
+        
+        const setupTaskListener = () => {
+            const data = loadLocalData();
+            const tasks = data.tasks;
+
+            const taskListEl = document.getElementById('taskList');
+            const reportTaskSelectEl = document.getElementById('reportTaskSelect');
+
+            const sortedTasks = tasks.sort((a, b) => b.createdAt - a.createdAt);
+
+            let htmlContent = '';
+            let selectHtml = '<option value="" disabled selected>--- Select a Task ---</option>';
+            taskState = {};
+            
+            if (sortedTasks.length === 0) {
+                htmlContent = '<p class="text-gray-500 text-center p-4 bg-gray-50 rounded-lg">No tasks created yet.</p>';
+            } else {
+                sortedTasks.forEach((data) => {
+                    const taskId = data.id;
+                    taskState[taskId] = data;
+                    
+                    const pL = calculateTaskProfitLoss(data);
+                    const assignedNames = (data.assignedEmployees || []).map(id => employeesState[id]?.name || 'Unknown').join(', ');
+                    
+                    const profitLossColor = pL.netProfitLossValue >= 0 ? 'text-emerald-700' : 'text-red-700';
+                    const profitLossBg = pL.netProfitLossValue >= 0 ? 'bg-emerald-100' : 'bg-red-100';
+                    const profitLossLabel = pL.netProfitLossValue >= 0 ? 'Profit' : 'Loss';
+                    
+                    htmlContent += `
+                        <div id="task-card-${taskId}" class="task-detail-card p-4 bg-white border border-fuchsia-200 rounded-lg shadow-sm hover:shadow-md cursor-pointer" onclick="viewTaskDetails('${taskId}')">
+                            <div class="flex justify-between items-center">
+                                <h4 class="text-lg font-bold text-fuchsia-800">${data.name}</h4>
+                                <span class="px-3 py-1 text-sm font-semibold rounded-full ${data.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                                    ${data.status}
+                                </span>
+                            </div>
+                            <div class="mt-2 text-sm text-gray-600">
+                                <p>Assigned: ${assignedNames || 'None'}</p>
+                                <p>Est. Hours: ${data.estimatedHours || 0} | Actual Hours: ${pL.totalActualHours}</p>
+                            </div>
+                            <div class="mt-3 p-2 rounded-lg ${profitLossBg} flex justify-between items-center">
+                                <span class="font-bold ${profitLossColor}">Net ${profitLossLabel}: ${formatCurrency(pL.netProfitLoss)}</span>
+                                <span class="text-xs text-gray-600">Total Revenue: ${formatCurrency(pL.totalRevenue)} | Total Cost: ${formatCurrency(pL.totalCost)}</span>
+                            </div>
+                        </div>
+                        <div id="task-details-${taskId}" class="hidden bg-fuchsia-50 rounded-lg p-2 border-l-4 border-fuchsia-400 mt-[-16px] mb-4">
+                            <div id="task-details-content-${taskId}">
+                            </div>
+                        </div>
+                    `;
+                    
+                    selectHtml += `<option value="${taskId}">${data.name}</option>`;
+
+                });
+            }
+            
+            taskListEl.innerHTML = htmlContent;
+            reportTaskSelectEl.innerHTML = selectHtml;
+
+            if (activeTaskDetailsId && taskState[activeTaskDetailsId]) {
+                document.getElementById(`task-details-${activeTaskDetailsId}`).classList.remove('hidden');
+                renderTaskDetailsContent(activeTaskDetailsId, taskState[activeTaskDetailsId]);
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            const taskForm = document.getElementById('taskForm');
+            if (taskForm) {
+                taskForm.addEventListener('submit', handleTaskSubmit);
+            }
+        });
+
+
+        // --- Import / Export Logic (NEW) ---
+
+        window.exportData = () => {
+            const data = loadLocalData();
+            const filename = `payroll_export_${new Date().toISOString().substring(0, 10)}.json`;
+            const jsonStr = JSON.stringify(data, null, 2);
+
+            const blob = new Blob([jsonStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        };
+
+        window.handleImport = () => {
+            const fileInput = document.getElementById('importFile');
+            const file = fileInput.files[0];
+            const messageEl = document.getElementById('import-message');
+            messageEl.textContent = '';
+
+            if (!file) {
+                showFormMessage('import-message', 'Please select a JSON file to import.', true);
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    
+                    // Validate structure
+                    if (!importedData || !importedData.employees || !importedData.tasks) {
+                        showFormMessage('import-message', 'Invalid JSON file structure. Missing expected collections.', true);
+                        return;
+                    }
+
+                    let existingData = loadLocalData();
+                    let importedCount = 0;
+                    
+                    const collections = ['employees', 'attendance', 'payments', 'tasks'];
+
+                    collections.forEach(key => {
+                        const existingIds = new Set(existingData[key].map(item => item.id));
+                        
+                        // Filter imported items that don't have existing IDs
+                        const newItems = importedData[key].filter(importedItem => {
+                            // Ensure the imported item has an ID and that ID does not exist locally
+                            return importedItem.id && !existingIds.has(importedItem.id);
+                        });
+                        
+                        if (newItems.length > 0) {
+                            existingData[key].push(...newItems);
+                            importedCount += newItems.length;
+                        }
+                    });
+
+                    saveLocalData(existingData);
+                    runAllListeners();
+                    showFormMessage('import-message', `Successfully imported and merged ${importedCount} new records!`, false);
+
+                } catch (error) {
+                    console.error("Import error:", error);
+                    showFormMessage('import-message', 'Error reading or parsing JSON file.', true);
+                }
+            };
+            reader.readAsText(file);
+        };
+
+
+        // --- Tab Switching Logic ---
+
+        window.showTab = function(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.add('hidden');
+            });
+            
+            document.querySelectorAll('.tab-button').forEach(el => {
+                el.classList.remove('active', 'border-emerald-600', 'text-emerald-600', 'bg-emerald-100');
+                el.classList.add('border-transparent');
+            });
+
+            const selectedContent = document.getElementById(tabId + 'Tab');
+            if (selectedContent) {
+                selectedContent.classList.remove('hidden');
+            }
+
+            const selectedButton = document.querySelector(`.tab-button[data-tab="${tabId}"]`);
+            if (selectedButton) {
+                selectedButton.classList.add('active', 'border-emerald-600', 'text-emerald-600', 'bg-emerald-100');
+            }
+            
+            // Re-run listeners specific to the tab for refresh
+            if (tabId === 'attendance') {
+                window.updateAttendanceStatus();
+            } else if (tabId === 'payments') {
+                document.getElementById('payrollEmployeeSelect').value = ''; 
+                document.getElementById('total-hours-owed').textContent = '0.00';
+                document.getElementById('total-amount-owed').textContent = '₹0.00';
+                document.getElementById('payEmployeeButton').disabled = true;
+                document.getElementById('customPaymentAmount').value = ''; 
+            } else if (tabId === 'reports') {
+                document.getElementById('employeeReportOutput').innerHTML = `<p class="text-gray-500 text-center">Select an employee and a month to generate a payroll report.</p>`;
+                document.getElementById('taskReportOutput').innerHTML = `<p class="text-gray-500 text-center">Select a task to generate a profit/loss report.</p>`;
+                
+            } else if (tabId === 'tasks') {
+                if (activeTaskDetailsId) {
+                    document.getElementById(`task-details-${activeTaskDetailsId}`).classList.add('hidden');
+                    activeTaskDetailsId = null;
+                }
+            }
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+             window.showTab('home');
+        });
+
+    </script>
+</body>
+</html>
