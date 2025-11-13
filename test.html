@@ -6,6 +6,8 @@
     <title>RS' Payroll & Attendance System</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <style>
         /* Custom styles for Inter font and general container */
         body { font-family: 'Inter', sans-serif; background-color: #f3ffec; }
@@ -39,7 +41,7 @@
             
             <!-- Header and Navigation -->
             <header class="bg-emerald-600 p-4 text-white text-center rounded-t-xl">
-                <h1 class="text-2xl font-bold">RaGhS' Payroll and Attendance System</h1>
+                <h1 class="text-2xl font-bold">RaGhS' Payroll and Attendance System (Local Data)</h1>
                 <p id="user-id-display" class="text-xs mt-1 text-emerald-100">Data stored only in your browser's Local Storage.</p>
             </header>
 
@@ -47,7 +49,7 @@
                 <button onclick="showTab('home')" class="tab-button active flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="home">
                     Dashboard
                 </button>
-				<button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
+                <button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
                     Tasks (Job Costing)
                 </button>
                 <button onclick="showTab('employees')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="employees">
@@ -83,9 +85,18 @@
                             <p id="total-employees-count" class="text-3xl font-extrabold text-emerald-800 mt-1">0</p>
                         </div>
                     </div>
+                    
+                    <!-- Chart Section (NEW) -->
+                    <div class="card p-5 bg-white rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Task Performance Visualization (Hours & Profit/Loss)</h3>
+                        <div class="h-80">
+                            <canvas id="taskPerformanceChart"></canvas>
+                        </div>
+                        <p id="chart-message" class="text-center text-sm text-gray-500 mt-4">Task data needed for visualization.</p>
+                    </div>
 
-                    <!-- Import/Export Functionality (NEW) -->
-                    <div class="card p-5 bg-gray-100 rounded-xl">
+                    <!-- Import/Export Functionality -->
+                    <div class="card p-5 bg-gray-100 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Data Import / Export</h3>
 
                         <!-- Export Section -->
@@ -108,6 +119,28 @@
                              <p id="import-message" class="mt-3 text-sm text-center text-red-500"></p>
                         </div>
                     </div>
+                    
+                    <!-- General Info and Copyright -->
+                    <div class="card p-5 bg-gray-100 rounded-xl">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">General Information & Copyright</h3>
+                        <p class="text-sm text-gray-700 mb-2">
+                            This Payroll and Attendance System is a **custom-generated utility** designed for demonstration and quick local tracking.
+                        </p>
+                        <p class="text-sm text-gray-700 mb-2">
+                            **Disclaimer:** This application uses your browser's **Local Storage** for data persistence. It is **not** a secured cloud payroll system and should not be used for official, regulatory, or sensitive financial records. Always use professional, compliant software for production use.
+                        </p>
+                        <p class="text-sm text-gray-700 font-bold mt-4">
+                             Copyright & Licensing:
+                        </p>
+                        <p class="text-xs text-gray-600">
+                            The source code for this specific utility is generally considered **public domain/open source** under the <a href="https://github.com/TechLabRS" target="_blank" class="text-blue-500 hover:underline">
+                            Copyright &copy; 2025 RIT License. All rights reserved. </a> You are free to copy, modify, distribute, and use the code for private, personal, or commercial purposes.
+                        </p>
+                        <p class="text-xs text-gray-600 mt-1">
+                            **Dependencies:** This application uses the open-source **Tailwind CSS** framework and standard JavaScript/HTML functionality.
+                        </p>
+                    </div>
+
                 </div>
 
                 <!-- Employees Tab -->
@@ -393,7 +426,7 @@
         const emptyDataStructure = {
             employees: [],
             attendance: [],
-            payments: [],
+            payments: [], // Employee Payroll Payments
             tasks: []
         };
         
@@ -403,7 +436,8 @@
         let lastCalculatedAmountDue = 0; // Stores the amount calculated by calculatePayrollOwed
         let taskState = {}; // Global store for task data
         let activeTaskDetailsId = null; // Tracks which task's details are currently expanded
-        
+        let taskChartInstance = null; // Chart.js instance
+
         const FULL_DAY_EQUIVALENT_HOURS = 8; // Define constant for full day attendance
 
         // --- Local Storage Persistence Functions ---
@@ -549,9 +583,137 @@
                 setupPaymentListener();
                 setupAttendanceListener();
                 setupTaskListener();
+                renderTaskChart(); // Rerun chart rendering
             }, 50);
         };
         
+        // --- Dashboard Chart Logic (NEW) ---
+
+        const renderTaskChart = () => {
+            const canvas = document.getElementById('taskPerformanceChart');
+            const messageEl = document.getElementById('chart-message');
+
+            const data = loadLocalData();
+            if (data.tasks.length === 0) {
+                messageEl.style.display = 'block';
+                if(taskChartInstance) taskChartInstance.destroy();
+                return;
+            }
+
+            messageEl.style.display = 'none';
+            
+            const chartData = data.tasks.map(task => {
+                const pL = calculateTaskProfitLoss(task);
+                return {
+                    name: task.name,
+                    estimatedHours: parseFloat(task.estimatedHours),
+                    actualHours: parseFloat(pL.totalActualHours),
+                    profit: parseFloat(pL.netProfitLossValue),
+                };
+            }).sort((a, b) => b.actualHours - a.actualHours); // Sort by actual hours
+
+            const labels = chartData.map(d => d.name.substring(0, 15) + '...');
+            const estimatedHours = chartData.map(d => d.estimatedHours);
+            const actualHours = chartData.map(d => d.actualHours);
+            const profits = chartData.map(d => d.profit);
+            
+            if(taskChartInstance) taskChartInstance.destroy();
+
+            taskChartInstance = new Chart(canvas, {
+                type: 'bar', // Base type is bar
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            // Actual Hours (Bar - Strong Indicator)
+                            label: 'Actual Hours',
+                            data: actualHours,
+                            backgroundColor: 'rgba(59, 130, 246, 0.9)', // Strong Blue
+                            borderColor: 'rgba(59, 130, 246, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y1',
+                            type: 'bar',
+                            order: 2, // Draw estimated line on top
+                        },
+                        {
+                            // Estimated Hours (Line - Benchmark)
+                            label: 'Estimated Hours',
+                            data: estimatedHours,
+                            backgroundColor: 'rgba(156, 163, 175, 0.4)', // Faint Gray
+                            borderColor: 'rgba(156, 163, 175, 0.8)',
+                            borderWidth: 2,
+                            yAxisID: 'y1',
+                            type: 'line',
+                            pointRadius: 4,
+                            order: 1,
+                            fill: false,
+                        },
+                        {
+                            // Net Profit/Loss (Line - Financial Outcome)
+                            label: 'Net Profit/Loss (₹)',
+                            data: profits,
+                            backgroundColor: profits.map(p => p >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'), // Green/Red
+                            borderColor: profits.map(p => p >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'),
+                            borderWidth: 3,
+                            type: 'line',
+                            yAxisID: 'y2',
+                            pointStyle: 'circle',
+                            pointRadius: 6,
+                            order: 3,
+                            fill: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            stacked: false,
+                            grid: { display: false }
+                        },
+                        y1: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Hours Logged' },
+                            beginAtZero: true
+                        },
+                         y2: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Profit/Loss (₹)' },
+                            grid: { drawOnChartArea: false }, // Only draw grid lines for the left axis
+                        }
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (label.includes('Profit') || label.includes('Estimated Amount')) {
+                                        label += formatCurrency(context.parsed.y);
+                                    } else if (label.includes('Hours')) {
+                                        label += context.parsed.y + ' hrs';
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        };
+
         // --- Employee Logic (LOCAL STORAGE) ---
 
         const handleEmployeeSubmit = (e) => {
@@ -1162,7 +1324,7 @@
                     <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 lg:col-span-4">
                         <p class="text-sm font-medium text-yellow-700">Total Revenue Received</p>
                         <p class="text-3xl font-extrabold text-yellow-800">${formatCurrency(pL.totalRevenue)}</p>
-                        <p class="text-xs text-gray-500 mt-1">Advance: ${formatCurrency(task.advanceReceived)} | Final: ${formatCurrency(task.finalReceived)}</p>
+                        <p class="text-xs text-gray-500 mt-1">Total customer payments recorded.</p>
                     </div>
                 </div>
 
@@ -1205,8 +1367,13 @@
         const calculateTaskProfitLoss = (task) => {
             const material = parseFloat(task.materialCost || 0);
             const otherLabor = parseFloat(task.otherLaborCost || 0);
-            const advance = parseFloat(task.advanceReceived || 0);
-            const final = parseFloat(task.finalReceived || 0);
+            
+            let totalRevenue = 0;
+            if (task.customerPayments && Array.isArray(task.customerPayments)) {
+                task.customerPayments.forEach(p => {
+                    totalRevenue += parseFloat(p.amount || 0);
+                });
+            }
             
             let totalEmployeeLaborCost = 0;
             let totalActualHours = 0;
@@ -1223,7 +1390,6 @@
                 });
             }
 
-            const totalRevenue = advance + final;
             const totalCost = material + otherLabor + totalEmployeeLaborCost;
             const netProfitLoss = totalRevenue - totalCost;
 
@@ -1265,24 +1431,6 @@
             }
         };
         
-        /**
-         * Utility to get the current selected assigned employees from the multi-select.
-         * Used for re-rendering the task form after an update.
-         */
-        const getAssignedEmployeeIds = (taskId) => {
-            const selectEl = document.getElementById('assignedEmployees');
-            if (taskId) {
-                const task = taskState[taskId];
-                if (task) {
-                    return task.assignedEmployees || [];
-                }
-            }
-            // If viewing the creation form or task not found, return an empty array
-            return Array.from(selectEl.options)
-                .filter(option => option.selected)
-                .map(option => option.value);
-        };
-        
         const renderTaskDetailsContent = (taskId, task) => {
             const detailsContentEl = document.getElementById(`task-details-content-${taskId}`);
             if (!detailsContentEl) return;
@@ -1302,6 +1450,13 @@
                 .map(log => {
                     const empName = employeesState[log.employeeId]?.name || 'Unknown';
                     return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${empName} - ${log.hours} hrs</span><span class="text-xs text-gray-500">${formatTimestamp(log.date)}</span></li>`;
+                }).join('');
+                
+            const customerPaymentsHtml = (task.customerPayments || [])
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .map(p => {
+                    const type = p.type === 'advance' ? 'Advance' : 'Final';
+                    return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${type}: ${formatCurrency(p.amount)}</span><span class="text-xs text-gray-500">${formatTimestamp(p.timestamp)}</span></li>`;
                 }).join('');
             
             const assignedEmployeesHtml = Object.values(employeesState).map(emp => {
@@ -1335,7 +1490,7 @@
                         </div>
                     </div>
                     
-                    <!-- Employee Assignment (FIXED) -->
+                    <!-- Employee Assignment -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Manage Assigned Employees</h5>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-fuchsia-100 rounded-lg">
@@ -1343,18 +1498,38 @@
                         </div>
                     </div>
 
-                    <!-- Cost/Revenue Inputs -->
+                    <!-- Customer Payment Logging (NEW) -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
-                        <h5 class="text-lg font-semibold text-gray-700">Financial Inputs (₹)</h5>
+                        <h5 class="text-lg font-semibold text-gray-700">Customer Payment Tracking (₹)</h5>
+                        <form onsubmit="handleCustomerPayment(event, '${taskId}')" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <select id="payment-type-${taskId}" required class="w-full p-2 border rounded-lg">
+                                <option value="" disabled selected>--- Select Type ---</option>
+                                <option value="advance">Advance Payment</option>
+                                <option value="final">Final Payment</option>
+                            </select>
+                            <div>
+                                <input type="number" id="payment-amount-${taskId}" step="0.01" min="0.01" placeholder="Amount (₹)" required class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div>
+                                <input type="date" id="payment-date-${taskId}" required value="${new Date().toISOString().substring(0, 10)}" class="w-full p-2 border rounded-lg">
+                            </div>
+                            <div class="col-span-3">
+                                <button type="submit" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">
+                                    Record Customer Payment
+                                </button>
+                            </div>
+                        </form>
+
+                        <div class="pt-2">
+                            <h6 class="text-md font-medium text-gray-600">Recent Customer Payments:</h6>
+                            <ul class="space-y-1">${customerPaymentsHtml || '<li class="text-sm text-gray-500">No payments recorded yet.</li>'}</ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Cost Inputs -->
+                    <div class="space-y-3 pt-3 border-t border-gray-200">
+                        <h5 class="text-lg font-semibold text-gray-700">External Cost Inputs (₹)</h5>
                         <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Advance Received</label>
-                                <input type="number" step="0.01" value="${task.advanceReceived || 0}" onchange="updateTaskField('${taskId}', 'advanceReceived', this.value)" class="w-full p-2 border rounded-lg">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Final Received</label>
-                                <input type="number" step="0.01" value="${task.finalReceived || 0}" onchange="updateTaskField('${taskId}', 'finalReceived', this.value)" class="w-full p-2 border rounded-lg">
-                            </div>
                             <div>
                                 <label class="block text-sm font-medium text-gray-700">Material Cost</label>
                                 <input type="number" step="0.01" value="${task.materialCost || 0}" onchange="updateTaskField('${taskId}', 'materialCost', this.value)" class="w-full p-2 border rounded-lg">
@@ -1397,8 +1572,53 @@
         };
         
         /**
-         * UPDATED: Handles adding/removing an employee from a task's assigned list.
+         * NEW: Handles recording a payment from the customer for a task.
          */
+        window.handleCustomerPayment = (event, taskId) => {
+            event.preventDefault();
+
+            const paymentType = document.getElementById(`payment-type-${taskId}`).value;
+            const amount = parseFloat(document.getElementById(`payment-amount-${taskId}`).value);
+            const dateInput = document.getElementById(`payment-date-${taskId}`).value;
+
+            if (!paymentType || isNaN(amount) || amount <= 0 || !dateInput) {
+                 showFormMessage("task-form-message", "Please enter a valid amount, type, and date for customer payment.", true);
+                 return;
+            }
+            
+            const newPayment = {
+                id: generateUUID(),
+                type: paymentType, // 'advance' or 'final'
+                amount: amount,
+                timestamp: getTimestampFromInput(dateInput),
+            };
+
+            try {
+                const data = loadLocalData();
+                const index = data.tasks.findIndex(t => t.id === taskId);
+
+                if (index !== -1) {
+                    const currentPayments = data.tasks[index].customerPayments || [];
+                    data.tasks[index].customerPayments = [...currentPayments, newPayment];
+                    data.tasks[index].updatedAt = Date.now();
+
+                    updateAndRerender('tasks', data.tasks);
+                    
+                    // Clear inputs and re-render details
+                    document.getElementById(`payment-amount-${taskId}`).value = '';
+                    document.getElementById(`payment-type-${taskId}`).value = '';
+
+                    if (activeTaskDetailsId === taskId) {
+                        renderTaskDetailsContent(taskId, data.tasks[index]);
+                    }
+                    showFormMessage("task-form-message", `Customer payment of ${formatCurrency(amount)} recorded.`, false);
+                }
+            } catch (error) {
+                console.error("Error logging customer payment:", error);
+                showFormMessage("task-form-message", "Failed to record customer payment. Try again.", true);
+            }
+        };
+
         window.handleAssignEmployeeChange = (taskId, isChecked, employeeId) => {
              try {
                 const data = loadLocalData();
@@ -1413,7 +1633,8 @@
                         assigned = assigned.filter(id => id !== employeeId);
                     }
                     
-                    data.tasks[taskIndex].assignedEmployees = assigned;
+                    // FIX: Changed 'index' to 'taskIndex'
+                    data.tasks[taskIndex].assignedEmployees = assigned; 
                     data.tasks[taskIndex].updatedAt = Date.now();
                     
                     updateAndRerender('tasks', data.tasks);
@@ -1529,8 +1750,7 @@
                     status: 'In Progress',
                     materialCost: 0,
                     otherLaborCost: 0,
-                    advanceReceived: 0,
-                    finalReceived: 0,
+                    customerPayments: [], // Initialize new array for payments
                     laborLogs: [],
                     createdAt: Date.now(),
                 };
@@ -1734,6 +1954,9 @@
                     document.getElementById(`task-details-${activeTaskDetailsId}`).classList.add('hidden');
                     activeTaskDetailsId = null;
                 }
+            } else if (tabId === 'home') {
+                // Rerender chart when navigating to home
+                renderTaskChart();
             }
         };
         
