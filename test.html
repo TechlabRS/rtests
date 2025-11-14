@@ -3,10 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS' Payroll & Attendance System v2.17</title>
-    <!-- Load Tailwind CSS -->
+    <title>RS' Payroll & Attendance System v2.18</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Load Chart.js for visualizations -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <style>
         /* Custom styles for Inter font and general container */
@@ -37,18 +35,14 @@
     <div id="app" class="min-h-screen flex items-start justify-center p-4 sm:p-8">
         <div class="w-full max-w-4xl bg-white rounded-xl shadow-2xl overflow-hidden">
             
-            <!-- Header and Navigation -->
             <header class="bg-emerald-600 p-4 text-white text-center rounded-t-xl">
                 <h1 class="text-2xl font-bold">RaGhS' Payroll and Attendance System (Local Data)</h1>
-                <p id="user-id-display" class="text-xs mt-1 text-emerald-100">v2.17 | Data stored only in your browser's Local Storage.</p>
+                <p id="user-id-display" class="text-xs mt-1 text-emerald-100">v2.18 | Data stored only in your browser's Local Storage.</p>
             </header>
 
             <nav class="flex border-b border-gray-200 bg-emerald-50 nav-tabs">
                 <button onclick="showTab('home')" class="tab-button active flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="home">
                     Dashboard
-                </button>
-				<button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
-                    Tasks (Job Costing)
                 </button>
                 <button onclick="showTab('employees')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="employees">
                     Employees
@@ -62,24 +56,22 @@
                  <button onclick="showTab('reports')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="reports">
                     Reports
                 </button>
-                
+                <button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
+                    Tasks (Job Costing)
+                </button>
             </nav>
 
-            <!-- Main Content Area -->
             <main class="p-6">
-                <!-- Home Tab (Default Content) -->
                 <div id="homeTab" class="tab-content">
                     <h2 class="text-2xl font-semibold mb-4 text-gray-800">System Overview & Daily Actions</h2>
                     <p class="text-gray-600 mb-6">
                         This tab is optimized for your daily routine: **quick logging** and a **performance snapshot**.
                     </p>
                     
-                    <!-- NEW: Daily Actions Card -->
                     <div class="card p-5 bg-indigo-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-indigo-800 mb-4 border-b pb-2">Quick Daily Actions</h3>
                         
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <!-- 1. Quick Attendance -->
                             <div class="p-4 bg-white rounded-lg border border-indigo-200">
                                 <h4 class="font-bold text-lg text-indigo-700 mb-2">Check In/Out</h4>
                                 <label for="quickAttendanceEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
@@ -91,8 +83,7 @@
                                     onchange="updateQuickAttendanceStatus()"
                                 >
                                     <option value="" disabled selected>--- Select an Employee ---</option>
-                                    <!-- Options will be dynamically populated -->
-                                </select>
+                                    </select>
                                 
                                 <div id="quick-attendance-status" class="text-center mb-3 p-2 text-sm rounded-lg bg-gray-100 text-gray-600">
                                     Awaiting selection.
@@ -107,7 +98,6 @@
                                 </div>
                             </div>
 
-                            <!-- 2. Quick Task Logging -->
                             <div class="p-4 bg-white rounded-lg border border-indigo-200">
                                 <h4 class="font-bold text-lg text-indigo-700 mb-2">Log Task Hours</h4>
                                 <form onsubmit="handleQuickLogTaskHours(event)">
@@ -139,7 +129,6 @@
                          <p id="quick-action-message" class="mt-3 text-sm text-center text-red-500"></p>
                     </div>
 
-                    <!-- Chart Section -->
                     <div class="card p-5 bg-white rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Task Performance Visualization (Hours & Profit/Loss)</h3>
                         <div class="h-80">
@@ -148,7 +137,6 @@
                         <p id="chart-message" class="text-center text-sm text-gray-500 mt-4">Task data needed for visualization.</p>
                     </div>
 
-                    <!-- Summary Metrics -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                         <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                             <p class="text-sm font-medium text-emerald-700">Total Payments Recorded:</p>
@@ -160,11 +148,9 @@
                         </div>
                     </div>
 
-                    <!-- Import/Export Functionality -->
                     <div class="card p-5 bg-gray-100 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Data Import / Export</h3>
 
-                        <!-- Export Section -->
                         <div class="mb-6 p-4 border rounded-lg bg-white">
                             <p class="font-medium text-gray-700 mb-2">Export Data (Backup)</p>
                             <button onclick="exportData()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 ease-in-out shadow-md">
@@ -173,7 +159,6 @@
                             <p class="text-xs text-gray-500 mt-2">Downloads a single JSON file containing all employees, attendance, payments, and tasks.</p>
                         </div>
 
-                        <!-- Import Section -->
                         <div class="p-4 border rounded-lg bg-white">
                             <p class="font-medium text-gray-700 mb-2">Import Data (Non-Destructive Merge)</p>
                             <input type="file" id="importFile" accept=".json" class="w-full p-3 border border-gray-300 rounded-lg text-sm mb-3">
@@ -184,15 +169,16 @@
                         </div>
                     </div>
                     
-                    <!-- General Info and Copyright -->
                     <div class="card p-5 bg-gray-100 rounded-xl">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">General Information & Copyright</h3>
-                        <p class="text-sm text-gray-700 mb-2">
-                            This Payroll and Attendance System is a **custom-generated utility** designed for demonstration and quick local tracking.
-                        </p>
-                        <p class="text-sm text-gray-700 mb-2">
-                            **Disclaimer:** This application uses your browser's **Local Storage** for data persistence. It is **not** a secured cloud payroll system and should not be used for official, regulatory, or sensitive financial records. Always use professional, compliant software for production use.
-                        </p>
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Factory Reset & Information</h3>
+                        <div class="mb-4 p-4 border rounded-lg bg-red-50 border-red-200">
+                             <p class="font-medium text-red-700 mb-2">Clear All Data (Factory Reset)</p>
+                            <button onclick="clearAllData()" class="w-full py-3 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700 transition duration-150 ease-in-out shadow-md">
+                                DANGER: Clear All Local Data
+                            </button>
+                            <p class="text-xs text-gray-500 mt-2">This permanently deletes ALL employees, tasks, attendance, and payments from your browser.</p>
+                        </div>
+
                         <p class="text-sm text-gray-700 font-bold mt-4">
                             Copyright & Licensing:
                         </p>
@@ -200,18 +186,13 @@
                             The source code for this specific utility is generally considered **public domain/open source** under the <a href="https://github.com/TechLabRS" target="_blank" class="text-blue-500 hover:underline">
                             Copyright &copy; 2025 RIT License. All rights reserved. </a> You are free to copy, modify, distribute, and use the code for private, personal, or commercial purposes.
                         </p>
-                        <p class="text-xs text-gray-600 mt-1">
-                            **Dependencies:** This application uses the open-source **Tailwind CSS** framework and standard JavaScript/HTML functionality.
-                        </p>
                     </div>
 
                 </div>
 
-                <!-- Employees Tab -->
                 <div id="employeesTab" class="tab-content hidden">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Employee Management</h2>
 
-                    <!-- Add Employee Form -->
                     <div class="card p-5 bg-yellow-50 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="md:col-span-4">
                             <h3 class="text-xl font-semibold text-yellow-800 mb-4">Add/Update Employee Details</h3>
@@ -244,19 +225,15 @@
                         </form>
                     </div>
 
-                    <!-- Employee List -->
                     <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Current Staff List (Rate/ID)</h3>
                     <div id="employeeList" class="space-y-3">
                         <p id="employee-loading-message" class="text-gray-500 text-center">Loading employees...</p>
-                        <!-- Employees will be injected here -->
-                    </div>
+                        </div>
                 </div>
                 
-                <!-- Attendance Tab -->
                 <div id="attendanceTab" class="tab-content hidden">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Employee Attendance Tracking</h2>
 
-                    <!-- Check In/Out Interface -->
                     <div class="card p-5 bg-blue-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-blue-800 mb-4">Record Daily Time</h3>
                         <label for="attendanceEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
@@ -268,14 +245,12 @@
                             onchange="updateAttendanceStatus()"
                         >
                             <option value="" disabled selected>--- Select an Employee ---</option>
-                            <!-- Options will be dynamically populated by setupEmployeeListener -->
-                        </select>
+                            </select>
                         
                         <div id="attendance-status" class="text-center mb-4 p-3 rounded-lg bg-gray-100 text-gray-600">
                             Please select an employee.
                         </div>
 
-                        <!-- Simplify: Keep Override inputs, but make them less prominent -->
                         <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label for="checkInTimeInput" class="block text-sm font-medium text-blue-700 mb-2">
@@ -304,18 +279,15 @@
                         <p id="attendance-form-message" class="mt-3 text-sm text-center text-red-500"></p>
                     </div>
                     
-                    <!-- Attendance List -->
                     <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Recent Attendance Records</h3>
                     <div id="attendanceList" class="space-y-3">
                         <p id="attendance-loading-message" class="text-gray-500 text-center">Loading attendance...</p>
                     </div>
                 </div>
 
-                <!-- Payments Tab (Now Payroll Calculation) -->
                 <div id="paymentsTab" class="tab-content hidden">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Payroll Calculation & Payment</h2>
 
-                    <!-- Payment Calculation Interface -->
                     <div class="card p-5 bg-emerald-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-emerald-800 mb-4">Calculate Hours & Pay</h3>
                         <label for="payrollEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
@@ -329,7 +301,6 @@
                             <option value="" disabled selected>--- Select an Employee ---</option>
                         </select>
                         
-                        <!-- Calculation Results Display -->
                         <div class="bg-white p-4 rounded-lg border border-emerald-300 mb-4">
                             <p class="text-sm font-medium text-gray-700">Total Unpaid Hours:</p>
                             <p id="total-hours-owed" class="text-3xl font-bold text-emerald-600">0.00</p>
@@ -340,7 +311,6 @@
                             </p>
                         </div>
                         
-                        <!-- NEW: Custom Payment Input -->
                         <div class="mb-4">
                              <label for="customPaymentAmount" class="block text-sm font-medium text-gray-700 mb-2">
                                 Amount to Pay Now (₹)
@@ -360,19 +330,15 @@
                         <p id="payment-form-message" class="mt-3 text-sm text-center text-red-500"></p>
                     </div>
 
-                    <!-- Payment List -->
                     <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Recent Payroll Transactions</h3>
                     <div id="paymentsList" class="space-y-3">
                         <p id="payment-loading-message" class="text-gray-500 text-center">Loading payments...</p>
-                        <!-- Payments will be injected here -->
-                    </div>
+                        </div>
                 </div>
 
-                <!-- Reports Tab -->
                 <div id="reportsTab" class="tab-content hidden">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">System Reports</h2>
                     
-                    <!-- Employee Report Section -->
                     <div class="card p-5 bg-blue-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-blue-800 mb-4 border-b pb-2">Employee Payroll Report</h3>
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -386,8 +352,7 @@
                                     onchange="generateEmployeeReport()"
                                 >
                                     <option value="" disabled selected>--- Select an Employee ---</option>
-                                    <!-- Options populated by setupEmployeeListener -->
-                                </select>
+                                    </select>
                             </div>
                             <div class="md:col-span-1">
                                 <label for="reportMonthSelect" class="block text-sm font-medium text-gray-700 mb-2">
@@ -398,8 +363,7 @@
                                     class="w-full p-3 border border-blue-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 transition duration-150 text-lg" 
                                     onchange="generateEmployeeReport()"
                                 >
-                                    <!-- Options populated by populateReportMonthDropdown -->
-                                </select>
+                                    </select>
                             </div>
                             <div class="flex flex-col space-y-2">
                                 <button onclick="generateEmployeeReport()" class="w-full py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
@@ -412,13 +376,11 @@
                         </div>
                     </div>
 
-                    <!-- Employee Report Output -->
                     <div id="employeeReportOutput" class="card p-5 bg-white rounded-xl border border-gray-200 mb-8">
                         <p class="text-gray-500 text-center">Select an employee and a month to generate a payroll report.</p>
                     </div>
                     
-                    <!-- Task Report Section (NEW) -->
-                     <div class="card p-5 bg-fuchsia-50 rounded-xl">
+                    <div class="card p-5 bg-fuchsia-50 rounded-xl">
                         <h3 class="text-xl font-semibold text-fuchsia-800 mb-4 border-b pb-2">Task Profit/Loss Report</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                             <div class="md:col-span-2">
@@ -431,8 +393,7 @@
                                     onchange="generateTaskReport()"
                                 >
                                     <option value="" disabled selected>--- Select a Task ---</option>
-                                    <!-- Options populated by setupTaskListener -->
-                                </select>
+                                    </select>
                             </div>
                             <div class="flex items-end">
                                 <button onclick="generateTaskReport()" class="w-full py-3 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700 transition duration-150 shadow-md">
@@ -442,7 +403,6 @@
                         </div>
                     </div>
 
-                    <!-- Task Report Output (NEW) -->
                     <div id="taskReportOutput" class="card p-5 bg-white rounded-xl border border-gray-200 mt-8">
                         <p class="text-gray-500 text-center">Select a task to generate a profit/loss report.</p>
                     </div>
@@ -450,15 +410,13 @@
                     <p id="report-message" class="mt-3 text-sm text-center text-red-500"></p>
                 </div>
                 
-                <!-- Tasks Tab (NEW) -->
                 <div id="tasksTab" class="tab-content hidden">
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Tasks & Job Costing</h2>
                     
-                    <!-- Create Task Form -->
                     <div class="card p-5 bg-fuchsia-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-fuchsia-800 mb-4">Create New Task/Job</h3>
-                        <form id="taskForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            <div class="lg:col-span-3">
+                        <form id="taskForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                            <div class="lg:col-span-4">
                                 <label for="taskName" class="block text-sm font-medium text-gray-700 mb-2">Task Name</label>
                                 <input type="text" id="taskName" required placeholder="E.g., Client Alpha Website" class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 text-lg">
                             </div>
@@ -466,27 +424,28 @@
                                 <label for="estimatedHours" class="block text-sm font-medium text-gray-700 mb-2">Estimated Hours</label>
                                 <input type="number" id="estimatedHours" min="0" step="0.5" value="0" required class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150 text-lg">
                             </div>
+                            <div>
+                                <label for="estimatedCost" class="block text-sm font-medium text-gray-700 mb-2">Estimated Cost (₹)</label>
+                                <input type="number" id="estimatedCost" min="0" step="0.01" value="0.00" required placeholder="E.g., 5000.00 (Materials/External Services)" class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 transition duration-150 text-lg">
+                            </div>
                             <div class="lg:col-span-2">
                                 <label for="assignedEmployees" class="block text-sm font-medium text-gray-700 mb-2">Assign Employees (Hold CTRL/CMD to select multiple)</label>
                                 <select id="assignedEmployees" multiple size="3" class="w-full p-3 border border-fuchsia-300 rounded-lg focus:ring-fuchsia-500 focus:border-fuchsia-500 text-lg">
-                                    <!-- Options populated by setupEmployeeListener -->
-                                </select>
+                                    </select>
                             </div>
-                            <div class="lg:col-span-3 flex items-end">
+                            <div class="lg:col-span-4 flex items-end">
                                 <button type="submit" class="w-full py-3 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700 transition duration-150 ease-in-out shadow-md">
                                     Create Task
                                 </button>
                             </div>
-                            <p id="task-form-message" class="mt-3 text-sm text-center text-red-500 lg:col-span-3"></p>
+                            <p id="task-form-message" class="mt-3 text-sm text-center text-red-500 lg:col-span-4"></p>
                         </form>
                     </div>
 
-                    <!-- Task List & Details -->
                     <h3 class="text-lg font-semibold mb-4 text-gray-700 border-b pb-2">Active Tasks & Profit/Loss</h3>
                     <div id="taskList" class="space-y-4">
                         <p class="text-gray-500 text-center">Loading tasks...</p>
-                        <!-- Tasks and details will be injected here -->
-                    </div>
+                        </div>
                 </div>
                 
             </main>
@@ -736,63 +695,71 @@
             
             const chartData = data.tasks.map(task => {
                 const pL = calculateTaskProfitLoss(task);
+                
+                // Calculate Average Estimated Labor Cost (Needed for Cost Comparison Baseline)
+                // Using a simple approximation based on total estimated hours * average employee rate
+                let averageRate = Object.values(employeesState).reduce((sum, e) => sum + e.hourlyRate, 0) / Object.keys(employeesState).length || 0;
+                let estimatedLaborCost = task.estimatedHours * averageRate;
+                
+                const estimatedTotalCost = estimatedLaborCost + (parseFloat(task.estimatedCost || 0)); // New Estimated Cost field + Estimated Labor
+
                 return {
                     name: task.name,
                     estimatedHours: parseFloat(task.estimatedHours),
                     actualHours: parseFloat(pL.totalActualHours),
-                    profit: parseFloat(pL.netProfitLossValue),
+                    estimatedCost: estimatedTotalCost,
+                    actualCost: parseFloat(pL.totalCost),
                 };
-            }).sort((a, b) => b.actualHours - a.actualHours); // Sort by actual hours
+            }).sort((a, b) => b.actualHours - a.actualHours); 
 
             const labels = chartData.map(d => d.name.substring(0, 15) + '...');
-            const estimatedHours = chartData.map(d => d.estimatedHours);
-            const actualHours = chartData.map(d => d.actualHours);
-            const profits = chartData.map(d => d.profit);
             
             if(taskChartInstance) taskChartInstance.destroy();
 
             taskChartInstance = new Chart(canvas, {
-                type: 'bar', // Base type is bar
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
                         {
-                            // Actual Hours (Bar - Strong Indicator)
+                            // Hours Chart: Estimated Hours
+                            label: 'Estimated Hours',
+                            data: chartData.map(d => d.estimatedHours),
+                            backgroundColor: 'rgba(156, 163, 175, 0.4)', // Faint Gray
+                            borderColor: 'rgba(156, 163, 175, 0.8)',
+                            borderWidth: 1,
+                            yAxisID: 'y1',
+                            stack: 'hours',
+                        },
+                        {
+                            // Hours Chart: Actual Hours
                             label: 'Actual Hours',
-                            data: actualHours,
+                            data: chartData.map(d => d.actualHours),
                             backgroundColor: 'rgba(59, 130, 246, 0.9)', // Strong Blue
                             borderColor: 'rgba(59, 130, 246, 1)',
                             borderWidth: 1,
                             yAxisID: 'y1',
-                            type: 'bar',
-                            order: 2, // Draw estimated line on top
+                            stack: 'hours',
                         },
                         {
-                            // Estimated Hours (Line - Benchmark)
-                            label: 'Estimated Hours',
-                            data: estimatedHours,
-                            backgroundColor: 'rgba(156, 163, 175, 0.4)', // Faint Gray
-                            borderColor: 'rgba(156, 163, 175, 0.8)',
-                            borderWidth: 2,
-                            yAxisID: 'y1',
-                            type: 'line',
-                            pointRadius: 4,
-                            order: 1,
-                            fill: false,
-                        },
-                        {
-                            // Net Profit/Loss (Line - Financial Outcome)
-                            label: 'Net Profit/Loss (₹)',
-                            data: profits,
-                            backgroundColor: profits.map(p => p >= 0 ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)'), // Green/Red
-                            borderColor: profits.map(p => p >= 0 ? 'rgba(16, 185, 129, 1)' : 'rgba(239, 68, 68, 1)'),
-                            borderWidth: 3,
-                            type: 'line',
+                            // Cost Chart: Estimated Total Cost
+                            label: 'Estimated Cost (₹)',
+                            data: chartData.map(d => d.estimatedCost),
+                            backgroundColor: 'rgba(16, 185, 129, 0.4)', // Faint Green
+                            borderColor: 'rgba(16, 185, 129, 0.8)',
+                            borderWidth: 1,
                             yAxisID: 'y2',
-                            pointStyle: 'circle',
-                            pointRadius: 6,
-                            order: 3,
-                            fill: false,
+                            stack: 'cost',
+                        },
+                        {
+                            // Cost Chart: Actual Total Cost
+                            label: 'Actual Total Cost (₹)',
+                            data: chartData.map(d => d.actualCost),
+                            backgroundColor: 'rgba(239, 68, 68, 0.9)', // Strong Red
+                            borderColor: 'rgba(239, 68, 68, 1)',
+                            borderWidth: 1,
+                            yAxisID: 'y2',
+                            stack: 'cost',
                         }
                     ]
                 },
@@ -805,20 +772,23 @@
                     },
                     scales: {
                         x: {
-                            stacked: false,
+                            // X-axis setup for grouping the bars
+                            stacked: false, 
                             grid: { display: false }
                         },
                         y1: {
                             type: 'linear',
                             position: 'left',
-                            title: { display: true, text: 'Hours Logged' },
-                            beginAtZero: true
+                            title: { display: true, text: 'Hours Logged (Primary Axis)' },
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: true }
                         },
                          y2: {
                             type: 'linear',
                             position: 'right',
-                            title: { display: true, text: 'Profit/Loss (₹)' },
-                            grid: { drawOnChartArea: false }, // Only draw grid lines for the left axis
+                            title: { display: true, text: 'Cost (₹) (Secondary Axis)' },
+                            beginAtZero: true,
+                            grid: { drawOnChartArea: false }, 
                         }
                     },
                     plugins: {
@@ -830,12 +800,10 @@
                                     if (label) {
                                         label += ': ';
                                     }
-                                    if (label.includes('Profit') || label.includes('Estimated Amount')) {
+                                    if (label.includes('(₹)')) {
                                         label += formatCurrency(context.parsed.y);
                                     } else if (label.includes('Hours')) {
-                                        label += context.parsed.y + ' hrs';
-                                    } else {
-                                        label += context.parsed.y;
+                                        label += context.parsed.y.toFixed(2) + ' hrs';
                                     }
                                     return label;
                                 }
@@ -1580,11 +1548,8 @@
 
             outputEl.innerHTML = reportHtml;
         };
-        
-        /**
-         * NEW: Share the currently generated report via WhatsApp (formatted as a professional summary).
-         */
-        window.shareReportViaWhatsApp = () => {
+		
+		window.shareReportViaWhatsApp = () => {
             if (!lastGeneratedReportData) {
                 showFormMessage('report-message', 'Please generate an employee report first.', true);
                 return;
@@ -1639,7 +1604,6 @@
             window.open(whatsappUrl, '_blank');
         };
 
-
         window.generateTaskReport = () => {
             const taskId = document.getElementById('reportTaskSelect').value;
             const outputEl = document.getElementById('taskReportOutput');
@@ -1671,7 +1635,6 @@
                 <h4 class="text-xl font-semibold mb-3 text-gray-700">Performance Metrics</h4>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     
-                    <!-- Hours -->
                     <div class="p-3 bg-blue-50 rounded-lg border border-blue-200">
                         <p class="text-sm font-medium text-blue-700">Estimated Hours</p>
                         <p class="text-3xl font-extrabold text-blue-800">${task.estimatedHours.toFixed(2)} hrs</p>
@@ -1681,14 +1644,12 @@
                         <p class="text-3xl font-extrabold text-indigo-800">${pL.totalActualHours} hrs</p>
                     </div>
                     
-                    <!-- TPI (NEW) -->
                     <div class="p-3 ${pL.tpi >= 100 ? 'bg-emerald-100 border-emerald-300' : 'bg-red-100 border-red-300'} rounded-lg border lg:col-span-2">
                         <p class="text-sm font-medium text-gray-700">Task Performance Index (TPI)</p>
                         <p class="text-3xl font-extrabold ${pL.tpi >= 100 ? 'text-emerald-700' : 'text-red-700'}">${pL.tpi}%</p>
                         <p class="text-xs text-gray-500 mt-1">${pL.tpi >= 100 ? 'Ahead of estimate (Faster)' : 'Behind estimate (Slower)'}</p>
                     </div>
 
-                    <!-- Revenue -->
                     <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-200 lg:col-span-4">
                         <p class="text-sm font-medium text-yellow-700">Total Revenue Received</p>
                         <p class="text-3xl font-extrabold text-yellow-800">${formatCurrency(pL.totalRevenue)}</p>
@@ -1711,7 +1672,6 @@
                         <p class="text-2xl font-bold text-red-800">${formatCurrency(pL.totalEmployeeLaborCost)}</p>
                     </div>
                     
-                    <!-- LER (NEW) -->
                     <div class="p-3 bg-yellow-100 rounded-lg border border-yellow-300">
                         <p class="text-sm font-medium text-yellow-700">Labor Efficiency Ratio (LER)</p>
                         <p class="text-2xl font-bold text-yellow-800">${pL.ler}</p>
@@ -1895,7 +1855,6 @@
                         </button>
                     </h4>
                     
-                    <!-- Financial Snapshot -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-3 bg-white border rounded-lg">
                             <p class="text-sm text-gray-500">Total Revenue</p>
@@ -1913,7 +1872,6 @@
                         </div>
                     </div>
                     
-                    <!-- Employee Assignment -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Manage Assigned Employees</h5>
                         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 p-3 bg-fuchsia-100 rounded-lg">
@@ -1921,7 +1879,6 @@
                         </div>
                     </div>
 
-                    <!-- Customer Payment Tracking -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Customer Payment Tracking (₹)</h5>
                         <form onsubmit="handleCustomerPayment(event, '${taskId}')" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
@@ -1945,13 +1902,11 @@
                         </div>
                     </div>
                     
-                    <!-- Unified Cost Logging (Material & Other Labor) -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Project Cost Tracking (Material & Services)</h5>
                         
                         <form onsubmit="handleUnifiedCostLog(event, '${taskId}')" class="p-3 bg-red-50 rounded-lg space-y-3">
                             
-                            <!-- Cost Type Selector -->
                             <div class="flex space-x-4">
                                 <label class="flex items-center space-x-1 font-medium text-gray-700">
                                     <input type="radio" name="costType" value="materialCostLogs" id="cost-type-material-${taskId}" checked class="text-red-600">
@@ -1963,7 +1918,6 @@
                                 </label>
                             </div>
                             
-                            <!-- Cost Inputs -->
                             <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                                 <div class="sm:col-span-2">
                                     <input type="text" id="cost-description-${taskId}" placeholder="Description (e.g., Cement, Subcontractor Fee)" class="w-full p-2 border rounded-lg">
@@ -1978,7 +1932,6 @@
                             </div>
                         </form>
                         
-                        <!-- History Display Container -->
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
                              <div class="p-3 bg-white rounded-lg border">
                                 <h6 class="text-md font-medium text-gray-600 border-b mb-2 pb-1">Recent Material Purchases (Total: ${formatCurrency(pL.totalMaterialCost)}):</h6>
@@ -1991,7 +1944,6 @@
                         </div>
                     </div>
 
-                    <!-- Labor Logging (Employee) -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Employee Labor Tracking (Total: ${pL.totalActualHours} hrs | Cost: ${formatCurrency(pL.totalEmployeeLaborCost)})</h5>
                         <form onsubmit="handleLogTaskHours(event, '${taskId}')" class="grid grid-cols-2 gap-3">
@@ -2267,6 +2219,7 @@
             
             const taskName = document.getElementById('taskName').value.trim();
             const estimatedHours = parseFloat(document.getElementById('estimatedHours').value);
+            const estimatedCost = parseFloat(document.getElementById('estimatedCost').value); // NEW
             const assignedSelect = document.getElementById('assignedEmployees');
             
             // Collect all selected employees
@@ -2274,8 +2227,8 @@
                 .filter(option => option.selected)
                 .map(option => option.value);
 
-            if (taskName.length < 3 || isNaN(estimatedHours) || estimatedHours < 0) {
-                showFormMessage("task-form-message", "Please enter a valid task name and estimated hours.", true);
+            if (taskName.length < 3 || isNaN(estimatedHours) || estimatedHours < 0 || isNaN(estimatedCost) || estimatedCost < 0) {
+                showFormMessage("task-form-message", "Please enter valid task name, estimated hours, and estimated cost.", true);
                 return;
             }
 
@@ -2284,6 +2237,7 @@
                     id: generateUUID(),
                     name: taskName,
                     estimatedHours: estimatedHours,
+                    estimatedCost: estimatedCost, // SAVE NEW FIELD
                     assignedEmployees: assignedEmployees,
                     status: 'In Progress', // Default status
                     // Initializing cost log arrays
@@ -2383,7 +2337,7 @@
         });
 
 
-        // --- Import / Export Logic (NEW) ---
+        // --- Import / Export Logic ---
 
         window.exportData = () => {
             const data = loadLocalData();
@@ -2453,6 +2407,15 @@
                 }
             };
             reader.readAsText(file);
+        };
+        
+        window.clearAllData = () => {
+            if (confirm("DANGER: Are you sure you want to delete ALL local data? This action cannot be undone.")) {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                runAllListeners();
+                document.getElementById('import-message').textContent = 'All local data cleared.';
+                alert("Data cleared! Application reset.");
+            }
         };
 
 
