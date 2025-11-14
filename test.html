@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RS' Payroll & Attendance System</title>
+    <title>RS' Payroll & Attendance System v2.17</title>
     <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Load Chart.js for visualizations -->
@@ -18,16 +18,14 @@
         .task-detail-card { transition: all 0.3s ease; }
 
         /* FIX: Mobile Scrollable Tabs */
-        /* Flex ensures buttons stay inline, overflow-x-auto enables horizontal scrolling */
-        /* whitespace-nowrap prevents buttons from wrapping to the next line */
         @media (max-width: 640px) {
             .nav-tabs {
                 overflow-x: auto;
                 white-space: nowrap;
-                justify-content: flex-start; /* Aligns items to the start */
+                justify-content: flex-start;
             }
             .tab-button {
-                flex-shrink: 0; /* Prevents buttons from shrinking */
+                flex-shrink: 0;
                 padding-left: 1rem;
                 padding-right: 1rem;
             }
@@ -42,14 +40,14 @@
             <!-- Header and Navigation -->
             <header class="bg-emerald-600 p-4 text-white text-center rounded-t-xl">
                 <h1 class="text-2xl font-bold">RaGhS' Payroll and Attendance System (Local Data)</h1>
-                <p id="user-id-display" class="text-xs mt-1 text-emerald-100">Data stored only in your browser's Local Storage.</p>
+                <p id="user-id-display" class="text-xs mt-1 text-emerald-100">v2.17 | Data stored only in your browser's Local Storage.</p>
             </header>
 
             <nav class="flex border-b border-gray-200 bg-emerald-50 nav-tabs">
                 <button onclick="showTab('home')" class="tab-button active flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="home">
                     Dashboard
                 </button>
-                <button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
+				<button onclick="showTab('tasks')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="tasks">
                     Tasks (Job Costing)
                 </button>
                 <button onclick="showTab('employees')" class="tab-button flex-1 py-3 px-4 text-sm transition duration-150 ease-in-out border-b-2 border-transparent hover:bg-emerald-100" data-tab="employees">
@@ -71,10 +69,86 @@
             <main class="p-6">
                 <!-- Home Tab (Default Content) -->
                 <div id="homeTab" class="tab-content">
-                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">System Overview & Data Management</h2>
+                    <h2 class="text-2xl font-semibold mb-4 text-gray-800">System Overview & Daily Actions</h2>
                     <p class="text-gray-600 mb-6">
-                        This version uses **Local Storage**. Please manage your data carefully using the options below.
+                        This tab is optimized for your daily routine: **quick logging** and a **performance snapshot**.
                     </p>
+                    
+                    <!-- NEW: Daily Actions Card -->
+                    <div class="card p-5 bg-indigo-50 rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-indigo-800 mb-4 border-b pb-2">Quick Daily Actions</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- 1. Quick Attendance -->
+                            <div class="p-4 bg-white rounded-lg border border-indigo-200">
+                                <h4 class="font-bold text-lg text-indigo-700 mb-2">Check In/Out</h4>
+                                <label for="quickAttendanceEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Select Your Employee ID:
+                                </label>
+                                <select 
+                                    id="quickAttendanceEmployeeSelect" 
+                                    class="w-full p-2 border border-indigo-300 rounded-lg text-base mb-3"
+                                    onchange="updateQuickAttendanceStatus()"
+                                >
+                                    <option value="" disabled selected>--- Select an Employee ---</option>
+                                    <!-- Options will be dynamically populated -->
+                                </select>
+                                
+                                <div id="quick-attendance-status" class="text-center mb-3 p-2 text-sm rounded-lg bg-gray-100 text-gray-600">
+                                    Awaiting selection.
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="quickCheckInButton" onclick="handleQuickCheckIn()" disabled class="flex-1 py-2 text-white font-bold rounded-lg transition duration-150 shadow-md attendance-btn-in hover:bg-blue-700 disabled:opacity-50">
+                                        Check In
+                                    </button>
+                                    <button id="quickCheckOutButton" onclick="handleQuickCheckOut()" disabled class="flex-1 py-2 text-white font-bold rounded-lg transition duration-150 shadow-md attendance-btn-out hover:bg-red-600 disabled:opacity-50">
+                                        Check Out
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- 2. Quick Task Logging -->
+                            <div class="p-4 bg-white rounded-lg border border-indigo-200">
+                                <h4 class="font-bold text-lg text-indigo-700 mb-2">Log Task Hours</h4>
+                                <form onsubmit="handleQuickLogTaskHours(event)">
+                                    <label for="quickTaskEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Employee ID:
+                                    </label>
+                                    <select id="quickTaskEmployeeSelect" required class="w-full p-2 border border-indigo-300 rounded-lg text-base mb-3">
+                                        <option value="" disabled selected>--- Select Employee ---</option>
+                                    </select>
+
+                                    <label for="quickTaskSelect" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Task:
+                                    </label>
+                                    <select id="quickTaskSelect" required class="w-full p-2 border border-indigo-300 rounded-lg text-base mb-3">
+                                        <option value="" disabled selected>--- Select Task ---</option>
+                                    </select>
+                                    
+                                    <label for="quickTaskHours" class="block text-sm font-medium text-gray-700 mb-2">
+                                        Hours Worked:
+                                    </label>
+                                    <input type="number" id="quickTaskHours" min="0.25" step="0.25" placeholder="e.g., 4.00" required class="w-full p-2 border border-indigo-300 rounded-lg text-base mb-3">
+                                    
+                                    <button type="submit" class="w-full py-2 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700 transition duration-150 shadow-md">
+                                        Log Hours Now
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                         <p id="quick-action-message" class="mt-3 text-sm text-center text-red-500"></p>
+                    </div>
+
+                    <!-- Chart Section -->
+                    <div class="card p-5 bg-white rounded-xl mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Task Performance Visualization (Hours & Profit/Loss)</h3>
+                        <div class="h-80">
+                            <canvas id="taskPerformanceChart"></canvas>
+                        </div>
+                        <p id="chart-message" class="text-center text-sm text-gray-500 mt-4">Task data needed for visualization.</p>
+                    </div>
+
+                    <!-- Summary Metrics -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
                         <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-lg">
                             <p class="text-sm font-medium text-emerald-700">Total Payments Recorded:</p>
@@ -84,15 +158,6 @@
                             <p class="text-sm font-medium text-emerald-700">Active Employees:</p>
                             <p id="total-employees-count" class="text-3xl font-extrabold text-emerald-800 mt-1">0</p>
                         </div>
-                    </div>
-                    
-                    <!-- Chart Section (NEW) -->
-                    <div class="card p-5 bg-white rounded-xl mb-8">
-                        <h3 class="text-xl font-semibold text-gray-800 mb-4 border-b pb-2">Task Performance Visualization (Hours & Profit/Loss)</h3>
-                        <div class="h-80">
-                            <canvas id="taskPerformanceChart"></canvas>
-                        </div>
-                        <p id="chart-message" class="text-center text-sm text-gray-500 mt-4">Task data needed for visualization.</p>
                     </div>
 
                     <!-- Import/Export Functionality -->
@@ -115,7 +180,6 @@
                             <button onclick="handleImport()" class="w-full py-3 bg-green-600 text-white font-bold rounded-lg hover:bg-green-700 transition duration-150 ease-in-out shadow-md">
                                 Import Data (Merge)
                             </button>
-                             <p class="text-xs text-gray-500 mt-2">Imports new records from a JSON file. Existing records are NOT overwritten.</p>
                              <p id="import-message" class="mt-3 text-sm text-center text-red-500"></p>
                         </div>
                     </div>
@@ -130,7 +194,7 @@
                             **Disclaimer:** This application uses your browser's **Local Storage** for data persistence. It is **not** a secured cloud payroll system and should not be used for official, regulatory, or sensitive financial records. Always use professional, compliant software for production use.
                         </p>
                         <p class="text-sm text-gray-700 font-bold mt-4">
-                             Copyright & Licensing:
+                            Copyright & Licensing:
                         </p>
                         <p class="text-xs text-gray-600">
                             The source code for this specific utility is generally considered **public domain/open source** under the <a href="https://github.com/TechLabRS" target="_blank" class="text-blue-500 hover:underline">
@@ -148,12 +212,12 @@
                     <h2 class="text-2xl font-semibold mb-6 text-gray-800">Employee Management</h2>
 
                     <!-- Add Employee Form -->
-                    <div class="card p-5 bg-yellow-50 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div class="md:col-span-3">
+                    <div class="card p-5 bg-yellow-50 rounded-xl mb-8 grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="md:col-span-4">
                             <h3 class="text-xl font-semibold text-yellow-800 mb-4">Add/Update Employee Details</h3>
                         </div>
-                        <form id="employeeForm" class="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
+                        <form id="employeeForm" class="md:col-span-4 grid grid-cols-1 sm:grid-cols-4 gap-4">
+                            <div class="sm:col-span-2">
                                 <label for="employeeName" class="block text-sm font-medium text-gray-700 mb-2">
                                     Employee Name
                                 </label>
@@ -165,12 +229,18 @@
                                 </label>
                                 <input type="number" id="hourlyRate" name="hourlyRate" step="0.01" min="0.01" required placeholder="500.00" class="w-full p-3 border border-yellow-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150 text-lg">
                             </div>
-                            <div class="sm:col-span-1 flex items-end">
+                            <div class="sm:col-span-1">
+                                <label for="employeePhone" class="block text-sm font-medium text-gray-700 mb-2">
+                                    WhatsApp Phone (+91)
+                                </label>
+                                <input type="tel" id="employeePhone" name="employeePhone" placeholder="E.g., 9876543210" class="w-full p-3 border border-yellow-300 rounded-lg focus:ring-yellow-500 focus:border-yellow-500 transition duration-150 text-lg">
+                            </div>
+                            <div class="sm:col-span-4 flex items-end">
                                 <button type="submit" class="w-full py-3 bg-yellow-600 text-white font-bold rounded-lg hover:bg-yellow-700 transition duration-150 ease-in-out shadow-md">
-                                    Add Employee
+                                    Add/Update Employee
                                 </button>
                             </div>
-                            <p id="employee-form-message" class="mt-3 text-sm text-center text-red-500 md:col-span-3"></p>
+                            <p id="employee-form-message" class="mt-3 text-sm text-center text-red-500 md:col-span-4"></p>
                         </form>
                     </div>
 
@@ -205,7 +275,7 @@
                             Please select an employee.
                         </div>
 
-                        <!-- NEW: Timestamp Override Inputs -->
+                        <!-- Simplify: Keep Override inputs, but make them less prominent -->
                         <div class="mb-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label for="checkInTimeInput" class="block text-sm font-medium text-blue-700 mb-2">
@@ -305,8 +375,8 @@
                     <!-- Employee Report Section -->
                     <div class="card p-5 bg-blue-50 rounded-xl mb-8">
                         <h3 class="text-xl font-semibold text-blue-800 mb-4 border-b pb-2">Employee Payroll Report</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div class="md:col-span-2">
                                 <label for="reportEmployeeSelect" class="block text-sm font-medium text-gray-700 mb-2">
                                     Select Employee
                                 </label>
@@ -319,7 +389,7 @@
                                     <!-- Options populated by setupEmployeeListener -->
                                 </select>
                             </div>
-                            <div>
+                            <div class="md:col-span-1">
                                 <label for="reportMonthSelect" class="block text-sm font-medium text-gray-700 mb-2">
                                     Select Month
                                 </label>
@@ -331,9 +401,12 @@
                                     <!-- Options populated by populateReportMonthDropdown -->
                                 </select>
                             </div>
-                            <div class="flex items-end">
-                                <button onclick="generateEmployeeReport()" class="w-full py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
+                            <div class="flex flex-col space-y-2">
+                                <button onclick="generateEmployeeReport()" class="w-full py-2 bg-blue-600 text-white text-sm font-bold rounded-lg hover:bg-blue-700 transition duration-150 shadow-md">
                                     Generate Report
+                                </button>
+                                <button onclick="shareReportViaWhatsApp()" class="w-full py-2 bg-green-500 text-white text-sm font-bold rounded-lg hover:bg-green-600 transition duration-150 shadow-md">
+                                    Share via WhatsApp
                                 </button>
                             </div>
                         </div>
@@ -437,6 +510,7 @@
         let taskState = {}; // Global store for task data
         let activeTaskDetailsId = null; // Tracks which task's details are currently expanded
         let taskChartInstance = null; // Chart.js instance
+        let lastGeneratedReportData = null; // Stores data for WhatsApp sharing
 
         const FULL_DAY_EQUIVALENT_HOURS = 8; // Define constant for full day attendance
 
@@ -524,9 +598,32 @@
          * Creates a Date object from a datetime-local string, or falls back to Date.now().
          */
         const getTimestampFromInput = (datetimeString) => {
-            return datetimeString ? new Date(datetimeString).getTime() : Date.now();
+            // If the user provided a full datetime string, parse it.
+            if (datetimeString) {
+                const date = new Date(datetimeString);
+                // Check if the date is valid (e.g., handles partial/invalid strings better than Date.parse alone)
+                if (!isNaN(date.getTime())) {
+                    return date.getTime();
+                }
+            }
+            // If no input, or input was invalid, use the current timestamp
+            return Date.now();
         };
         
+        /**
+         * Gets the current datetime in YYYY-MM-DDTHH:MM format for pre-filling datetime-local inputs.
+         */
+        const getCurrentLocalDatetime = () => {
+             const now = new Date();
+             const year = now.getFullYear();
+             const month = String(now.getMonth() + 1).padStart(2, '0');
+             const day = String(now.getDate()).padStart(2, '0');
+             const hours = String(now.getHours()).padStart(2, '0');
+             const minutes = String(now.getMinutes()).padStart(2, '0');
+             return `${year}-${month}-${day}T${hours}:${minutes}`;
+        };
+
+
         /**
          * Populates the month dropdown for reports (Current month + 11 past months).
          */
@@ -571,7 +668,40 @@
             loadLocalData(); 
             populateReportMonthDropdown();
             runAllListeners();
+            // Initial render of quick action selectors
+            populateQuickActionSelectors();
         };
+
+        /**
+         * Populates employee and task selectors on the Dashboard Quick Actions card.
+         */
+        const populateQuickActionSelectors = () => {
+            const data = loadLocalData();
+            const employees = data.employees.sort((a, b) => a.name.localeCompare(b.name));
+            const tasks = data.tasks.sort((a, b) => a.name.localeCompare(b.name));
+            
+            const employeeSelects = [
+                document.getElementById('quickAttendanceEmployeeSelect'), 
+                document.getElementById('quickTaskEmployeeSelect')
+            ];
+            const taskSelect = document.getElementById('quickTaskSelect');
+
+            let employeeOptions = '<option value="" disabled selected>--- Select Employee ---</option>';
+            employees.forEach(emp => {
+                employeeOptions += `<option value="${emp.id}">${emp.name}</option>`;
+            });
+
+            employeeSelects.forEach(select => {
+                select.innerHTML = employeeOptions;
+            });
+            
+            let taskOptions = '<option value="" disabled selected>--- Select Task ---</option>';
+            tasks.forEach(task => {
+                taskOptions += `<option value="${task.id}">${task.name}</option>`;
+            });
+            taskSelect.innerHTML = taskOptions;
+        };
+
 
         /**
          * Re-runs all listener/rendering functions to simulate data update.
@@ -584,10 +714,12 @@
                 setupAttendanceListener();
                 setupTaskListener();
                 renderTaskChart(); // Rerun chart rendering
+                populateQuickActionSelectors(); // Ensure dashboard selectors are updated
+                updateQuickAttendanceStatus(); // Initial status check on dashboard
             }, 50);
         };
         
-        // --- Dashboard Chart Logic (NEW) ---
+        // --- Dashboard Chart Logic ---
 
         const renderTaskChart = () => {
             const canvas = document.getElementById('taskPerformanceChart');
@@ -721,9 +853,11 @@
             
             const employeeNameInput = document.getElementById('employeeName');
             const hourlyRateInput = document.getElementById('hourlyRate');
+            const employeePhoneInput = document.getElementById('employeePhone');
             
             const name = employeeNameInput.value.trim();
             const rate = parseFloat(hourlyRateInput.value);
+            const phone = employeePhoneInput.value.trim();
 
             if (name.length < 2 || isNaN(rate) || rate <= 0) {
                 showFormMessage("employee-form-message", "Please enter a valid name and an hourly rate greater than zero.", true);
@@ -735,17 +869,35 @@
                     id: generateUUID(),
                     name: name,
                     hourlyRate: rate,
+                    employeePhone: phone, // Save the phone number
                     created: Date.now(),
                 };
 
                 const data = loadLocalData();
-                data.employees.push(newEmployee);
+                
+                // Check if employee already exists (for update scenario - simple name matching for now)
+                let existingIndex = data.employees.findIndex(e => e.name.toLowerCase() === name.toLowerCase());
+
+                if (existingIndex !== -1) {
+                    // Update existing employee
+                    data.employees[existingIndex] = {
+                        ...data.employees[existingIndex],
+                        hourlyRate: rate,
+                        employeePhone: phone,
+                    };
+                    showFormMessage("employee-form-message", `${name}'s details updated successfully!`, false);
+                } else {
+                    // Add new employee
+                    data.employees.push(newEmployee);
+                    showFormMessage("employee-form-message", `${name} added successfully with rate ${formatCurrency(rate)}/hr!`, false);
+                }
+
                 
                 updateAndRerender('employees', data.employees);
 
-                showFormMessage("employee-form-message", `${name} added successfully with rate ${formatCurrency(rate)}/hr!`, false);
                 employeeNameInput.value = ''; 
                 hourlyRateInput.value = '';
+                employeePhoneInput.value = '';
 
             } catch (error) {
                 console.error("Error adding employee: ", error);
@@ -774,11 +926,12 @@
             } else {
                 employees.forEach((emp) => {
                     employeesState[emp.id] = {...emp, id: emp.id};
+                    const phoneDisplay = emp.employeePhone ? ` | Phone: ${emp.employeePhone}` : '';
                     
                     listHtml += `
                         <div class="p-4 bg-white border border-gray-200 rounded-lg flex justify-between items-center transition duration-150 hover:bg-gray-50">
                             <span class="text-lg font-medium text-gray-800">${emp.name}</span>
-                            <span class="text-sm text-gray-500">Rate: ${formatCurrency(emp.hourlyRate)}/hr | ID: ${emp.id.substring(0, 8)}...</span>
+                            <span class="text-sm text-gray-500">Rate: ${formatCurrency(emp.hourlyRate)}/hr${phoneDisplay} | ID: ${emp.id.substring(0, 8)}...</span>
                         </div>
                     `;
 
@@ -802,8 +955,149 @@
             }
         });
 
+        // --- Dashboard Quick Attendance Actions ---
 
-        // --- Attendance Logic (LOCAL STORAGE) ---
+        window.updateQuickAttendanceStatus = () => {
+            const data = loadLocalData();
+            const attendance = data.attendance;
+
+            const employeeId = document.getElementById('quickAttendanceEmployeeSelect').value;
+            const statusEl = document.getElementById('quick-attendance-status');
+            const checkInBtn = document.getElementById('quickCheckInButton');
+            const checkOutBtn = document.getElementById('quickCheckOutButton');
+
+            if (!employeeId) {
+                statusEl.textContent = "Awaiting selection.";
+                statusEl.className = 'text-center mb-3 p-2 text-sm rounded-lg bg-gray-100 text-gray-600';
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = true;
+                return;
+            }
+
+            // Find open shifts
+            let openShifts = attendance.filter(log => log.employeeId === employeeId && log.checkOut === null);
+            openShifts.sort((a, b) => b.checkIn - a.checkIn);
+            
+            if (openShifts.length > 0) {
+                const mostRecentShift = openShifts[0];
+                currentAttendanceId = mostRecentShift.id;
+                const checkInTime = formatTimestamp(mostRecentShift.checkIn);
+                
+                statusEl.innerHTML = `<span class="font-bold">Checked In</span> since ${checkInTime}.`;
+                statusEl.classList.remove('bg-gray-100', 'text-gray-600');
+                statusEl.classList.add('bg-red-100', 'text-red-700');
+                
+                checkInBtn.disabled = true;
+                checkOutBtn.disabled = false;
+            } else {
+                currentAttendanceId = null;
+                statusEl.textContent = "Currently Checked Out. Ready for Check In.";
+                statusEl.classList.remove('bg-red-100', 'text-red-700');
+                statusEl.classList.add('bg-gray-100', 'text-gray-600');
+                
+                checkInBtn.disabled = false;
+                checkOutBtn.disabled = true;
+            }
+        };
+
+        window.handleQuickCheckIn = () => {
+            const employeeId = document.getElementById('quickAttendanceEmployeeSelect').value;
+            if (!employeeId) return;
+            
+            try {
+                const data = loadLocalData();
+                data.attendance.push({
+                    id: generateUUID(),
+                    employeeId: employeeId,
+                    checkIn: Date.now(), // Use current time
+                    checkOut: null, 
+                });
+                
+                updateAndRerender('attendance', data.attendance);
+
+                showFormMessage("quick-action-message", "Check In recorded!", false);
+                // No time inputs to clear
+                updateQuickAttendanceStatus(); 
+            } catch (error) {
+                console.error("Error checking in:", error);
+                showFormMessage("quick-action-message", "Failed to check in.", true);
+            }
+        };
+        
+        window.handleQuickCheckOut = () => {
+            const employeeId = document.getElementById('quickAttendanceEmployeeSelect').value;
+            if (!employeeId || !currentAttendanceId) return;
+
+            try {
+                const data = loadLocalData();
+                const index = data.attendance.findIndex(log => log.id === currentAttendanceId);
+                const checkOutTime = Date.now();
+                
+                if (index !== -1 && data.attendance[index].checkIn < checkOutTime) {
+                    data.attendance[index].checkOut = checkOutTime;
+                    
+                    updateAndRerender('attendance', data.attendance);
+
+                    showFormMessage("quick-action-message", "Check Out recorded!", false);
+                    currentAttendanceId = null; 
+                    updateQuickAttendanceStatus(); 
+                } else {
+                    showFormMessage("quick-action-message", "Check Out time must be after Check In time.", true);
+                }
+            } catch (error) {
+                console.error("Error checking out:", error);
+                showFormMessage("quick-action-message", "Failed to check out.", true);
+            }
+        };
+        
+        window.handleQuickLogTaskHours = (event) => {
+            event.preventDefault();
+            
+            const employeeId = document.getElementById('quickTaskEmployeeSelect').value;
+            const taskId = document.getElementById('quickTaskSelect').value;
+            const hours = parseFloat(document.getElementById('quickTaskHours').value); 
+            
+            if (!employeeId || !taskId || isNaN(hours) || hours <= 0) {
+                 showFormMessage("quick-action-message", "Please select employee, task, and valid hours.", true);
+                 return;
+            }
+
+            if (hours * 100 % 25 !== 0) {
+                 showFormMessage("quick-action-message", "Hours must be logged in 15-minute increments (e.g., 1.00, 1.25).", true);
+                 return;
+            }
+            
+            const newLog = {
+                employeeId: employeeId,
+                hours: hours,
+                date: Date.now(), // Use current time/date
+                loggedAt: Date.now()
+            };
+
+            try {
+                const data = loadLocalData();
+                const taskIndex = data.tasks.findIndex(t => t.id === taskId);
+                
+                if (taskIndex !== -1) {
+                    const currentLogs = data.tasks[taskIndex].laborLogs || [];
+                    data.tasks[taskIndex].laborLogs = [...currentLogs, newLog];
+                    data.tasks[taskIndex].updatedAt = Date.now();
+
+                    updateAndRerender('tasks', data.tasks);
+
+                    document.getElementById('quickTaskHours').value = '';
+                    
+                    showFormMessage("quick-action-message", `Logged ${hours} hours for task!`, false);
+                }
+
+            } catch (error) {
+                console.error("Error logging task hours:", error);
+                showFormMessage("quick-action-message", "Failed to log hours. Try again.", true);
+            }
+        };
+
+
+        // --- Attendance Logic (MAIN TAB - kept for overrides) ---
         
         window.updateAttendanceStatus = () => {
             const data = loadLocalData();
@@ -854,6 +1148,7 @@
             if (!employeeId) return;
 
             const checkInInput = document.getElementById('checkInTimeInput').value;
+            // If checkInInput is empty, getTimestampFromInput uses Date.now() which is correct.
             const checkInTime = getTimestampFromInput(checkInInput);
             
             try {
@@ -880,6 +1175,7 @@
             if (!currentAttendanceId) return;
 
             const checkOutInput = document.getElementById('checkOutTimeInput').value;
+            // If checkOutInput is empty, getTimestampFromInput uses Date.now() which is correct.
             const checkOutTime = getTimestampFromInput(checkOutInput);
 
             try {
@@ -1057,7 +1353,7 @@
                     amount: paymentAmount,
                     hourlyRate: employeeRate,
                     hoursPaid: parseFloat(hoursPaid.toFixed(2)),
-                    timestamp: Date.now(),
+                    timestamp: Date.now(), // Use current time/date
                 };
 
                 data.payments.push(newPayment);
@@ -1129,7 +1425,8 @@
 
             outputEl.innerHTML = `<p class="text-gray-500 text-center">Generating payroll report...</p>`;
             messageEl.textContent = '';
-            
+            lastGeneratedReportData = null; // Reset report data
+
             if (!employeeId || !monthYear) {
                 outputEl.innerHTML = `<p class="text-gray-500 text-center">Select an employee and a month to generate a payroll report.</p>`;
                 return;
@@ -1218,6 +1515,18 @@
             
             const periodBalance = earnedAmount - totalAmountPaidInPeriod;
             
+            // Store report data for WhatsApp sharing
+            lastGeneratedReportData = {
+                employeeName: employee.name,
+                reportDate: monthYear,
+                daysWorked: daysWorkedFullEquivalent,
+                daysAbsent: daysAbsent,
+                earnedAmount: earnedAmount,
+                paidAmount: totalAmountPaidInPeriod,
+                balance: periodBalance,
+                employeePhone: employee.employeePhone,
+            };
+
             // Render Report
             let reportHtml = `
                 <h3 class="text-2xl font-bold mb-4 text-gray-800">${employee.name}'s Payroll Report - ${monthYear}</h3>
@@ -1271,6 +1580,65 @@
 
             outputEl.innerHTML = reportHtml;
         };
+        
+        /**
+         * NEW: Share the currently generated report via WhatsApp (formatted as a professional summary).
+         */
+        window.shareReportViaWhatsApp = () => {
+            if (!lastGeneratedReportData) {
+                showFormMessage('report-message', 'Please generate an employee report first.', true);
+                return;
+            }
+
+            const { employeeName, reportDate, daysWorked, daysAbsent, earnedAmount, paidAmount, balance, employeePhone } = lastGeneratedReportData;
+            
+            if (!employeePhone || employeePhone.length < 10) {
+                showFormMessage('report-message', `Employee ${employeeName} does not have a valid WhatsApp number saved. Update it in the Employees tab.`, true);
+                return;
+            }
+
+            // Clean up phone number (assuming India code +91 is standard for this user)
+            const cleanPhone = (employeePhone.startsWith('+') ? employeePhone : `+91${employeePhone}`).replace(/[^0-9+]/g, '');
+            
+            // Helper to format currency
+            const formatForWhatsapp = (amount) => `₹${parseFloat(amount).toFixed(2)}`;
+
+            const earnedDisplay = formatForWhatsapp(earnedAmount);
+            const paidDisplay = formatForWhatsapp(paidAmount);
+            const balanceDisplay = formatForWhatsapp(balance);
+            
+            // --- Constructing the Invoice-Style Text Summary for WhatsApp ---
+            // This relies on bolding and line breaks for clear, invoice-like separation.
+            
+            const separator = '--------------------------------------';
+            
+            const reportText = [
+                `*--- Payroll Statement ---*`,
+                `*Employee:* ${employeeName}`,
+                `*Period:* ${reportDate}`,
+                separator,
+                
+                `*WORKING DAYS:* ${daysWorked}`,
+                `*ABSENT DAYS:* ${daysAbsent}`,
+                separator,
+                
+                `*EARNED (Gross):* ${earnedDisplay}`,
+                `*PAID (In Period):* ${paidDisplay}`,
+                separator,
+                
+                `*BALANCE DUE: ${balanceDisplay}*`,
+                separator,
+                
+                `Report generated on: ${new Date().toLocaleDateString()}`
+            ].join('\n');
+            
+            // Construct the WhatsApp URL
+            const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(reportText)}`;
+            
+            // Open in a new tab
+            window.open(whatsappUrl, '_blank');
+        };
+
 
         window.generateTaskReport = () => {
             const taskId = document.getElementById('reportTaskSelect').value;
@@ -1332,11 +1700,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p class="text-sm font-medium text-gray-700">Material Cost</p>
-                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(task.materialCost)}</p>
+                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(pL.totalMaterialCost)}</p>
                     </div>
                     <div class="p-3 bg-gray-50 rounded-lg border border-gray-200">
                         <p class="text-sm font-medium text-gray-700">Other Labor Cost</p>
-                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(task.otherLaborCost)}</p>
+                        <p class="text-2xl font-bold text-gray-800">${formatCurrency(pL.totalOtherLaborCost)}</p>
                     </div>
                     <div class="p-3 bg-red-100 rounded-lg border border-red-300">
                         <p class="text-sm font-medium text-red-700">Employee Labor Cost</p>
@@ -1365,16 +1733,32 @@
         // --- Task Logic (LOCAL STORAGE) ---
         
         const calculateTaskProfitLoss = (task) => {
-            const material = parseFloat(task.materialCost || 0);
-            const otherLabor = parseFloat(task.otherLaborCost || 0);
-            
             let totalRevenue = 0;
+            let totalMaterialCost = 0;
+            let totalOtherLaborCost = 0;
+            
+            // 1. Calculate Total Revenue
             if (task.customerPayments && Array.isArray(task.customerPayments)) {
                 task.customerPayments.forEach(p => {
                     totalRevenue += parseFloat(p.amount || 0);
                 });
             }
             
+            // 2. Calculate Total Material Cost
+            if (task.materialCostLogs && Array.isArray(task.materialCostLogs)) {
+                task.materialCostLogs.forEach(log => {
+                    totalMaterialCost += parseFloat(log.amount || 0);
+                });
+            }
+
+            // 3. Calculate Total Other Labor Cost
+            if (task.otherLaborCostLogs && Array.isArray(task.otherLaborCostLogs)) {
+                task.otherLaborCostLogs.forEach(log => {
+                    totalOtherLaborCost += parseFloat(log.amount || 0);
+                });
+            }
+
+            // 4. Calculate Total Employee Labor Cost and Hours
             let totalEmployeeLaborCost = 0;
             let totalActualHours = 0;
             
@@ -1390,27 +1774,27 @@
                 });
             }
 
-            const totalCost = material + otherLabor + totalEmployeeLaborCost;
+            const totalCost = totalMaterialCost + totalOtherLaborCost + totalEmployeeLaborCost;
             const netProfitLoss = totalRevenue - totalCost;
 
             // --- NEW METRICS ---
-            // Task Performance Index (TPI) = (Estimated Hours / Actual Hours) * 100
-            const tpiValue = totalActualHours > 0 ? (task.estimatedHours / totalActualHours) * 100 : 0;
+            const estimatedHoursFloat = parseFloat(task.estimatedHours || 0);
+            const tpiValue = totalActualHours > 0 ? (estimatedHoursFloat / totalActualHours) * 100 : 0;
             
-            // Labor Efficiency Ratio (LER) = (Total Revenue - Non-Labor Costs) / Total Employee Labor Cost
-            const nonLaborCosts = material + otherLabor;
-            const numerator = totalRevenue - nonLaborCosts;
+            const numerator = totalRevenue - (totalMaterialCost + totalOtherLaborCost);
             const lerValue = totalEmployeeLaborCost > 0 ? numerator / totalEmployeeLaborCost : 0;
 
             return {
                 totalActualHours: totalActualHours.toFixed(2),
                 totalEmployeeLaborCost: totalEmployeeLaborCost.toFixed(2),
+                totalMaterialCost: totalMaterialCost.toFixed(2), // NEW
+                totalOtherLaborCost: totalOtherLaborCost.toFixed(2), // NEW
                 totalRevenue: totalRevenue.toFixed(2),
                 totalCost: totalCost.toFixed(2),
                 netProfitLoss: netProfitLoss.toFixed(2),
                 netProfitLossValue: netProfitLoss,
-                tpi: tpiValue.toFixed(1), // NEW
-                ler: lerValue.toFixed(2), // NEW
+                tpi: tpiValue.toFixed(1),
+                ler: lerValue.toFixed(2),
             };
         };
         
@@ -1444,9 +1828,14 @@
                 return `<option value="${id}">${name} (${formatCurrency(employeesState[id]?.hourlyRate || 0)}/hr)</option>`;
             }).join('');
             
+            // Get the current local datetime for pre-filling inputs
+            const currentDatetimeLocal = getCurrentLocalDatetime();
+            
+            // --- Transaction History Displays ---
+            
             const laborLogsHtml = (task.laborLogs || [])
                 .sort((a, b) => b.date - a.date)
-                .slice(0, 5)
+                .slice(0, 3)
                 .map(log => {
                     const empName = employeesState[log.employeeId]?.name || 'Unknown';
                     return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${empName} - ${log.hours} hrs</span><span class="text-xs text-gray-500">${formatTimestamp(log.date)}</span></li>`;
@@ -1454,11 +1843,27 @@
                 
             const customerPaymentsHtml = (task.customerPayments || [])
                 .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 3)
                 .map(p => {
                     const type = p.type === 'advance' ? 'Advance' : 'Final';
                     return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${type}: ${formatCurrency(p.amount)}</span><span class="text-xs text-gray-500">${formatTimestamp(p.timestamp)}</span></li>`;
                 }).join('');
+                
+            const materialCostHtml = (task.materialCostLogs || [])
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 3)
+                .map(log => {
+                    return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${formatCurrency(log.amount)} - ${log.description || 'Purchase'}</span><span class="text-xs text-gray-500">${formatTimestamp(log.timestamp)}</span></li>`;
+                }).join('');
+                
+            const otherLaborCostHtml = (task.otherLaborCostLogs || [])
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .slice(0, 3)
+                .map(log => {
+                    return `<li class="flex justify-between text-sm text-gray-700 border-b pb-1"><span>${formatCurrency(log.amount)} - ${log.description || 'Service Fee'}</span><span class="text-xs text-gray-500">${formatTimestamp(log.timestamp)}</span></li>`;
+                }).join('');
             
+            // --- Employee Assignment Checkboxes ---
             const assignedEmployeesHtml = Object.values(employeesState).map(emp => {
                 const isAssigned = (task.assignedEmployees || []).includes(emp.id);
                 return `
@@ -1468,11 +1873,29 @@
                     </label>
                 `;
             }).join('');
-                
+            
+            // Determine if Mark as Complete button should be disabled (e.g., if already complete)
+            const isCompleted = task.status === 'Completed';
+            const completeButtonClass = isCompleted 
+                ? 'bg-gray-400 cursor-not-allowed' 
+                : 'bg-green-600 hover:bg-green-700';
+
+            // --- MAIN RENDER ---
+
             detailsContentEl.innerHTML = `
                 <div class="p-4 space-y-4">
-                    <h4 class="text-xl font-bold text-gray-800 border-b pb-2">Task: ${task.name}</h4>
+                    <h4 class="text-xl font-bold text-gray-800 border-b pb-2 flex justify-between items-center">
+                        Task: ${task.name}
+                        <button 
+                            onclick="handleTaskComplete('${taskId}')" 
+                            class="px-4 py-2 text-sm font-semibold text-white rounded-lg transition duration-150 ${completeButtonClass}"
+                            ${isCompleted ? 'disabled' : ''}
+                        >
+                            ${isCompleted ? 'Task Completed' : 'Mark as Complete'}
+                        </button>
+                    </h4>
                     
+                    <!-- Financial Snapshot -->
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-3 bg-white border rounded-lg">
                             <p class="text-sm text-gray-500">Total Revenue</p>
@@ -1498,50 +1921,77 @@
                         </div>
                     </div>
 
-                    <!-- Customer Payment Logging (NEW) -->
+                    <!-- Customer Payment Tracking -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Customer Payment Tracking (₹)</h5>
-                        <form onsubmit="handleCustomerPayment(event, '${taskId}')" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <form onsubmit="handleCustomerPayment(event, '${taskId}')" class="grid grid-cols-1 sm:grid-cols-4 gap-3">
                             <select id="payment-type-${taskId}" required class="w-full p-2 border rounded-lg">
                                 <option value="" disabled selected>--- Select Type ---</option>
                                 <option value="advance">Advance Payment</option>
                                 <option value="final">Final Payment</option>
                             </select>
-                            <div>
-                                <input type="number" id="payment-amount-${taskId}" step="0.01" min="0.01" placeholder="Amount (₹)" required class="w-full p-2 border rounded-lg">
-                            </div>
-                            <div>
-                                <input type="date" id="payment-date-${taskId}" required value="${new Date().toISOString().substring(0, 10)}" class="w-full p-2 border rounded-lg">
-                            </div>
-                            <div class="col-span-3">
+                            <input type="number" id="payment-amount-${taskId}" step="0.01" min="0.01" placeholder="Amount (₹)" required class="w-full p-2 border rounded-lg">
+                            <input type="datetime-local" id="payment-date-${taskId}" required class="w-full p-2 border rounded-lg" value="${currentDatetimeLocal}">
+                            <div class="col-span-1">
                                 <button type="submit" class="w-full py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700">
-                                    Record Customer Payment
+                                    Record
                                 </button>
                             </div>
                         </form>
 
                         <div class="pt-2">
-                            <h6 class="text-md font-medium text-gray-600">Recent Customer Payments:</h6>
+                            <h6 class="text-md font-medium text-gray-600">Recent Customer Payments (Total: ${formatCurrency(pL.totalRevenue)}):</h6>
                             <ul class="space-y-1">${customerPaymentsHtml || '<li class="text-sm text-gray-500">No payments recorded yet.</li>'}</ul>
                         </div>
                     </div>
                     
-                    <!-- Cost Inputs -->
+                    <!-- Unified Cost Logging (Material & Other Labor) -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
-                        <h5 class="text-lg font-semibold text-gray-700">External Cost Inputs (₹)</h5>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Material Cost</label>
-                                <input type="number" step="0.01" value="${task.materialCost || 0}" onchange="updateTaskField('${taskId}', 'materialCost', this.value)" class="w-full p-2 border rounded-lg">
+                        <h5 class="text-lg font-semibold text-gray-700">Project Cost Tracking (Material & Services)</h5>
+                        
+                        <form onsubmit="handleUnifiedCostLog(event, '${taskId}')" class="p-3 bg-red-50 rounded-lg space-y-3">
+                            
+                            <!-- Cost Type Selector -->
+                            <div class="flex space-x-4">
+                                <label class="flex items-center space-x-1 font-medium text-gray-700">
+                                    <input type="radio" name="costType" value="materialCostLogs" id="cost-type-material-${taskId}" checked class="text-red-600">
+                                    <span>Material Cost</span>
+                                </label>
+                                <label class="flex items-center space-x-1 font-medium text-gray-700">
+                                    <input type="radio" name="costType" value="otherLaborCostLogs" id="cost-type-labor-${taskId}" class="text-red-600">
+                                    <span>Other Labor/Service</span>
+                                </label>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700">Other Labor Cost</label>
-                                <input type="number" step="0.01" value="${task.otherLaborCost || 0}" onchange="updateTaskField('${taskId}', 'otherLaborCost', this.value)" class="w-full p-2 border rounded-lg">
+                            
+                            <!-- Cost Inputs -->
+                            <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                                <div class="sm:col-span-2">
+                                    <input type="text" id="cost-description-${taskId}" placeholder="Description (e.g., Cement, Subcontractor Fee)" class="w-full p-2 border rounded-lg">
+                                </div>
+                                <input type="number" id="cost-amount-${taskId}" step="0.01" min="0.01" placeholder="Amount (₹)" required class="w-full p-2 border rounded-lg">
+                                <input type="datetime-local" id="cost-date-${taskId}" required class="w-full p-2 border rounded-lg" value="${currentDatetimeLocal}">
+                                <div class="sm:col-span-4">
+                                    <button type="submit" class="w-full py-2 bg-red-600 text-white font-bold rounded-lg hover:bg-red-700">
+                                        Log Project Cost
+                                    </button>
+                                </div>
+                            </div>
+                        </form>
+                        
+                        <!-- History Display Container -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                             <div class="p-3 bg-white rounded-lg border">
+                                <h6 class="text-md font-medium text-gray-600 border-b mb-2 pb-1">Recent Material Purchases (Total: ${formatCurrency(pL.totalMaterialCost)}):</h6>
+                                <ul class="space-y-1">${materialCostHtml || '<li class="text-sm text-gray-500">No material costs recorded.</li>'}</ul>
+                            </div>
+                            <div class="p-3 bg-white rounded-lg border">
+                                <h6 class="text-md font-medium text-gray-600 border-b mb-2 pb-1">Recent External Service Fees (Total: ${formatCurrency(pL.totalOtherLaborCost)}):</h6>
+                                <ul class="space-y-1">${otherLaborCostHtml || '<li class="text-sm text-gray-500">No external labor costs recorded.</li>'}</ul>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Labor Logging -->
+                    <!-- Labor Logging (Employee) -->
                     <div class="space-y-3 pt-3 border-t border-gray-200">
                         <h5 class="text-lg font-semibold text-gray-700">Employee Labor Tracking (Total: ${pL.totalActualHours} hrs | Cost: ${formatCurrency(pL.totalEmployeeLaborCost)})</h5>
                         <form onsubmit="handleLogTaskHours(event, '${taskId}')" class="grid grid-cols-2 gap-3">
@@ -1553,7 +2003,7 @@
                                 <input type="number" id="task-labor-hours-${taskId}" min="0.25" step="0.25" placeholder="Hours Worked (e.g., 8.00)" required class="w-full p-2 border rounded-lg">
                             </div>
                             <div>
-                                <input type="date" id="task-labor-date-${taskId}" required value="${new Date().toISOString().substring(0, 10)}" class="w-full p-2 border rounded-lg">
+                                <input type="datetime-local" id="task-labor-date-${taskId}" required class="w-full p-2 border rounded-lg" value="${currentDatetimeLocal}">
                             </div>
                             <div class="col-span-2">
                                 <button type="submit" class="w-full py-2 bg-fuchsia-600 text-white font-bold rounded-lg hover:bg-fuchsia-700">
@@ -1572,17 +2022,43 @@
         };
         
         /**
-         * NEW: Handles recording a payment from the customer for a task.
+         * NEW: Handles marking a task as complete.
+         */
+        window.handleTaskComplete = (taskId) => {
+            try {
+                const data = loadLocalData();
+                const taskIndex = data.tasks.findIndex(t => t.id === taskId);
+                
+                if (taskIndex !== -1 && data.tasks[taskIndex].status !== 'Completed') {
+                    data.tasks[taskIndex].status = 'Completed';
+                    data.tasks[taskIndex].updatedAt = Date.now();
+                    
+                    updateAndRerender('tasks', data.tasks);
+
+                    // Re-render task details if currently open
+                    if (activeTaskDetailsId === taskId) {
+                        renderTaskDetailsContent(taskId, data.tasks[taskIndex]);
+                    }
+                    showFormMessage("task-form-message", `Task marked as COMPLETED!`, false);
+                }
+            } catch (error) {
+                console.error("Error marking task complete:", error);
+                    showFormMessage("task-form-message", "Failed to mark task as complete.", true);
+            }
+        };
+
+        /**
+         * Handles recording a payment from the customer for a task.
          */
         window.handleCustomerPayment = (event, taskId) => {
             event.preventDefault();
 
             const paymentType = document.getElementById(`payment-type-${taskId}`).value;
             const amount = parseFloat(document.getElementById(`payment-amount-${taskId}`).value);
-            const dateInput = document.getElementById(`payment-date-${taskId}`).value;
+            const dateInput = document.getElementById(`payment-date-${taskId}`).value; 
 
-            if (!paymentType || isNaN(amount) || amount <= 0 || !dateInput) {
-                 showFormMessage("task-form-message", "Please enter a valid amount, type, and date for customer payment.", true);
+            if (!paymentType || isNaN(amount) || amount <= 0) { 
+                 showFormMessage("task-form-message", "Please enter a valid amount and type for customer payment.", true);
                  return;
             }
             
@@ -1590,7 +2066,8 @@
                 id: generateUUID(),
                 type: paymentType, // 'advance' or 'final'
                 amount: amount,
-                timestamp: getTimestampFromInput(dateInput),
+                // FIX: Use current time if datetime input is empty or parsed, otherwise use user input
+                timestamp: getTimestampFromInput(dateInput), 
             };
 
             try {
@@ -1607,6 +2084,9 @@
                     // Clear inputs and re-render details
                     document.getElementById(`payment-amount-${taskId}`).value = '';
                     document.getElementById(`payment-type-${taskId}`).value = '';
+                    // Reset datetime input to current time for next log
+                    document.getElementById(`payment-date-${taskId}`).value = getCurrentLocalDatetime();
+
 
                     if (activeTaskDetailsId === taskId) {
                         renderTaskDetailsContent(taskId, data.tasks[index]);
@@ -1618,6 +2098,61 @@
                 showFormMessage("task-form-message", "Failed to record customer payment. Try again.", true);
             }
         };
+
+        /**
+         * NEW UNIFIED HANDLER: Handles logging Material Cost or Other Labor Cost transactions.
+         */
+        window.handleUnifiedCostLog = (event, taskId) => {
+            event.preventDefault();
+
+            const costType = document.querySelector(`input[name="costType"]:checked`).value; // materialCostLogs or otherLaborCostLogs
+            
+            const amount = parseFloat(document.getElementById(`cost-amount-${taskId}`).value);
+            const dateInput = document.getElementById(`cost-date-${taskId}`).value;
+            const description = document.getElementById(`cost-description-${taskId}`).value.trim();
+            const isMaterial = costType === 'materialCostLogs';
+
+            if (isNaN(amount) || amount <= 0) { 
+                 showFormMessage("task-form-message", "Please enter a valid amount for the cost.", true);
+                 return;
+            }
+            
+            const newLog = {
+                id: generateUUID(),
+                amount: amount,
+                // FIX: Use current time if datetime input is empty or parsed, otherwise use user input
+                timestamp: getTimestampFromInput(dateInput), 
+                description: description || (isMaterial ? 'Material Purchase' : 'External Service Fee'),
+            };
+
+            try {
+                const data = loadLocalData();
+                const index = data.tasks.findIndex(t => t.id === taskId);
+
+                if (index !== -1) {
+                    const currentLogs = data.tasks[index][costType] || [];
+                    data.tasks[index][costType] = [...currentLogs, newLog];
+                    data.tasks[index].updatedAt = Date.now();
+
+                    updateAndRerender('tasks', data.tasks);
+                    
+                    // Clear inputs and re-render details
+                    document.getElementById(`cost-amount-${taskId}`).value = '';
+                    document.getElementById(`cost-description-${taskId}`).value = '';
+                    // Reset datetime input to current time for next log
+                    document.getElementById(`cost-date-${taskId}`).value = getCurrentLocalDatetime();
+                    
+                    if (activeTaskDetailsId === taskId) {
+                        renderTaskDetailsContent(taskId, data.tasks[index]);
+                    }
+                    showFormMessage("task-form-message", `${formatCurrency(amount)} cost logged successfully to ${isMaterial ? 'Material' : 'Other Labor'}.`, false);
+                }
+            } catch (error) {
+                console.error(`Error logging cost:`, error);
+                showFormMessage("task-form-message", "Failed to record cost transaction. Try again.", true);
+            }
+        };
+
 
         window.handleAssignEmployeeChange = (taskId, isChecked, employeeId) => {
              try {
@@ -1659,7 +2194,9 @@
                 const index = data.tasks.findIndex(t => t.id === taskId);
 
                 if (index !== -1) {
-                    data.tasks[index][field] = floatValue;
+                    // NOTE: Static materialCost and otherLaborCost fields removed, only transactions are supported
+                    // This function is now only relevant for estimatedHours and status if they were inputs
+                    data.tasks[index][field] = floatValue; 
                     data.tasks[index].updatedAt = Date.now();
                     
                     updateAndRerender('tasks', data.tasks);
@@ -1681,9 +2218,9 @@
             const employeeId = document.getElementById(`task-labor-employee-${taskId}`).value;
             // Hours input now uses step="0.25" to enforce 15-minute increments
             const hours = parseFloat(document.getElementById(`task-labor-hours-${taskId}`).value); 
-            const dateInput = document.getElementById(`task-labor-date-${taskId}`).value;
+            const dateInput = document.getElementById(`task-labor-date-${taskId}`).value; 
             
-            if (!employeeId || isNaN(hours) || hours <= 0 || !dateInput) return;
+            if (!employeeId || isNaN(hours) || hours <= 0) return;
             
             const task = taskState[taskId];
             if (!task) return;
@@ -1697,7 +2234,8 @@
             const newLog = {
                 employeeId: employeeId,
                 hours: hours,
-                date: new Date(dateInput).getTime(),
+                // FIX: Use current time if datetime input is empty or parsed, otherwise use user input
+                date: getTimestampFromInput(dateInput),
                 loggedAt: Date.now()
             };
 
@@ -1713,7 +2251,7 @@
                     updateAndRerender('tasks', data.tasks);
 
                     document.getElementById(`task-labor-hours-${taskId}`).value = '';
-                    document.getElementById(`task-labor-date-${taskId}`).value = new Date().toISOString().substring(0, 10);
+                    document.getElementById(`task-labor-date-${taskId}`).value = getCurrentLocalDatetime(); // Reset datetime input
                     
                     showFormMessage("task-form-message", `Logged ${hours} hours for ${employeesState[employeeId]?.name || 'Employee'} on ${task.name}.`, false);
                 }
@@ -1747,10 +2285,11 @@
                     name: taskName,
                     estimatedHours: estimatedHours,
                     assignedEmployees: assignedEmployees,
-                    status: 'In Progress',
-                    materialCost: 0,
-                    otherLaborCost: 0,
-                    customerPayments: [], // Initialize new array for payments
+                    status: 'In Progress', // Default status
+                    // Initializing cost log arrays
+                    materialCostLogs: [], 
+                    otherLaborCostLogs: [],
+                    customerPayments: [], 
                     laborLogs: [],
                     createdAt: Date.now(),
                 };
@@ -1795,12 +2334,15 @@
                     const profitLossColor = pL.netProfitLossValue >= 0 ? 'text-emerald-700' : 'text-red-700';
                     const profitLossBg = pL.netProfitLossValue >= 0 ? 'bg-emerald-100' : 'bg-red-100';
                     const profitLossLabel = pL.netProfitLossValue >= 0 ? 'Profit' : 'Loss';
+
+                    // Dynamic status display
+                    const statusClass = data.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700';
                     
                     htmlContent += `
                         <div id="task-card-${taskId}" class="task-detail-card p-4 bg-white border border-fuchsia-200 rounded-lg shadow-sm hover:shadow-md cursor-pointer" onclick="viewTaskDetails('${taskId}')">
                             <div class="flex justify-between items-center">
                                 <h4 class="text-lg font-bold text-fuchsia-800">${data.name}</h4>
-                                <span class="px-3 py-1 text-sm font-semibold rounded-full ${data.status === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}">
+                                <span class="px-3 py-1 text-sm font-semibold rounded-full ${statusClass}">
                                     ${data.status}
                                 </span>
                             </div>
@@ -1955,8 +2497,10 @@
                     activeTaskDetailsId = null;
                 }
             } else if (tabId === 'home') {
-                // Rerender chart when navigating to home
+                // Rerender chart and quick actions when navigating to home
                 renderTaskChart();
+                populateQuickActionSelectors();
+                updateQuickAttendanceStatus();
             }
         };
         
