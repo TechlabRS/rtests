@@ -55,6 +55,8 @@
             currentPin: null,
             unsubscribe: null,
             history: [],
+            isSettingPassword: false,
+            currentDetail: null,
 
             init: async function() {
                 onAuthStateChanged(auth, (user) => {
@@ -68,16 +70,82 @@
                 });
             },
 
+            // --- SECURITY UTILS ---
+            sha256: async function(message) {
+                const msgBuffer = new TextEncoder().encode(message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+
             // --- TEACHER AUTH ---
-            showTeacherLogin: function() { document.getElementById('login-modal').classList.remove('hidden-section'); },
-            closeLoginModal: function() { document.getElementById('login-modal').classList.add('hidden-section'); },
-            verifyTeacher: function() {
-                if(document.getElementById('admin-pass').value === 'admin') { 
-                    this.closeLoginModal();
-                    this.role = 'teacher';
-                    this.switchView('teacher-dashboard');
-                    this.loadHistory(); 
-                } else { alert("Incorrect Password"); }
+            showTeacherLogin: function() { 
+                const storedHash = localStorage.getItem('teacher_auth_hash');
+                const title = document.getElementById('login-title');
+                const btn = document.getElementById('login-btn');
+                const subtext = document.getElementById('login-subtext');
+
+                if (!storedHash) {
+                    this.isSettingPassword = true;
+                    title.innerText = "Set Admin Password";
+                    btn.innerText = "Set & Login";
+                    subtext.innerText = "Set a password for future access.";
+                    subtext.classList.remove('hidden-section');
+                } else {
+                    this.isSettingPassword = false;
+                    title.innerText = "Teacher Login";
+                    btn.innerText = "Login";
+                    subtext.classList.add('hidden-section');
+                }
+
+                document.getElementById('login-modal').classList.remove('hidden-section'); 
+                document.getElementById('admin-pass').value = '';
+                document.getElementById('admin-pass').focus();
+            },
+            
+            closeLoginModal: function() { 
+                document.getElementById('login-modal').classList.add('hidden-section'); 
+            },
+
+            verifyTeacher: async function() {
+                const inputPass = document.getElementById('admin-pass').value;
+                if(!inputPass) { alert("Please enter a password."); return; }
+                
+                const inputHash = await this.sha256(inputPass);
+                
+                if (this.isSettingPassword) {
+                    localStorage.setItem('teacher_auth_hash', inputHash);
+                    alert("Password set successfully! Please remember it.");
+                    this.completeLogin();
+                } else {
+                    const storedHash = localStorage.getItem('teacher_auth_hash');
+                    if(inputHash === storedHash) { 
+                        this.completeLogin();
+                    } else { 
+                        alert("Incorrect Password"); 
+                        document.getElementById('admin-pass').value = '';
+                    }
+                }
+            },
+
+            completeLogin: function() {
+                this.closeLoginModal();
+                this.role = 'teacher';
+                this.switchView('teacher-dashboard');
+                this.loadHistory(); 
+                this.loadSavedMasterList(); 
+            },
+
+            // --- MASTER LIST PERSISTENCE ---
+            loadSavedMasterList: function() {
+                const savedList = localStorage.getItem('attendance_master_list');
+                if (savedList) {
+                    document.getElementById('master-list').value = savedList;
+                }
+            },
+
+            saveMasterList: function(listStr) {
+                localStorage.setItem('attendance_master_list', listStr);
             },
 
             switchTab: function(tab) {
@@ -109,30 +177,27 @@
             startSession: async function() {
                 if(!this.teacherLat) { alert("Set location first."); return; }
                 
-                // 1. Get Inputs
                 const subject = document.getElementById('session-subject').value;
-                const hoursInput = document.getElementById('session-hours').value; // e.g., "3" or "3,4"
+                const hoursInput = document.getElementById('session-hours').value;
                 const masterListStr = document.getElementById('master-list').value;
                 
                 if(!subject || !hoursInput) { alert("Subject and Class Hour are required."); return; }
 
-                // 2. Generate Custom ID (DDMMCLHR)
+                this.saveMasterList(masterListStr);
+
                 const now = new Date();
                 const day = String(now.getDate()).padStart(2, '0');
                 const month = String(now.getMonth() + 1).padStart(2, '0');
-                // Remove non-numeric characters from hour input (e.g. "3,4" -> "34", "3" -> "03")
                 let hourClean = hoursInput.replace(/[^0-9]/g, '');
                 if(hourClean.length === 1) hourClean = '0' + hourClean;
                 
                 const customClassId = `${day}${month}${hourClean}`;
                 
-                // 3. Process Master List
                 let masterRolls = [];
                 if(masterListStr.trim()) {
                     masterRolls = masterListStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
                 }
 
-                // 4. Create Session
                 const pin = Math.floor(1000 + Math.random() * 9000).toString();
                 this.currentPin = pin;
 
@@ -142,9 +207,9 @@
                     timestamp: Date.now(),
                     teacher_uid: this.user.uid,
                     subject: subject,
-                    class_id: customClassId,     // The ID you asked for
+                    class_id: customClassId,
                     class_hours: hoursInput,
-                    master_list: masterRolls,    // Array of expected rolls
+                    master_list: masterRolls,
                     total_strength: masterRolls.length > 0 ? masterRolls.length : 60,
                     status: 'active',
                     lat: this.teacherLat,
@@ -182,7 +247,7 @@
                 }
                 let html = '';
                 [...list].reverse().forEach(s => {
-                    html += `<div class="flex justify-between p-2 bg-white rounded mb-2 border-l-4 border-green-500 shadow-sm text-sm">
+                    html += `<div class="flex justify-between p-2 bg-white rounded mb-2 border-l-4 border-green-500 shadow-sm text-sm animate-fade-in">
                         <div><span class="font-bold">${s.name}</span> <span class="text-xs text-gray-500">(${s.roll})</span></div>
                         <div class="text-xs text-green-600">${s.time}</div>
                     </div>`;
@@ -209,10 +274,15 @@
                 try {
                     const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions'));
                     this.history = [];
-                    snap.forEach(d => { if(d.data().teacher_uid === this.user.uid) this.history.push(d.data()); });
+                    snap.forEach(d => { 
+                        if(d.data().teacher_uid === this.user.uid) {
+                            let record = d.data();
+                            record.docId = d.id; 
+                            this.history.push(record); 
+                        }
+                    });
                     this.history.sort((a, b) => b.timestamp - a.timestamp);
                     
-                    // Stats
                     document.getElementById('stat-sessions').innerText = this.history.length;
                     let totalP = 0, count = 0;
                     this.history.forEach(h => { if(h.total_strength>0) { totalP += (h.attendees.length/h.total_strength); count++; } });
@@ -255,54 +325,90 @@
                 this.currentDetail = this.history[idx];
                 document.getElementById('detail-title').innerText = this.currentDetail.subject;
                 document.getElementById('detail-id').innerText = this.currentDetail.class_id || '--';
+                
                 this.switchDetailTab('present');
                 document.getElementById('history-detail').classList.remove('hidden-section');
             },
 
+            // --- MANUAL UPDATES ---
+            manualRemove: async function(roll) {
+                if(!confirm(`Delete attendance for Roll: ${roll}?`)) return;
+                try {
+                    const pin = this.currentDetail.docId;
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                    const newAttendees = this.currentDetail.attendees.filter(s => s.roll !== roll);
+                    await updateDoc(ref, { attendees: newAttendees });
+                    this.currentDetail.attendees = newAttendees;
+                    this.switchDetailTab('present'); 
+                    alert("Deleted successfully.");
+                } catch(e) { console.error(e); alert("Delete failed: " + e.message); }
+            },
+
+            manualAdd: async function(roll) {
+                const name = prompt(`Enter Name for Roll No ${roll}:`, "");
+                if(!name) return;
+                const newEntry = { name: name, roll: roll, uid: "manual_" + Date.now(), dist: 0, time: "Manual" };
+                try {
+                    const pin = this.currentDetail.docId;
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                    await updateDoc(ref, { attendees: arrayUnion(newEntry) });
+                    this.currentDetail.attendees.push(newEntry);
+                    this.switchDetailTab('absent'); 
+                    alert("Marked Present.");
+                } catch(e) { console.error(e); alert("Add failed: " + e.message); }
+            },
+
             switchDetailTab: function(tab) {
                 const isPresent = tab === 'present';
-                document.getElementById('tab-det-present').className = isPresent ? 'flex-1 py-2 text-green-600 border-b-2 border-green-600 font-bold' : 'flex-1 py-2 text-gray-500';
+                document.getElementById('tab-det-present').className = isPresent ? 'flex-1 py-2 font-bold border-b-2 border-green-600 text-green-600' : 'flex-1 py-2 text-gray-500';
                 document.getElementById('tab-det-absent').className = !isPresent ? 'flex-1 py-2 text-red-600 border-b-2 border-red-600 font-bold' : 'flex-1 py-2 text-gray-500';
                 
                 const list = document.getElementById('detail-list');
                 const session = this.currentDetail;
                 
                 if(isPresent) {
-                    // Show Present
                     if(!session.attendees || session.attendees.length === 0) {
                         list.innerHTML = '<p class="text-center text-gray-400 mt-4">No one attended.</p>';
                     } else {
                         list.innerHTML = session.attendees.map(s => 
-                            `<div class="flex justify-between p-3 border-b text-sm">
+                            `<div class="flex justify-between items-center p-3 border-b text-sm">
                                 <div><span class="font-bold">${s.name}</span> <span class="text-gray-500">(${s.roll})</span></div>
-                                <div class="text-gray-400 text-xs">${s.time}</div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-gray-400 text-xs">${s.time}</span>
+                                    <button onclick="attendanceApp.manualRemove('${s.roll}')" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
                              </div>`
                         ).join('');
                     }
                 } else {
-                    // Show Absent
                     const master = session.master_list || [];
                     const presentRolls = (session.attendees || []).map(a => a.roll.toLowerCase().trim());
-                    
-                    // Filter master list for those NOT in present list
                     const absentRolls = master.filter(roll => !presentRolls.includes(roll.toLowerCase().trim()));
 
                     if(master.length === 0) {
-                        list.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs bg-yellow-50 rounded border border-yellow-100"><i class="fa-solid fa-triangle-exclamation mb-1"></i><br>No Master List was provided for this session.<br>Cannot list absent names.</div>';
+                        list.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs bg-yellow-50 rounded border border-yellow-100"><i class="fa-solid fa-triangle-exclamation mb-1"></i><br>No Master List found.<br>Cannot calculate absent students.</div>';
                     } else if(absentRolls.length === 0) {
                         list.innerHTML = '<p class="text-center text-green-500 mt-4 font-bold">All present!</p>';
                     } else {
                         list.innerHTML = absentRolls.map(roll => 
-                            `<div class="p-3 border-b text-sm flex items-center text-red-600">
-                                <i class="fa-solid fa-xmark mr-3"></i>
-                                <span class="font-mono font-bold">${roll}</span>
+                            `<div class="p-3 border-b text-sm flex justify-between items-center text-red-600">
+                                <div>
+                                    <i class="fa-solid fa-xmark mr-2"></i>
+                                    <span class="font-mono font-bold">${roll}</span>
+                                </div>
+                                <button onclick="attendanceApp.manualAdd('${roll}')" class="text-green-600 hover:text-green-800 px-2 py-1 bg-green-50 rounded text-xs border border-green-200">
+                                    <i class="fa-solid fa-user-plus mr-1"></i> Mark Present
+                                </button>
                              </div>`
                         ).join('');
                     }
                 }
             },
 
-            closeDetail: function() { document.getElementById('history-detail').classList.add('hidden-section'); },
+            closeDetail: function() { 
+                document.getElementById('history-detail').classList.add('hidden-section'); 
+                this.loadHistory();
+            },
 
             // --- STUDENT ---
             showStudentView: function() {
@@ -382,11 +488,12 @@
         <!-- Login -->
         <div id="login-modal" class="hidden-section absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-6 rounded-xl w-72 shadow-2xl">
-                <h3 class="font-bold mb-4">Teacher Login</h3>
-                <input type="password" id="admin-pass" placeholder="Password (admin)" class="w-full border p-2 rounded mb-4">
+                <h3 id="login-title" class="font-bold mb-2">Teacher Login</h3>
+                <p id="login-subtext" class="text-xs text-gray-500 mb-3 hidden-section"></p>
+                <input type="password" id="admin-pass" placeholder="Password" class="w-full border p-2 rounded mb-4" onkeypress="if(event.key === 'Enter') attendanceApp.verifyTeacher()">
                 <div class="flex gap-2">
                     <button onclick="attendanceApp.closeLoginModal()" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
-                    <button onclick="attendanceApp.verifyTeacher()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Login</button>
+                    <button id="login-btn" onclick="attendanceApp.verifyTeacher()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Login</button>
                 </div>
             </div>
         </div>
@@ -411,8 +518,8 @@
                         </div>
                         <div class="space-y-1">
                             <label class="text-xs text-gray-500 font-bold ml-1">Class Roll List (Comma Separated)</label>
-                            <textarea id="master-list" placeholder="101, 102, 103, 104..." class="w-full border p-2 rounded text-sm h-20 bg-gray-50"></textarea>
-                            <p class="text-[10px] text-gray-400">Required to identify Absent students by Roll No.</p>
+                            <textarea id="master-list" placeholder="101, 102, 103, 104..." class="w-full border p-2 rounded text-sm h-20 bg-gray-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                            <p class="text-[10px] text-gray-400">List is saved automatically for next time.</p>
                         </div>
                         <button onclick="attendanceApp.startSession()" class="w-full bg-green-600 text-white py-3 rounded font-bold shadow">Start Session</button>
                     </div>
@@ -444,7 +551,7 @@
             </div>
         </div>
 
-        <!-- Student -->
+        <!-- Student Dashboard (RESTORED SECTION) -->
         <div id="student-dashboard" class="hidden-section flex-1 p-6 flex flex-col justify-center">
             <button onclick="location.reload()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark"></i></button>
             <div id="student-form" class="space-y-3">
