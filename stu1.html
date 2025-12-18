@@ -1,0 +1,591 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecurePass Cloud Analytics</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDKs (Version 11.6.1) -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, getDocs } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // --- CONFIGURATION ---
+        const fallbackConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+  measurementId: "G-9PZZM5LFKX"
+        };
+
+        const firebaseConfig = typeof window.__firebase_config !== 'undefined' 
+            ? JSON.parse(window.__firebase_config) 
+            : fallbackConfig;
+            
+        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app';
+
+        // Initialize Firebase
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) {
+            console.error("Init Error:", e);
+        }
+
+        window.attendanceApp = {
+            db: db,
+            auth: auth,
+            appId: appId,
+            
+            // State
+            user: null,
+            role: null,
+            teacherLat: null,
+            teacherLng: null,
+            currentPin: null,
+            unsubscribe: null,
+            history: [],
+            isSettingPassword: false,
+            currentDetail: null,
+
+            init: async function() {
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        this.user = user;
+                        document.getElementById('loading-screen').classList.add('hidden-section');
+                        document.getElementById('role-screen').classList.remove('hidden-section');
+                    } else {
+                        signInAnonymously(auth).catch(e => alert("Auth Failed: " + e.message));
+                    }
+                });
+            },
+
+            // --- SECURITY UTILS ---
+            sha256: async function(message) {
+                const msgBuffer = new TextEncoder().encode(message);
+                const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+                const hashArray = Array.from(new Uint8Array(hashBuffer));
+                return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            },
+
+            // --- TEACHER AUTH ---
+            showTeacherLogin: function() { 
+                const storedHash = localStorage.getItem('teacher_auth_hash');
+                const title = document.getElementById('login-title');
+                const btn = document.getElementById('login-btn');
+                const subtext = document.getElementById('login-subtext');
+
+                if (!storedHash) {
+                    this.isSettingPassword = true;
+                    title.innerText = "Set Admin Password";
+                    btn.innerText = "Set & Login";
+                    subtext.innerText = "Set a password for future access.";
+                    subtext.classList.remove('hidden-section');
+                } else {
+                    this.isSettingPassword = false;
+                    title.innerText = "Teacher Login";
+                    btn.innerText = "Login";
+                    subtext.classList.add('hidden-section');
+                }
+
+                document.getElementById('login-modal').classList.remove('hidden-section'); 
+                document.getElementById('admin-pass').value = '';
+                document.getElementById('admin-pass').focus();
+            },
+            
+            closeLoginModal: function() { 
+                document.getElementById('login-modal').classList.add('hidden-section'); 
+            },
+
+            verifyTeacher: async function() {
+                const inputPass = document.getElementById('admin-pass').value;
+                if(!inputPass) { alert("Please enter a password."); return; }
+                
+                const inputHash = await this.sha256(inputPass);
+                
+                if (this.isSettingPassword) {
+                    localStorage.setItem('teacher_auth_hash', inputHash);
+                    alert("Password set successfully! Please remember it.");
+                    this.completeLogin();
+                } else {
+                    const storedHash = localStorage.getItem('teacher_auth_hash');
+                    if(inputHash === storedHash) { 
+                        this.completeLogin();
+                    } else { 
+                        alert("Incorrect Password"); 
+                        document.getElementById('admin-pass').value = '';
+                    }
+                }
+            },
+
+            completeLogin: function() {
+                this.closeLoginModal();
+                this.role = 'teacher';
+                this.switchView('teacher-dashboard');
+                this.loadHistory(); 
+                this.loadSavedMasterList(); 
+            },
+
+            // --- MASTER LIST PERSISTENCE ---
+            loadSavedMasterList: function() {
+                const savedList = localStorage.getItem('attendance_master_list');
+                if (savedList) {
+                    document.getElementById('master-list').value = savedList;
+                }
+            },
+
+            saveMasterList: function(listStr) {
+                localStorage.setItem('attendance_master_list', listStr);
+            },
+
+            switchTab: function(tab) {
+                const isLive = tab === 'live';
+                document.getElementById('tab-live').className = isLive ? 'flex-1 p-3 text-indigo-600 border-b-2 border-indigo-600 font-bold text-sm' : 'flex-1 p-3 text-gray-500 text-sm';
+                document.getElementById('tab-hist').className = !isLive ? 'flex-1 p-3 text-indigo-600 border-b-2 border-indigo-600 font-bold text-sm' : 'flex-1 p-3 text-gray-500 text-sm';
+                document.getElementById('view-live').classList.toggle('hidden-section', !isLive);
+                document.getElementById('view-hist').classList.toggle('hidden-section', isLive);
+                if(!isLive) this.loadHistory();
+            },
+
+            // --- LIVE SESSION ---
+            setGeo: function() {
+                const btn = document.getElementById('btn-set-loc');
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Locating...';
+                if (!navigator.geolocation) { alert("No GPS"); return; }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => {
+                        this.teacherLat = pos.coords.latitude;
+                        this.teacherLng = pos.coords.longitude;
+                        btn.innerHTML = '<i class="fa-solid fa-check"></i> Location Set';
+                        btn.className = "w-full bg-green-600 text-white py-2 rounded shadow transition";
+                    },
+                    (err) => { alert("GPS Error"); btn.innerHTML = "Retry Location"; },
+                    { enableHighAccuracy: true }
+                );
+            },
+
+            startSession: async function() {
+                if(!this.teacherLat) { alert("Set location first."); return; }
+                
+                const subject = document.getElementById('session-subject').value;
+                const hoursInput = document.getElementById('session-hours').value;
+                const masterListStr = document.getElementById('master-list').value;
+                
+                if(!subject || !hoursInput) { alert("Subject and Class Hour are required."); return; }
+
+                this.saveMasterList(masterListStr);
+
+                const now = new Date();
+                const day = String(now.getDate()).padStart(2, '0');
+                const month = String(now.getMonth() + 1).padStart(2, '0');
+                let hourClean = hoursInput.replace(/[^0-9]/g, '');
+                if(hourClean.length === 1) hourClean = '0' + hourClean;
+                
+                const customClassId = `${day}${month}${hourClean}`;
+                
+                let masterRolls = [];
+                if(masterListStr.trim()) {
+                    masterRolls = masterListStr.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                }
+
+                const pin = Math.floor(1000 + Math.random() * 9000).toString();
+                this.currentPin = pin;
+
+                const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                const sessionData = {
+                    created_at: new Date().toISOString(),
+                    timestamp: Date.now(),
+                    teacher_uid: this.user.uid,
+                    subject: subject,
+                    class_id: customClassId,
+                    class_hours: hoursInput,
+                    master_list: masterRolls,
+                    total_strength: masterRolls.length > 0 ? masterRolls.length : 60,
+                    status: 'active',
+                    lat: this.teacherLat,
+                    lng: this.teacherLng,
+                    attendees: []
+                };
+
+                try {
+                    await setDoc(sessionRef, sessionData);
+                    
+                    document.getElementById('teacher-setup').classList.add('hidden-section');
+                    document.getElementById('teacher-active').classList.remove('hidden-section');
+                    document.getElementById('display-pin').innerText = pin;
+                    document.getElementById('display-class-id').innerText = customClassId;
+
+                    this.unsubscribe = onSnapshot(sessionRef, (docSnap) => {
+                        if (docSnap.exists()) {
+                            const data = docSnap.data();
+                            this.renderLiveList(data.attendees || [], data.total_strength);
+                        }
+                    });
+                } catch (e) { console.error(e); alert("Cloud Error: " + e.message); }
+            },
+
+            renderLiveList: function(list, total) {
+                const present = list.length;
+                const absent = Math.max(0, total - present);
+                document.getElementById('live-present').innerText = present;
+                document.getElementById('live-absent').innerText = absent;
+                
+                const container = document.getElementById('live-list');
+                if(list.length === 0) {
+                    container.innerHTML = '<p class="text-center text-gray-400 mt-10">Waiting for students...</p>';
+                    return;
+                }
+                let html = '';
+                [...list].reverse().forEach(s => {
+                    html += `<div class="flex justify-between p-2 bg-white rounded mb-2 border-l-4 border-green-500 shadow-sm text-sm animate-fade-in">
+                        <div><span class="font-bold">${s.name}</span> <span class="text-xs text-gray-500">(${s.roll})</span></div>
+                        <div class="text-xs text-green-600">${s.time}</div>
+                    </div>`;
+                });
+                container.innerHTML = html;
+            },
+
+            endSession: async function() {
+                if(!confirm("End session?")) return;
+                if(this.unsubscribe) this.unsubscribe();
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', this.currentPin), { status: 'ended' });
+                
+                document.getElementById('teacher-active').classList.add('hidden-section');
+                document.getElementById('teacher-setup').classList.remove('hidden-section');
+                document.getElementById('session-subject').value = '';
+                this.switchTab('history');
+            },
+
+            // --- HISTORY & ANALYTICS ---
+            loadHistory: async function() {
+                const listContainer = document.getElementById('history-list');
+                listContainer.innerHTML = '<p class="text-center text-gray-400 py-4"><i class="fa-solid fa-spinner fa-spin"></i> Loading...</p>';
+                
+                try {
+                    const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions'));
+                    this.history = [];
+                    snap.forEach(d => { 
+                        if(d.data().teacher_uid === this.user.uid) {
+                            let record = d.data();
+                            record.docId = d.id; 
+                            this.history.push(record); 
+                        }
+                    });
+                    this.history.sort((a, b) => b.timestamp - a.timestamp);
+                    
+                    document.getElementById('stat-sessions').innerText = this.history.length;
+                    let totalP = 0, count = 0;
+                    this.history.forEach(h => { if(h.total_strength>0) { totalP += (h.attendees.length/h.total_strength); count++; } });
+                    document.getElementById('stat-avg').innerText = count > 0 ? Math.round((totalP/count)*100) + "%" : "0%";
+
+                    this.renderHistoryList();
+                } catch(e) { console.error(e); listContainer.innerText = "Error loading history."; }
+            },
+
+            renderHistoryList: function() {
+                const container = document.getElementById('history-list');
+                if(this.history.length === 0) { container.innerHTML = '<p class="text-center text-gray-400">No sessions.</p>'; return; }
+                
+                let html = '';
+                this.history.forEach((h, idx) => {
+                    const present = h.attendees.length;
+                    const percent = h.total_strength > 0 ? Math.round((present/h.total_strength)*100) : 0;
+                    const color = percent > 75 ? 'text-green-600' : (percent > 50 ? 'text-yellow-600' : 'text-red-600');
+                    
+                    html += `
+                        <div onclick="attendanceApp.openDetail(${idx})" class="bg-white p-3 rounded-lg border mb-2 cursor-pointer shadow-sm hover:border-indigo-300">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <h4 class="font-bold text-gray-800">${h.subject}</h4>
+                                        <span class="bg-gray-100 text-gray-600 text-[10px] px-1.5 rounded border font-mono">${h.class_id || 'N/A'}</span>
+                                    </div>
+                                    <p class="text-xs text-gray-500">${new Date(h.timestamp).toLocaleDateString()} &bull; Hrs: ${h.class_hours || 'N/A'}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-lg font-bold ${color}">${percent}%</span>
+                                </div>
+                            </div>
+                        </div>`;
+                });
+                container.innerHTML = html;
+            },
+
+            openDetail: function(idx) {
+                this.currentDetail = this.history[idx];
+                document.getElementById('detail-title').innerText = this.currentDetail.subject;
+                document.getElementById('detail-id').innerText = this.currentDetail.class_id || '--';
+                
+                this.switchDetailTab('present');
+                document.getElementById('history-detail').classList.remove('hidden-section');
+            },
+
+            // --- MANUAL UPDATES ---
+            manualRemove: async function(roll) {
+                if(!confirm(`Delete attendance for Roll: ${roll}?`)) return;
+                try {
+                    const pin = this.currentDetail.docId;
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                    const newAttendees = this.currentDetail.attendees.filter(s => s.roll !== roll);
+                    await updateDoc(ref, { attendees: newAttendees });
+                    this.currentDetail.attendees = newAttendees;
+                    this.switchDetailTab('present'); 
+                    alert("Deleted successfully.");
+                } catch(e) { console.error(e); alert("Delete failed: " + e.message); }
+            },
+
+            manualAdd: async function(roll) {
+                const name = prompt(`Enter Name for Roll No ${roll}:`, "");
+                if(!name) return;
+                const newEntry = { name: name, roll: roll, uid: "manual_" + Date.now(), dist: 0, time: "Manual" };
+                try {
+                    const pin = this.currentDetail.docId;
+                    const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                    await updateDoc(ref, { attendees: arrayUnion(newEntry) });
+                    this.currentDetail.attendees.push(newEntry);
+                    this.switchDetailTab('absent'); 
+                    alert("Marked Present.");
+                } catch(e) { console.error(e); alert("Add failed: " + e.message); }
+            },
+
+            switchDetailTab: function(tab) {
+                const isPresent = tab === 'present';
+                document.getElementById('tab-det-present').className = isPresent ? 'flex-1 py-2 font-bold border-b-2 border-green-600 text-green-600' : 'flex-1 py-2 text-gray-500';
+                document.getElementById('tab-det-absent').className = !isPresent ? 'flex-1 py-2 text-red-600 border-b-2 border-red-600 font-bold' : 'flex-1 py-2 text-gray-500';
+                
+                const list = document.getElementById('detail-list');
+                const session = this.currentDetail;
+                
+                if(isPresent) {
+                    if(!session.attendees || session.attendees.length === 0) {
+                        list.innerHTML = '<p class="text-center text-gray-400 mt-4">No one attended.</p>';
+                    } else {
+                        list.innerHTML = session.attendees.map(s => 
+                            `<div class="flex justify-between items-center p-3 border-b text-sm">
+                                <div><span class="font-bold">${s.name}</span> <span class="text-gray-500">(${s.roll})</span></div>
+                                <div class="flex items-center gap-3">
+                                    <span class="text-gray-400 text-xs">${s.time}</span>
+                                    <button onclick="attendanceApp.manualRemove('${s.roll}')" class="text-red-400 hover:text-red-600 px-2"><i class="fa-solid fa-trash"></i></button>
+                                </div>
+                             </div>`
+                        ).join('');
+                    }
+                } else {
+                    const master = session.master_list || [];
+                    const presentRolls = (session.attendees || []).map(a => a.roll.toLowerCase().trim());
+                    const absentRolls = master.filter(roll => !presentRolls.includes(roll.toLowerCase().trim()));
+
+                    if(master.length === 0) {
+                        list.innerHTML = '<div class="p-4 text-center text-gray-500 text-xs bg-yellow-50 rounded border border-yellow-100"><i class="fa-solid fa-triangle-exclamation mb-1"></i><br>No Master List found.<br>Cannot calculate absent students.</div>';
+                    } else if(absentRolls.length === 0) {
+                        list.innerHTML = '<p class="text-center text-green-500 mt-4 font-bold">All present!</p>';
+                    } else {
+                        list.innerHTML = absentRolls.map(roll => 
+                            `<div class="p-3 border-b text-sm flex justify-between items-center text-red-600">
+                                <div>
+                                    <i class="fa-solid fa-xmark mr-2"></i>
+                                    <span class="font-mono font-bold">${roll}</span>
+                                </div>
+                                <button onclick="attendanceApp.manualAdd('${roll}')" class="text-green-600 hover:text-green-800 px-2 py-1 bg-green-50 rounded text-xs border border-green-200">
+                                    <i class="fa-solid fa-user-plus mr-1"></i> Mark Present
+                                </button>
+                             </div>`
+                        ).join('');
+                    }
+                }
+            },
+
+            closeDetail: function() { 
+                document.getElementById('history-detail').classList.add('hidden-section'); 
+                this.loadHistory();
+            },
+
+            // --- STUDENT ---
+            showStudentView: function() {
+                if(localStorage.getItem('att_lock_cloud')) { alert("Already marked on this device."); return; }
+                this.role = 'student';
+                this.switchView('student-dashboard');
+            },
+
+            submitAttendance: async function() {
+                const name = document.getElementById('s-name').value;
+                const roll = document.getElementById('s-roll').value;
+                const pin = document.getElementById('s-pin').value;
+                const btn = document.getElementById('btn-submit');
+                if(!name || !roll || !pin) { alert("Fill all fields"); return; }
+                
+                btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...'; btn.disabled = true;
+                const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'attendance_sessions', pin);
+                
+                try {
+                    const snap = await getDoc(sessionRef);
+                    if (!snap.exists() || snap.data().status !== 'active') { alert("Invalid/Closed Session"); btn.innerText='Mark Present'; btn.disabled=false; return; }
+                    
+                    const data = snap.data();
+                    if (data.attendees && data.attendees.some(a => a.uid === this.user.uid)) { alert("Already marked."); btn.innerText='Mark Present'; btn.disabled=false; return; }
+                    
+                    if (!navigator.geolocation) { alert("GPS Needed"); return; }
+                    navigator.geolocation.getCurrentPosition(async (pos) => {
+                        const dist = this.getDist(data.lat, data.lng, pos.coords.latitude, pos.coords.longitude);
+                        if(dist > 100) { alert(`Too far (${Math.round(dist)}m)`); btn.innerText='Mark Present'; btn.disabled=false; return; }
+                        
+                        await updateDoc(sessionRef, { attendees: arrayUnion({ uid: this.user.uid, name, roll, dist: Math.round(dist), time: new Date().toLocaleTimeString() }) });
+                        localStorage.setItem('att_lock_cloud', 'true');
+                        document.getElementById('student-form').classList.add('hidden-section');
+                        document.getElementById('student-success').classList.remove('hidden-section');
+                    }, (e) => { alert("GPS Error: "+e.message); btn.innerText='Mark Present'; btn.disabled=false; }, {enableHighAccuracy:true});
+                } catch(e) { console.error(e); alert("Error: "+e.message); btn.innerText='Mark Present'; btn.disabled=false; }
+            },
+
+            switchView: function(id) {
+                ['role-screen','teacher-dashboard','student-dashboard'].forEach(v => document.getElementById(v).classList.add('hidden-section'));
+                document.getElementById(id).classList.remove('hidden-section');
+            },
+            getDist: function(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; const φ1 = lat1 * Math.PI/180; const φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180; const Δλ = (lon2-lon1) * Math.PI/180;
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            }
+        };
+        window.attendanceApp.init();
+    </script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f3f4f6; }
+        .hidden-section { display: none !important; }
+        .animate-fade-in { animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        ::-webkit-scrollbar { width: 4px; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-4">
+
+    <div id="loading-screen" class="fixed inset-0 bg-white z-50 flex items-center justify-center"><div class="text-indigo-600 font-bold animate-pulse">Connecting...</div></div>
+
+    <div class="w-full max-w-md bg-white rounded-xl shadow-xl overflow-hidden h-[650px] flex flex-col relative">
+        <div class="bg-indigo-600 p-4 text-center text-white shrink-0">
+            <h1 class="text-xl font-bold">SecurePass Cloud</h1>
+            <p class="text-indigo-200 text-xs">Analytics & Geo-Fencing</p>
+        </div>
+
+        <!-- Role -->
+        <div id="role-screen" class="hidden-section flex-1 p-8 flex flex-col justify-center gap-4">
+            <button onclick="attendanceApp.showTeacherLogin()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow hover:bg-indigo-700">Teacher Dashboard</button>
+            <button onclick="attendanceApp.showStudentView()" class="w-full border-2 border-indigo-600 text-indigo-700 py-4 rounded-xl font-bold hover:bg-indigo-50">Student Check-In</button>
+        </div>
+
+        <!-- Login -->
+        <div id="login-modal" class="hidden-section absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-white p-6 rounded-xl w-72 shadow-2xl">
+                <h3 id="login-title" class="font-bold mb-2">Teacher Login</h3>
+                <p id="login-subtext" class="text-xs text-gray-500 mb-3 hidden-section"></p>
+                <input type="password" id="admin-pass" placeholder="Password" class="w-full border p-2 rounded mb-4" onkeypress="if(event.key === 'Enter') attendanceApp.verifyTeacher()">
+                <div class="flex gap-2">
+                    <button onclick="attendanceApp.closeLoginModal()" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button>
+                    <button id="login-btn" onclick="attendanceApp.verifyTeacher()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Login</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Teacher -->
+        <div id="teacher-dashboard" class="hidden-section flex-1 flex flex-col overflow-hidden">
+            <div class="flex border-b bg-gray-50 shrink-0">
+                <button id="tab-live" onclick="attendanceApp.switchTab('live')" class="flex-1 p-3 text-indigo-600 border-b-2 border-indigo-600 font-bold text-sm">Live</button>
+                <button id="tab-hist" onclick="attendanceApp.switchTab('history')" class="flex-1 p-3 text-gray-500 text-sm">Analytics</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 relative">
+                <button onclick="location.reload()" class="absolute top-2 right-2 text-xs text-red-500 border border-red-200 px-2 py-1 rounded bg-white z-10">Logout</button>
+                
+                <div id="view-live">
+                    <div id="teacher-setup" class="space-y-3">
+                        <div class="bg-blue-50 p-3 rounded border border-blue-100 text-center">
+                            <button id="btn-set-loc" onclick="attendanceApp.setGeo()" class="w-full bg-blue-600 text-white py-2 rounded text-sm shadow">Set Location</button>
+                        </div>
+                        <input type="text" id="session-subject" placeholder="Subject (e.g. Physics)" class="w-full border p-2 rounded text-sm">
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="session-hours" placeholder="Hrs (e.g. 3 or 3,4)" class="w-full border p-2 rounded text-sm">
+                        </div>
+                        <div class="space-y-1">
+                            <label class="text-xs text-gray-500 font-bold ml-1">Class Roll List (Comma Separated)</label>
+                            <textarea id="master-list" placeholder="101, 102, 103, 104..." class="w-full border p-2 rounded text-sm h-20 bg-gray-50 focus:ring-2 focus:ring-indigo-500"></textarea>
+                            <p class="text-[10px] text-gray-400">List is saved automatically for next time.</p>
+                        </div>
+                        <button onclick="attendanceApp.startSession()" class="w-full bg-green-600 text-white py-3 rounded font-bold shadow">Start Session</button>
+                    </div>
+
+                    <div id="teacher-active" class="hidden-section flex flex-col h-full">
+                        <div class="bg-gray-800 text-white rounded p-3 text-center mb-2">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-xs text-gray-400">PIN</span>
+                                <span class="text-xs text-gray-400">ID: <span id="display-class-id" class="text-white font-mono">--</span></span>
+                            </div>
+                            <div id="display-pin" class="text-3xl font-mono font-bold text-green-400">----</div>
+                        </div>
+                        <div class="flex justify-between text-xs font-bold text-gray-600 mb-2">
+                            <span>Present: <span id="live-present" class="text-green-600">0</span></span>
+                            <span>Absent: <span id="live-absent" class="text-red-500">0</span></span>
+                        </div>
+                        <div id="live-list" class="flex-1 overflow-y-auto border rounded bg-gray-50 p-2"></div>
+                        <button onclick="attendanceApp.endSession()" class="w-full mt-2 bg-red-100 text-red-700 py-2 rounded text-sm font-bold">End Session</button>
+                    </div>
+                </div>
+
+                <div id="view-hist" class="hidden-section">
+                    <div class="grid grid-cols-2 gap-2 mb-4">
+                        <div class="bg-indigo-50 p-3 rounded text-center border border-indigo-100"><div id="stat-sessions" class="text-xl font-bold text-indigo-700">0</div><div class="text-[10px] uppercase">Sessions</div></div>
+                        <div class="bg-emerald-50 p-3 rounded text-center border border-emerald-100"><div id="stat-avg" class="text-xl font-bold text-emerald-700">0%</div><div class="text-[10px] uppercase">Avg Attendance</div></div>
+                    </div>
+                    <div id="history-list"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Student Dashboard (RESTORED SECTION) -->
+        <div id="student-dashboard" class="hidden-section flex-1 p-6 flex flex-col justify-center">
+            <button onclick="location.reload()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+            <div id="student-form" class="space-y-3">
+                <h2 class="text-lg font-bold text-gray-700 mb-4">Mark Attendance</h2>
+                <input type="text" id="s-name" placeholder="Full Name" class="w-full border p-3 rounded">
+                <input type="text" id="s-roll" placeholder="Roll Number" class="w-full border p-3 rounded">
+                <input type="number" id="s-pin" placeholder="PIN Code" class="w-full border p-3 rounded font-mono text-lg tracking-widest">
+                <div class="text-xs text-yellow-600 bg-yellow-50 p-2 rounded"><i class="fa-solid fa-location-dot mr-1"></i> Location Check Active</div>
+                <button id="btn-submit" onclick="attendanceApp.submitAttendance()" class="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold shadow">Mark Present</button>
+            </div>
+            <div id="student-success" class="hidden-section text-center">
+                <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4"><i class="fa-solid fa-check text-2xl text-green-600"></i></div>
+                <h3 class="text-xl font-bold text-gray-800">Done!</h3>
+                <p class="text-gray-500 text-sm">Attendance recorded.</p>
+            </div>
+        </div>
+
+        <!-- Detail Modal -->
+        <div id="history-detail" class="hidden-section absolute inset-0 bg-white z-40 flex flex-col animate-fade-in">
+            <div class="p-4 border-b bg-gray-50">
+                <div class="flex justify-between items-center mb-2">
+                    <h3 id="detail-title" class="font-bold text-gray-800">Subject</h3>
+                    <button onclick="attendanceApp.closeDetail()" class="text-gray-500"><i class="fa-solid fa-xmark text-xl"></i></button>
+                </div>
+                <div class="text-xs text-gray-500 font-mono">Class ID: <span id="detail-id" class="text-indigo-600 font-bold">--</span></div>
+            </div>
+            <div class="flex border-b text-xs text-center">
+                <div id="tab-det-present" onclick="attendanceApp.switchDetailTab('present')" class="flex-1 py-2 font-bold border-b-2 border-green-600 text-green-600">Present</div>
+                <div id="tab-det-absent" onclick="attendanceApp.switchDetailTab('absent')" class="flex-1 py-2 text-gray-500">Absent</div>
+            </div>
+            <div id="detail-list" class="flex-1 overflow-y-auto p-2"></div>
+        </div>
+
+    </div>
+</body>
+</html>
