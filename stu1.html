@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- FingerprintJS (Kept as secondary layer) -->
+    <!-- FingerprintJS -->
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
     <script type="module">
@@ -42,12 +42,12 @@
             rollingTimer: null, currentSessionId: null, 
             historyStudents: [], historyFaculty: [],
             fpPromise: null, isSettingPassword: false, currentDetail: null,
-            deviceToken: null, // The 16-digit unique ID
+            deviceToken: null, 
 
             init: async function() {
                 try { this.fpPromise = FingerprintJS.load(); } catch(e) {}
 
-                // 1. Generate or Load Device Token
+                // 1. Generate or Load Device Token (Persistent ID for THIS browser profile)
                 this.deviceToken = localStorage.getItem('sa_device_token');
                 if (!this.deviceToken) {
                     this.deviceToken = this.generateToken(16);
@@ -66,12 +66,49 @@
                 this.loadSavedMasterList();
             },
 
+            // --- BROWSER & HARDWARE DETECTION ---
+            getBrowserName: function() {
+                const ua = navigator.userAgent;
+                if (ua.includes("Edg")) return "Edge";
+                if (ua.includes("OPR") || ua.includes("Opera")) return "Opera";
+                if (ua.includes("Chrome") || ua.includes("CriOS")) return "Chrome";
+                if (ua.includes("Firefox")) return "Firefox";
+                if (ua.includes("Safari") && !ua.includes("Chrome")) return "Safari";
+                return "Other";
+            },
+
+            // Browser-Agnostic Hardware Signature (Matches across Chrome/Brave/Firefox on same phone)
+            getHardwareSignature: function() {
+                // Resolution + ColorDepth + CPU Cores + OS Platform
+                // We exclude GPU here because different browsers format the GPU string differently
+                return `${screen.width}x${screen.height}_${screen.colorDepth}_${navigator.hardwareConcurrency || 1}_${navigator.platform}`.replace(/\s/g, ''); 
+            },
+
+            getPublicIP: async function() {
+                try {
+                    const req = await fetch('https://api.ipify.org?format=json');
+                    const res = await req.json();
+                    return res.ip;
+                } catch(e) {
+                    try { const req2 = await fetch('https://wttr.in/?format=%i'); const text = await req2.text(); return text.trim(); } 
+                    catch(e2) { return "unknown_ip"; }
+                }
+            },
+
             // --- UTILS ---
             generateToken: function(length) {
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
                 let result = '';
                 for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
                 return result;
+            },
+
+            getDist: function(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; 
+                const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             },
 
             showSection: function(id) {
@@ -87,13 +124,11 @@
                     el.classList.remove('text-indigo-700', 'border-b-2', 'border-indigo-700', 'font-bold');
                     el.classList.add('text-gray-500');
                 });
-                
                 const activeBtn = document.getElementById('btn-tab-' + tabName.split('-')[0]); 
                 if(activeBtn) {
                     activeBtn.classList.add('text-indigo-700', 'border-b-2', 'border-indigo-700', 'font-bold');
                     activeBtn.classList.remove('text-gray-500');
                 }
-
                 if(tabName === 'report') this.loadAllReports();
                 if(tabName === 'device') this.loadDeviceRequests();
             },
@@ -125,12 +160,12 @@
                 this.switchDashTab('action');
                 this.checkFacultyStatus();
             },
-            enterStudentMode: async function() { 
+            
+            enterStudentMode: async function() {
                 this.role = 'student'; 
                 this.showSection('student-dash'); 
                 document.getElementById('my-device-id').innerText = this.deviceToken;
                 
-                // Check Registration Status
                 const savedRoll = localStorage.getItem('sa_student_roll');
                 if(savedRoll) {
                     document.getElementById('s-roll').value = savedRoll;
@@ -138,9 +173,8 @@
                 }
             },
 
-            // --- DEVICE REGISTRATION LOGIC ---
+            // --- DEVICE REGISTRATION (WITH BROWSER LOCK) ---
             checkRegistrationStatus: async function(roll) {
-                // Check if this Roll No is registered to this Device Token
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll);
                 const snap = await getDoc(docRef);
 
@@ -150,21 +184,31 @@
 
                 if (snap.exists()) {
                     const data = snap.data();
+                    
+                    // 1. CHECK DEVICE TOKEN (Matches if on same browser profile)
                     if (data.deviceToken === this.deviceToken) {
-                        // Correct Device
                         statusEl.innerHTML = `<span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200"><i class="fa-solid fa-check-circle mr-1"></i> Device Verified</span>`;
                         btnMark.classList.remove('hidden');
                         btnReg.classList.add('hidden');
-                        document.getElementById('s-name').value = data.name; // Auto-fill name
+                        document.getElementById('s-name').value = data.name; 
                         document.getElementById('s-roll').readOnly = true;
-                    } else {
-                        // Registered to ANOTHER device
-                        statusEl.innerHTML = `<span class="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200"><i class="fa-solid fa-ban mr-1"></i> Roll No registered to another phone!</span>`;
+                    } 
+                    // 2. CHECK BROWSER LOCK (If tokens don't match, check user agent)
+                    else {
+                        const currentUA = navigator.userAgent;
+                        // Simple check: If registered on Chrome but currently on Brave/Firefox, tokens won't match.
+                        // We alert the user they are on the wrong browser.
+                        
+                        let msg = "Registered to another device!";
+                        if(data.browserName && data.browserName !== this.getBrowserName()) {
+                            msg = `Wrong Browser! Registered on <b>${data.browserName}</b>.`;
+                        }
+
+                        statusEl.innerHTML = `<span class="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200"><i class="fa-solid fa-ban mr-1"></i> ${msg}</span>`;
                         btnMark.classList.add('hidden');
                         btnReg.classList.add('hidden');
                     }
                 } else {
-                    // Not Registered yet - Check Pending Requests
                     const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll);
                     const reqSnap = await getDoc(reqRef);
                     if(reqSnap.exists()) {
@@ -184,8 +228,13 @@
                 if(!name || !roll) { alert("Enter Name & Roll No"); return; }
 
                 try {
+                    // Send Browser Info along with Request
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll), {
-                        name, roll, deviceToken: this.deviceToken, timestamp: Date.now()
+                        name, roll, 
+                        deviceToken: this.deviceToken, 
+                        userAgent: navigator.userAgent,
+                        browserName: this.getBrowserName(),
+                        timestamp: Date.now()
                     });
                     localStorage.setItem('sa_student_roll', roll);
                     alert("Request Sent! Ask your faculty to approve.");
@@ -212,24 +261,26 @@
                         <div>
                             <div class="font-bold text-gray-800">${r.name}</div>
                             <div class="text-xs text-gray-500">Roll: ${r.roll}</div>
-                            <div class="text-[10px] text-gray-400 font-mono">ID: ${r.deviceToken.substring(0,8)}...</div>
+                            <div class="text-[10px] text-indigo-500 font-bold bg-indigo-50 px-1 rounded inline-block mt-1">${r.browserName}</div>
                         </div>
                         <div class="flex gap-2">
                             <button class="bg-red-50 text-red-600 px-3 py-1 rounded text-xs border border-red-200 hover:bg-red-100" onclick="smartAtt.rejectDevice('${r.roll}')">Reject</button>
-                            <button class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 shadow" onclick="smartAtt.approveDevice('${r.roll}', '${r.name}', '${r.deviceToken}')">Approve</button>
+                            <button class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 shadow" onclick="smartAtt.approveDevice('${r.roll}', '${r.name}', '${r.deviceToken}', '${r.browserName}')">Approve</button>
                         </div>
                     `;
                     list.appendChild(el);
                 });
             },
 
-            approveDevice: async function(roll, name, token) {
-                if(!confirm(`Approve device for ${name}?`)) return;
-                // 1. Add to Registered Devices
+            approveDevice: async function(roll, name, token, browser) {
+                if(!confirm(`Approve ${name} on ${browser}?`)) return;
                 await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll), {
-                    roll, name, deviceToken: token, approvedAt: Date.now(), approvedBy: this.user.uid
+                    roll, name, 
+                    deviceToken: token, 
+                    browserName: browser,
+                    approvedAt: Date.now(), 
+                    approvedBy: this.user.uid
                 });
-                // 2. Remove from Requests
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll));
                 this.loadDeviceRequests();
             },
@@ -351,20 +402,47 @@
                         if(!targetDoc) { alert("Invalid/Expired Code"); this.resetBtn(); return; }
                         const data = targetDoc.data();
 
+                        // 1. GEO FENCE
                         if (data.lat && data.lng) {
                             const dist = this.getDist(data.lat, data.lng, pos.coords.latitude, pos.coords.longitude);
                             if (dist > 50) { alert(`Too far (${Math.round(dist)}m). Move closer.`); this.resetBtn(); return; }
                         }
 
-                        // Check Duplicate Roll in Session
+                        // 2. CROSS-BROWSER PROXY CHECK (IP + HARDWARE)
+                        // If another student (different Roll) has used the same IP + Hardware signature in this session, BLOCK IT.
+                        const ip = await this.getPublicIP();
+                        const hardwareSig = this.getHardwareSignature();
+                        
+                        // Look for a conflicting entry: Same IP/Hardware BUT Different Roll No
+                        if (ip !== 'unknown_ip') {
+                            const conflict = data.attendees.find(a => 
+                                a.ip === ip && 
+                                a.hardwareSig === hardwareSig && 
+                                a.roll !== roll
+                            );
+                            
+                            if (conflict) {
+                                alert(`⚠️ SECURITY ALERT ⚠️\n\nThis physical device was ALREADY used by: ${conflict.name} (${conflict.roll}).\n\nSwitching browsers does not hide your device! Attendance Rejected.`);
+                                this.resetBtn(); return;
+                            }
+                        }
+
+                        // 3. CHECK DUPLICATE ROLL
                         if(data.attendees.some(a => a.roll === roll)) { alert("Your Roll No is already present."); this.resetBtn(); return; }
 
                         await updateDoc(targetDoc.ref, {
-                            attendees: arrayUnion({ uid: this.user.uid, deviceToken: this.deviceToken, name, roll, time: new Date().toLocaleTimeString() })
+                            attendees: arrayUnion({ 
+                                uid: this.user.uid, 
+                                deviceToken: this.deviceToken, 
+                                ip: ip, 
+                                hardwareSig: hardwareSig,
+                                name, roll, 
+                                time: new Date().toLocaleTimeString() 
+                            })
                         });
                         document.getElementById('student-input-area').classList.add('hidden');
                         document.getElementById('student-success').classList.remove('hidden');
-                    } catch(e) { console.error(e); alert("System Error"); this.resetBtn(); }
+                    } catch(e) { console.error(e); alert("System Error: " + e.message); this.resetBtn(); }
                 }, (err) => { alert("GPS Error"); this.resetBtn(); }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
             },
             resetBtn: function() { const btn = document.getElementById('btn-mark'); btn.disabled=false; btn.innerHTML = 'Mark Attendance'; },
