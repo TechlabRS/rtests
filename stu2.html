@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Attendance Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- FingerprintJS -->
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, onSnapshot, collection, getDocs, query, where } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
+
+        // --- CONFIGURATION ---
+        const fallbackConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+  measurementId: "G-9PZZM5LFKX"
+        };
+
+        const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : fallbackConfig;
+        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app';
+
+        let app, auth, db;
+        try {
+            app = initializeApp(firebaseConfig);
+            auth = getAuth(app);
+            db = getFirestore(app);
+        } catch (e) { console.error("Firebase Init Error:", e); }
+
+        window.smartAtt = {
+            db, auth, appId,
+            user: null, role: null,
+            rollingTimer: null, currentSessionId: null, history: [],
+            fpPromise: null, isSettingPassword: false, currentDetail: null,
+
+            init: async function() {
+                try { this.fpPromise = FingerprintJS.load(); } catch(e) { console.warn(e); }
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        this.user = user;
+                        document.getElementById('loading').classList.add('hidden');
+                        document.getElementById('main-menu').classList.remove('hidden');
+                    } else {
+                        signInAnonymously(auth).catch(e => alert("Auth Failed. Check Config."));
+                    }
+                });
+                this.loadSavedMasterList();
+            },
+
+            // --- DEEP DEVICE INSPECTION ---
+            getGPUModel: function() {
+                try {
+                    const canvas = document.createElement('canvas');
+                    const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    return gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                } catch(e) { return "Generic GPU"; }
+            },
+
+            // The Ultimate Hardware Signature (Survives Incognito/Browser Switch)
+            getHardwareSignature: function() {
+                const screen = `${window.screen.width}x${window.screen.height}`;
+                const gpu = this.getGPUModel();
+                const cores = navigator.hardwareConcurrency || 1;
+                const platform = navigator.platform;
+                // e.g., "390x844_Apple GPU_4_iPhone"
+                return `${screen}_${gpu}_${cores}_${platform}`.replace(/\s/g, ''); 
+            },
+
+            getNetworkType: function() {
+                const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+                return conn ? (conn.effectiveType + (conn.type ? ` (${conn.type})` : '')) : 'Unknown';
+            },
+
+            getDeviceDetails: function() {
+                const ua = navigator.userAgent;
+                let os = "Unknown";
+                if (ua.indexOf("Android") > -1) os = "Android";
+                else if (ua.indexOf("iPhone") > -1) os = "iPhone";
+                else if (ua.indexOf("Windows") > -1) os = "Windows";
+                else if (ua.indexOf("Mac") > -1) os = "Mac";
+
+                return {
+                    os: os,
+                    gpu: this.getGPUModel(),
+                    res: `${window.screen.width}x${window.screen.height}`,
+                    net: this.getNetworkType()
+                };
+            },
+
+            getPublicIP: async function() {
+                try {
+                    // Try robust JSON source
+                    const req = await fetch('https://api.ipify.org?format=json');
+                    const res = await req.json();
+                    return res.ip;
+                } catch(e) {
+                    try {
+                        // Fallback text source (CORS friendly)
+                        const req2 = await fetch('https://wttr.in/?format=%i'); 
+                        const text = await req2.text();
+                        return text.trim();
+                    } catch(e2) { return "unknown_ip"; }
+                }
+            },
+
+            getDist: function(lat1, lon1, lat2, lon2) {
+                const R = 6371e3; 
+                const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
+                const Δφ = (lat2-lat1) * Math.PI/180, Δλ = (lon2-lon1) * Math.PI/180;
+                const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
+                return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            },
+
+            // --- NAVIGATION ---
+            showSection: function(id) {
+                document.querySelectorAll('.app-section').forEach(el => el.classList.add('hidden'));
+                document.getElementById(id).classList.remove('hidden');
+            },
+            switchDashTab: function(tab) {
+                const act = document.getElementById('tab-action-view'), rep = document.getElementById('tab-report-view');
+                const bAct = document.getElementById('btn-tab-action'), bRep = document.getElementById('btn-tab-report');
+                if (tab === 'actions') {
+                    act.classList.remove('hidden'); rep.classList.add('hidden');
+                    bAct.classList.replace('text-gray-500', 'text-indigo-700'); bAct.classList.add('border-b-2', 'border-indigo-700');
+                    bRep.classList.replace('text-indigo-700', 'text-gray-500'); bRep.classList.remove('border-b-2', 'border-indigo-700');
+                } else {
+                    rep.classList.remove('hidden'); act.classList.add('hidden');
+                    bRep.classList.replace('text-gray-500', 'text-indigo-700'); bRep.classList.add('border-b-2', 'border-indigo-700');
+                    bAct.classList.replace('text-indigo-700', 'text-gray-500'); bAct.classList.remove('border-b-2', 'border-indigo-700');
+                    this.loadHistory();
+                }
+            },
+
+            sha256: async function(msg) {
+                const data = new TextEncoder().encode(msg);
+                const buf = await crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            },
+
+            // --- AUTH ---
+            showLoginModal: function() {
+                const storedHash = localStorage.getItem('sa_faculty_hash');
+                document.getElementById('login-title').innerText = !storedHash ? "Set Admin Password" : "Faculty Login";
+                document.getElementById('login-btn').innerText = !storedHash ? "Set & Login" : "Login";
+                this.isSettingPassword = !storedHash;
+                document.getElementById('login-modal').classList.remove('hidden');
+            },
+            closeLoginModal: function() { document.getElementById('login-modal').classList.add('hidden'); },
+            verifyFaculty: async function() {
+                const pwd = document.getElementById('admin-pass').value; if(!pwd) return;
+                const hash = await this.sha256(pwd);
+                if (this.isSettingPassword) { localStorage.setItem('sa_faculty_hash', hash); this.completeLogin(); }
+                else if(hash === localStorage.getItem('sa_faculty_hash')) { this.completeLogin(); }
+                else { alert("Wrong Password"); }
+            },
+            completeLogin: function() {
+                this.closeLoginModal(); this.role = 'faculty'; this.showSection('faculty-dash'); this.switchDashTab('actions');
+            },
+            enterStudentMode: async function() { 
+                this.role = 'student'; 
+                this.showSection('student-dash'); 
+                
+                // Live Diagnostics
+                document.getElementById('diag-loading').classList.remove('hidden');
+                
+                const details = this.getDeviceDetails();
+                const ip = await this.getPublicIP();
+                
+                document.getElementById('diag-model').innerText = `${details.os} (${details.res})`;
+                document.getElementById('diag-gpu').innerText = details.gpu.substring(0, 20) + "...";
+                document.getElementById('diag-ip').innerText = ip;
+                document.getElementById('diag-loading').classList.add('hidden');
+                document.getElementById('diag-data').classList.remove('hidden');
+            },
+
+            // --- FACULTY ---
+            markFacultyAttendance: async function() {
+                const name = document.getElementById('fac-name').value; if(!name) { alert("Enter Name"); return; }
+                const today = new Date().toLocaleDateString().replace(/\//g, '-');
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'faculty_logs', today + "_" + this.user.uid), {
+                    uid: this.user.uid, name, timestamp: Date.now(), date: new Date().toLocaleDateString(), status: 'Present'
+                });
+                alert("Marked Present");
+            },
+            loadSavedMasterList: function() {
+                const saved = localStorage.getItem('sa_master_list'); if(saved) document.getElementById('master-list').value = saved;
+            },
+            startClass: async function() {
+                const subject = document.getElementById('c-subject').value;
+                const section = document.getElementById('c-section').value;
+                const hours = document.getElementById('c-hours').value;
+                const masterStr = document.getElementById('master-list').value;
+                if(!subject || !section) { alert("Subject & Section required"); return; }
+                
+                if(!navigator.geolocation) { alert("GPS Required"); return; }
+                const btn = document.querySelector('#btn-launch');
+                btn.disabled = true; btn.innerText = "Acquiring GPS...";
+
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    localStorage.setItem('sa_master_list', masterStr);
+                    const masterList = masterStr.split(',').map(s=>s.trim()).filter(s=>s);
+                    const sessionId = Date.now().toString();
+                    this.currentSessionId = sessionId;
+                    const initialCode = Math.floor(1000 + Math.random() * 9000);
+
+                    const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', sessionId);
+                    await setDoc(sessionRef, {
+                        teacher_uid: this.user.uid,
+                        subject, section, hours, master_list: masterList,
+                        created_at: Date.now(), date: new Date().toLocaleDateString(),
+                        lat: pos.coords.latitude, lng: pos.coords.longitude,
+                        status: 'active', current_code: initialCode, attendees: []
+                    });
+
+                    this.showSection('live-session');
+                    document.getElementById('live-subject').innerText = `${subject} (${section})`;
+                    this.updateRollingCode(initialCode); 
+                    
+                    this.rollingTimer = setInterval(async () => {
+                        const newCode = Math.floor(1000 + Math.random() * 9000);
+                        this.updateRollingCode(newCode);
+                        await updateDoc(sessionRef, { current_code: newCode });
+                    }, 15000); 
+
+                    onSnapshot(sessionRef, (snap) => {
+                        if(snap.exists()) { this.renderLiveStats(snap.data().attendees || [], snap.data().master_list || []); }
+                    });
+                    btn.disabled = false; btn.innerText = "Launch";
+                }, (err) => { alert("GPS Failed: "+err.message); btn.disabled=false; btn.innerText="Launch"; }, {enableHighAccuracy:true, timeout: 10000, maximumAge: 0});
+            },
+            updateRollingCode: function(code) {
+                const el = document.getElementById('rolling-pin'); el.innerText = code;
+                const bar = document.getElementById('progress-bar');
+                bar.style.transition = 'none'; bar.style.width = '100%';
+                setTimeout(() => { bar.style.transition = 'width 15s linear'; bar.style.width = '0%'; }, 100);
+            },
+            renderLiveStats: function(attendees, master) {
+                const total = master.length > 0 ? master.length : attendees.length;
+                document.getElementById('live-count-present').innerText = attendees.length;
+                document.getElementById('live-count-absent').innerText = Math.max(0, total - attendees.length);
+                document.getElementById('live-list').innerHTML = attendees.reverse().map(s => 
+                    `<div class="flex justify-between p-2 border-b text-sm"><span>${s.name} (${s.roll})</span><span class="text-xs text-gray-500">${s.time}</span></div>`
+                ).join('');
+            },
+            endClass: async function() {
+                if(!confirm("End Class?")) return;
+                clearInterval(this.rollingTimer);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sessions', this.currentSessionId), { status: 'ended', current_code: null });
+                this.showSection('faculty-dash'); this.switchDashTab('actions');
+            },
+
+            // --- STUDENT LOGIC ---
+            verifyAndMark: async function() {
+                const btn = document.getElementById('btn-mark');
+                const pin = parseInt(document.getElementById('s-pin').value);
+                const name = document.getElementById('s-name').value;
+                const roll = document.getElementById('s-roll').value;
+                if(!pin || !name || !roll) { alert("Enter details"); return; }
+                if(!navigator.geolocation) { alert("GPS Required"); return; }
+
+                btn.disabled = true; btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Checking...';
+
+                navigator.geolocation.getCurrentPosition(async (pos) => {
+                    try {
+                        let visitorId = "no_fp";
+                        if(this.fpPromise) { try { const fp = await this.fpPromise; const res = await fp.get(); visitorId = res.visitorId; } catch(e){} }
+
+                        const ip = await this.getPublicIP();
+                        const hardwareSig = this.getHardwareSignature(); // Now includes GPU
+                        const details = this.getDeviceDetails();
+
+                        const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'sessions'), where("status", "==", "active"));
+                        const snaps = await getDocs(q);
+                        let targetDoc = null;
+                        snaps.forEach(doc => { if(doc.data().current_code === pin) targetDoc = doc; });
+
+                        if(!targetDoc) { alert("Invalid/Expired Code"); this.resetBtn(); return; }
+                        const data = targetDoc.data();
+
+                        // 1. GEO FENCE
+                        if (data.lat && data.lng) {
+                            const dist = this.getDist(data.lat, data.lng, pos.coords.latitude, pos.coords.longitude);
+                            if (dist > 50) { alert(`Too far (${Math.round(dist)}m). Move closer.`); this.resetBtn(); return; }
+                        }
+
+                        // 2. DEVICE CHECK (IP + HARDWARE)
+                        if (ip !== 'unknown_ip') {
+                            const match = data.attendees.find(a => a.ip === ip && a.hardwareSig === hardwareSig);
+                            if (match) {
+                                alert(`⚠️ SECURITY ALERT ⚠️\n\nThis device is already used by: ${match.name}\n\n(Matched IP + GPU + Screen)`);
+                                this.resetBtn(); return;
+                            }
+                        }
+
+                        // 3. BROWSER CHECK
+                        if (visitorId !== 'no_fp' && data.attendees.some(a => a.visitorId === visitorId)) {
+                            alert("⚠️ REJECTED: Browser profile reuse detected."); this.resetBtn(); return;
+                        }
+
+                        // 4. UID CHECK
+                        if(data.attendees.some(a => a.uid === this.user.uid)) { alert("Already marked."); this.resetBtn(); return; }
+
+                        await updateDoc(targetDoc.ref, {
+                            attendees: arrayUnion({ 
+                                uid: this.user.uid, visitorId, ip, 
+                                hardwareSig, 
+                                deviceDetails: details,
+                                name, roll, time: new Date().toLocaleTimeString() 
+                            })
+                        });
+                        
+                        document.getElementById('student-input-area').classList.add('hidden');
+                        document.getElementById('student-success').classList.remove('hidden');
+
+                    } catch(e) { console.error(e); alert("System Error: "+e.message); this.resetBtn(); }
+                }, (err) => { alert("GPS Error: "+err.message); this.resetBtn(); }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
+            },
+            resetBtn: function() { const btn = document.getElementById('btn-mark'); btn.disabled=false; btn.innerHTML = 'Mark Attendance'; },
+
+            // --- REPORTS ---
+            loadHistory: async function() {
+                document.getElementById('history-list').innerHTML = '<div class="text-center py-4 text-gray-400">Loading...</div>';
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'sessions'), where("teacher_uid", "==", this.user.uid));
+                const snaps = await getDocs(q);
+                this.history = [];
+                snaps.forEach(d => { let r = d.data(); r.id = d.id; this.history.push(r); });
+                this.history.sort((a,b) => b.created_at - a.created_at);
+                this.renderHistory();
+            },
+            renderHistory: function() {
+                const list = document.getElementById('history-list');
+                if(this.history.length === 0) { list.innerHTML = '<div class="text-center py-4 text-gray-400">No sessions.</div>'; return; }
+                list.innerHTML = this.history.map((h, i) => 
+                    `<div onclick="smartAtt.openDetails(${i})" class="bg-gray-50 p-3 rounded mb-2 border cursor-pointer hover:bg-gray-100 flex justify-between">
+                        <div><div class="font-bold text-indigo-700">${h.subject}</div><div class="text-xs text-gray-500">${h.section} | ${h.date}</div></div>
+                        <div class="text-right"><span class="font-bold text-lg">${h.attendees.length}</span><div class="text-[10px]">Students</div></div>
+                    </div>`
+                ).join('');
+            },
+            openDetails: function(idx) {
+                this.currentDetail = this.history[idx];
+                document.getElementById('det-title').innerText = `${this.currentDetail.subject} (${this.currentDetail.section})`;
+                this.switchDetailTab('present');
+                document.getElementById('detail-modal').classList.remove('hidden');
+            },
+            switchDetailTab: function(tab) {
+                const isPresent = tab === 'present';
+                document.getElementById('tab-p').className = isPresent ? 'flex-1 py-2 font-bold text-green-600 border-b-2 border-green-600' : 'flex-1 py-2 text-gray-400';
+                document.getElementById('tab-a').className = !isPresent ? 'flex-1 py-2 font-bold text-red-600 border-b-2 border-red-600' : 'flex-1 py-2 text-gray-400';
+                const list = document.getElementById('det-list');
+                const session = this.currentDetail;
+                if(isPresent) {
+                    list.innerHTML = session.attendees.map(s => `<div class="flex justify-between p-2 border-b text-sm items-center"><span>${s.name} (${s.roll})</span><button onclick="smartAtt.manualRemove('${s.roll}')" class="text-red-400"><i class="fa-solid fa-trash"></i></button></div>`).join('');
+                } else {
+                    const master = session.master_list || [];
+                    const present = session.attendees.map(a => a.roll.toLowerCase().trim());
+                    const absent = master.filter(m => !present.includes(m.toLowerCase().trim()));
+                    list.innerHTML = master.length === 0 ? '<div class="text-center text-xs text-gray-400">No Master List</div>' : absent.map(roll => `<div class="flex justify-between p-2 border-b text-sm items-center text-red-600"><span>${roll}</span><button onclick="smartAtt.manualAdd('${roll}')" class="text-green-600 bg-green-50 px-2 rounded text-xs border">Mark Present</button></div>`).join('');
+                }
+            },
+            manualAdd: async function(roll) {
+                const name = prompt("Name:"); if(!name) return;
+                const entry = { name, roll, uid:'manual', visitorId:'manual', time:'Manual' };
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sessions', this.currentDetail.id), { attendees: arrayUnion(entry) });
+                this.currentDetail.attendees.push(entry); this.switchDetailTab('absent');
+            },
+            manualRemove: async function(roll) {
+                if(!confirm("Remove?")) return;
+                const newAtt = this.currentDetail.attendees.filter(s => s.roll !== roll);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'sessions', this.currentDetail.id), { attendees: newAtt });
+                this.currentDetail.attendees = newAtt; this.switchDetailTab('present');
+            },
+            exportData: function() {
+                const sec = document.getElementById('filter-section').value.trim().toLowerCase();
+                const mo = document.getElementById('filter-month').value;
+                let csv = "Date,Subject,Section,Hours,Name,Roll,Time,IP,OS,GPU,Resolution\n";
+                this.history.forEach(h => {
+                    if (sec && h.section.toLowerCase() !== sec) return;
+                    if (mo && !h.date.includes(mo.split('-')[1])) return;
+                    h.attendees.forEach(s => {
+                        const d = s.deviceDetails || {};
+                        csv += `${h.date},${h.subject},${h.section},"${h.hours}",${s.name},${s.roll},${s.time},${s.ip},${d.os||''},"${d.gpu||''}",${d.res||''}\n`;
+                    });
+                });
+                const link = document.createElement("a"); link.href = encodeURI("data:text/csv;charset=utf-8,"+csv); link.download="report.csv"; link.click();
+            }
+        };
+        window.smartAtt.init();
+    </script>
+    <style> .hidden { display: none !important; } .fade-in { animation: fadeIn 0.3s ease-in; } @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } } </style>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4 font-sans text-slate-800">
+    <div id="loading" class="text-indigo-600 font-bold animate-pulse text-xl">Loading...</div>
+    <div id="app-container" class="w-full max-w-md bg-white rounded-xl shadow-2xl overflow-hidden min-h-[600px] flex flex-col relative">
+        <div class="bg-indigo-700 p-5 text-white shadow-md z-10">
+            <h1 class="text-xl font-bold tracking-wide"><i class="fa-solid fa-shield-halved mr-2"></i>SmartAttend Pro</h1>
+            <p class="text-indigo-200 text-xs mt-1">Rolling Code + GPS + Fingerprint</p>
+        </div>
+        <div id="main-menu" class="app-section hidden flex-1 p-8 flex flex-col justify-center gap-4 fade-in">
+            <button onclick="smartAtt.showLoginModal()" class="bg-white border-2 border-indigo-600 text-indigo-700 p-5 rounded-xl font-bold hover:bg-indigo-50 shadow-sm flex items-center justify-center gap-3"><i class="fa-solid fa-chalkboard-user text-xl"></i> Faculty Portal</button>
+            <button onclick="smartAtt.enterStudentMode()" class="bg-indigo-600 text-white p-5 rounded-xl font-bold hover:bg-indigo-800 shadow-lg flex items-center justify-center gap-3"><i class="fa-solid fa-user-check text-xl"></i> Student Check-In</button>
+        </div>
+        <div id="login-modal" class="hidden absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div class="bg-white p-6 rounded-xl w-72 shadow-2xl">
+                <h3 id="login-title" class="font-bold mb-4">Login</h3>
+                <input type="password" id="admin-pass" placeholder="Password" class="w-full border p-2 rounded mb-4">
+                <div class="flex gap-2"><button onclick="smartAtt.closeLoginModal()" class="flex-1 bg-gray-200 py-2 rounded">Cancel</button><button id="login-btn" onclick="smartAtt.verifyFaculty()" class="flex-1 bg-indigo-600 text-white py-2 rounded">Login</button></div>
+            </div>
+        </div>
+        <div id="faculty-dash" class="app-section hidden flex-1 flex flex-col fade-in">
+            <div class="flex border-b text-sm font-semibold bg-gray-50">
+                <button id="btn-tab-action" onclick="smartAtt.switchDashTab('actions')" class="flex-1 py-3 text-indigo-700 border-b-2 border-indigo-700">Actions</button>
+                <button id="btn-tab-report" onclick="smartAtt.switchDashTab('reports')" class="flex-1 py-3 text-gray-500">Reports</button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-5 relative">
+                <div id="tab-action-view">
+                    <div class="bg-blue-50 p-4 rounded-xl border border-blue-200 mb-6">
+                        <h3 class="text-blue-800 font-bold mb-2"><i class="fa-solid fa-id-badge mr-2"></i>Staff Check-In</h3>
+                        <div class="flex gap-2"><input type="text" id="fac-name" placeholder="Name" class="flex-1 p-2 rounded border text-sm"><button onclick="smartAtt.markFacultyAttendance()" class="bg-blue-600 text-white px-4 rounded text-sm font-bold shadow">Mark</button></div>
+                    </div>
+                    <div class="space-y-3">
+                        <h3 class="font-bold text-gray-700">Start Session</h3>
+                        <input type="text" id="c-subject" placeholder="Subject" class="w-full p-2 border rounded bg-gray-50">
+                        <div class="flex gap-2"><input type="text" id="c-section" placeholder="Section" class="w-1/2 p-2 border rounded bg-gray-50"><input type="text" id="c-hours" placeholder="Hrs" class="w-1/2 p-2 border rounded bg-gray-50"></div>
+                        <textarea id="master-list" placeholder="Paste Master List (comma sep)" class="w-full p-2 border rounded bg-gray-50 text-xs h-16"></textarea>
+                        <button id="btn-launch" onclick="smartAtt.startClass()" class="w-full bg-green-600 text-white py-3 rounded font-bold shadow-md">Launch with GPS</button>
+                    </div>
+                </div>
+                <div id="tab-report-view" class="hidden">
+                    <div class="flex gap-2 mb-4 bg-gray-50 p-2 rounded border"><input type="text" id="filter-section" placeholder="Sec" class="w-1/3 p-1 border text-xs"><input type="month" id="filter-month" class="w-1/3 p-1 border text-xs"><button onclick="smartAtt.exportData()" class="bg-gray-800 text-white px-2 rounded text-xs w-1/3">Export CSV</button></div>
+                    <div id="history-list" class="space-y-2"></div>
+                </div>
+                <div id="detail-modal" class="hidden absolute inset-0 bg-white z-20 flex flex-col">
+                    <div class="p-3 bg-gray-100 flex justify-between items-center"><h3 id="det-title" class="font-bold"></h3><button onclick="document.getElementById('detail-modal').classList.add('hidden')"><i class="fa-solid fa-xmark"></i></button></div>
+                    <div class="flex border-b text-xs text-center"><div id="tab-p" onclick="smartAtt.switchDetailTab('present')" class="flex-1 py-2 font-bold text-green-600 border-b-2 border-green-600">Present</div><div id="tab-a" onclick="smartAtt.switchDetailTab('absent')" class="flex-1 py-2 text-gray-400">Absent</div></div>
+                    <div id="det-list" class="flex-1 overflow-y-auto p-2"></div>
+                </div>
+            </div>
+            <button onclick="location.reload()" class="m-2 text-xs text-red-500 text-center">Logout</button>
+        </div>
+        <div id="live-session" class="app-section hidden flex-1 flex flex-col bg-slate-900 text-white fade-in">
+            <div class="p-6 text-center">
+                <div class="text-sm text-gray-400 uppercase tracking-widest mb-1">Rolling Code</div>
+                <div id="rolling-pin" class="text-6xl font-mono font-bold text-green-400 transition-opacity duration-200">----</div>
+                <div class="w-48 h-1 bg-gray-700 rounded-full mx-auto mt-4 overflow-hidden"><div id="progress-bar" class="h-full bg-green-500 w-full"></div></div>
+                <h2 id="live-subject" class="text-xl font-bold mt-6 text-white"></h2>
+            </div>
+            <div class="flex-1 bg-white text-slate-800 rounded-t-3xl p-6 flex flex-col">
+                <div class="flex justify-between text-sm mb-2 font-bold text-gray-500"><span>Present: <span id="live-count-present" class="text-green-600">0</span></span><span>Absent: <span id="live-count-absent" class="text-red-500">0</span></span></div>
+                <div id="live-list" class="flex-1 overflow-y-auto border-t pt-2"></div>
+                <button onclick="smartAtt.endClass()" class="w-full bg-red-100 text-red-600 py-3 rounded-xl font-bold mt-4">End Class</button>
+            </div>
+        </div>
+        <div id="student-dash" class="app-section hidden flex-1 p-6 flex flex-col justify-center gap-4 fade-in">
+            <button onclick="location.reload()" class="absolute top-4 right-4 text-gray-400"><i class="fa-solid fa-xmark"></i></button>
+            <div id="student-input-area" class="flex flex-col gap-4">
+                <div class="text-center mb-4"><i class="fa-solid fa-fingerprint text-3xl text-indigo-600 mb-2"></i><h2 class="text-xl font-bold">Secure Check-In</h2></div>
+                <input type="text" id="s-name" placeholder="Name" class="w-full p-3 border rounded-lg">
+                <input type="text" id="s-roll" placeholder="Roll No" class="w-full p-3 border rounded-lg">
+                <input type="number" id="s-pin" placeholder="Code" class="w-full p-4 border-2 border-indigo-200 rounded-lg text-center text-2xl font-mono">
+                <button id="btn-mark" onclick="smartAtt.verifyAndMark()" class="w-full bg-indigo-600 text-white py-4 rounded-xl font-bold shadow-lg">Mark Attendance</button>
+                <div class="bg-gray-100 p-2 rounded text-[10px] text-gray-500 font-mono mt-2">
+                    <p class="font-bold border-b mb-1">Diagnostics</p>
+                    <div id="diag-loading" class="animate-pulse">Analyzing Device...</div>
+                    <div id="diag-data" class="hidden">
+                        <div class="flex justify-between"><span>Model:</span> <span id="diag-model">--</span></div>
+                        <div class="flex justify-between"><span>GPU:</span> <span id="diag-gpu">--</span></div>
+                        <div class="flex justify-between"><span>IP:</span> <span id="diag-ip">--</span></div>
+                    </div>
+                </div>
+            </div>
+            <div id="student-success" class="hidden text-center"><i class="fa-solid fa-check text-4xl text-green-600 mb-4"></i><h3 class="text-xl font-bold">Marked!</h3></div>
+        </div>
+    </div>
+</body>
+</html>
