@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <!-- FingerprintJS -->
+    <!-- FingerprintJS (Kept as secondary layer) -->
     <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
 
     <script type="module">
@@ -47,7 +47,6 @@
             init: async function() {
                 try { this.fpPromise = FingerprintJS.load(); } catch(e) {}
 
-                // 1. Generate or Load Device Token (Persistent ID for THIS browser profile)
                 this.deviceToken = localStorage.getItem('sa_device_token');
                 if (!this.deviceToken) {
                     this.deviceToken = this.generateToken(16);
@@ -66,7 +65,14 @@
                 this.loadSavedMasterList();
             },
 
-            // --- BROWSER & HARDWARE DETECTION ---
+            // --- BROWSER DETECTION ---
+            isChrome: function() {
+                const ua = navigator.userAgent;
+                const isChrome = (ua.includes("Chrome") || ua.includes("CriOS"));
+                const isEdge = ua.includes("Edg");
+                const isOpera = ua.includes("OPR") || ua.includes("Opera");
+                return isChrome && !isEdge && !isOpera;
+            },
             getBrowserName: function() {
                 const ua = navigator.userAgent;
                 if (ua.includes("Edg")) return "Edge";
@@ -77,24 +83,6 @@
                 return "Other";
             },
 
-            // Browser-Agnostic Hardware Signature (Matches across Chrome/Brave/Firefox on same phone)
-            getHardwareSignature: function() {
-                // Resolution + ColorDepth + CPU Cores + OS Platform
-                // We exclude GPU here because different browsers format the GPU string differently
-                return `${screen.width}x${screen.height}_${screen.colorDepth}_${navigator.hardwareConcurrency || 1}_${navigator.platform}`.replace(/\s/g, ''); 
-            },
-
-            getPublicIP: async function() {
-                try {
-                    const req = await fetch('https://api.ipify.org?format=json');
-                    const res = await req.json();
-                    return res.ip;
-                } catch(e) {
-                    try { const req2 = await fetch('https://wttr.in/?format=%i'); const text = await req2.text(); return text.trim(); } 
-                    catch(e2) { return "unknown_ip"; }
-                }
-            },
-
             // --- UTILS ---
             generateToken: function(length) {
                 const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
@@ -102,7 +90,6 @@
                 for (let i = 0; i < length; i++) result += chars.charAt(Math.floor(Math.random() * chars.length));
                 return result;
             },
-
             getDist: function(lat1, lon1, lat2, lon2) {
                 const R = 6371e3; 
                 const φ1 = lat1 * Math.PI/180, φ2 = lat2 * Math.PI/180;
@@ -110,7 +97,19 @@
                 const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ/2) * Math.sin(Δλ/2);
                 return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
             },
+            sha256: async function(msg) {
+                const data = new TextEncoder().encode(msg);
+                const buf = await crypto.subtle.digest('SHA-256', data);
+                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            },
+            getHardwareSignature: function() {
+                return `${screen.width}x${screen.height}_${screen.colorDepth}_${navigator.hardwareConcurrency || 1}_${navigator.platform}`.replace(/\s/g, ''); 
+            },
+            getPublicIP: async function() {
+                try { const req = await fetch('https://api.ipify.org?format=json'); const res = await req.json(); return res.ip; } catch(e) { try { const req2 = await fetch('https://wttr.in/?format=%i'); const text = await req2.text(); return text.trim(); } catch(e2) { return "unknown_ip"; } }
+            },
 
+            // --- UI LOGIC ---
             showSection: function(id) {
                 document.querySelectorAll('.app-section').forEach(el => el.classList.add('hidden'));
                 document.getElementById(id).classList.remove('hidden');
@@ -124,19 +123,31 @@
                     el.classList.remove('text-indigo-700', 'border-b-2', 'border-indigo-700', 'font-bold');
                     el.classList.add('text-gray-500');
                 });
+                
                 const activeBtn = document.getElementById('btn-tab-' + tabName.split('-')[0]); 
                 if(activeBtn) {
                     activeBtn.classList.add('text-indigo-700', 'border-b-2', 'border-indigo-700', 'font-bold');
                     activeBtn.classList.remove('text-gray-500');
                 }
+
                 if(tabName === 'report') this.loadAllReports();
-                if(tabName === 'device') this.loadDeviceRequests();
+                if(tabName === 'device') this.switchDeviceSubTab('pending');
             },
 
-            sha256: async function(msg) {
-                const data = new TextEncoder().encode(msg);
-                const buf = await crypto.subtle.digest('SHA-256', data);
-                return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+            switchDeviceSubTab: function(subTab) {
+                if(subTab === 'pending') {
+                    document.getElementById('dev-pending-list').classList.remove('hidden');
+                    document.getElementById('dev-approved-list').classList.add('hidden');
+                    document.getElementById('btn-sub-pending').classList.add('bg-indigo-100', 'text-indigo-700');
+                    document.getElementById('btn-sub-approved').classList.remove('bg-indigo-100', 'text-indigo-700');
+                    this.loadDeviceRequests();
+                } else {
+                    document.getElementById('dev-pending-list').classList.add('hidden');
+                    document.getElementById('dev-approved-list').classList.remove('hidden');
+                    document.getElementById('btn-sub-approved').classList.add('bg-indigo-100', 'text-indigo-700');
+                    document.getElementById('btn-sub-pending').classList.remove('bg-indigo-100', 'text-indigo-700');
+                    this.loadApprovedDevices();
+                }
             },
 
             // --- AUTH ---
@@ -157,159 +168,148 @@
             },
             completeLogin: function() {
                 this.closeLoginModal(); this.role = 'faculty'; this.showSection('faculty-dash'); 
-                this.switchDashTab('action');
-                this.checkFacultyStatus();
+                this.switchDashTab('action'); this.checkFacultyStatus();
             },
-            
             enterStudentMode: async function() {
+                // if (!this.isChrome()) { document.getElementById('chrome-warning').classList.remove('hidden'); return; }
                 this.role = 'student'; 
                 this.showSection('student-dash'); 
                 document.getElementById('my-device-id').innerText = this.deviceToken;
-                
                 const savedRoll = localStorage.getItem('sa_student_roll');
-                if(savedRoll) {
-                    document.getElementById('s-roll').value = savedRoll;
-                    this.checkRegistrationStatus(savedRoll);
-                }
+                if(savedRoll) { document.getElementById('s-roll').value = savedRoll; this.checkRegistrationStatus(savedRoll); }
             },
 
-            // --- DEVICE REGISTRATION (WITH BROWSER LOCK) ---
+            // --- DEVICE REGISTRATION ---
             checkRegistrationStatus: async function(roll) {
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll);
                 const snap = await getDoc(docRef);
-
                 const statusEl = document.getElementById('reg-status');
                 const btnMark = document.getElementById('btn-mark');
                 const btnReg = document.getElementById('btn-register');
 
                 if (snap.exists()) {
                     const data = snap.data();
-                    
-                    // 1. CHECK DEVICE TOKEN (Matches if on same browser profile)
                     if (data.deviceToken === this.deviceToken) {
-                        statusEl.innerHTML = `<span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200"><i class="fa-solid fa-check-circle mr-1"></i> Device Verified</span>`;
-                        btnMark.classList.remove('hidden');
-                        btnReg.classList.add('hidden');
-                        document.getElementById('s-name').value = data.name; 
-                        document.getElementById('s-roll').readOnly = true;
-                    } 
-                    // 2. CHECK BROWSER LOCK (If tokens don't match, check user agent)
-                    else {
-                        const currentUA = navigator.userAgent;
-                        // Simple check: If registered on Chrome but currently on Brave/Firefox, tokens won't match.
-                        // We alert the user they are on the wrong browser.
-                        
-                        let msg = "Registered to another device!";
-                        if(data.browserName && data.browserName !== this.getBrowserName()) {
-                            msg = `Wrong Browser! Registered on <b>${data.browserName}</b>.`;
-                        }
-
-                        statusEl.innerHTML = `<span class="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200"><i class="fa-solid fa-ban mr-1"></i> ${msg}</span>`;
-                        btnMark.classList.add('hidden');
-                        btnReg.classList.add('hidden');
+                        statusEl.innerHTML = `<span class="text-green-600 bg-green-50 px-2 py-1 rounded border border-green-200"><i class="fa-solid fa-check-circle mr-1"></i> Verified</span>`;
+                        btnMark.classList.remove('hidden'); btnReg.classList.add('hidden');
+                        document.getElementById('s-name').value = data.name; document.getElementById('s-roll').readOnly = true;
+                    } else {
+                        statusEl.innerHTML = `<span class="text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200"><i class="fa-solid fa-ban mr-1"></i> Wrong Device!</span>`;
+                        btnMark.classList.add('hidden'); btnReg.classList.add('hidden');
                     }
                 } else {
                     const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll);
                     const reqSnap = await getDoc(reqRef);
                     if(reqSnap.exists()) {
-                         statusEl.innerHTML = `<span class="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200"><i class="fa-solid fa-clock mr-1"></i> Approval Pending...</span>`;
+                         statusEl.innerHTML = `<span class="text-orange-600 bg-orange-50 px-2 py-1 rounded border border-orange-200"><i class="fa-solid fa-clock mr-1"></i> Pending...</span>`;
                          btnReg.classList.add('hidden');
                     } else {
-                        statusEl.innerHTML = `<span class="text-gray-500 text-xs">Device not registered. Request access below.</span>`;
-                        btnReg.classList.remove('hidden');
-                        btnMark.classList.add('hidden');
+                        statusEl.innerHTML = `<span class="text-gray-500 text-xs">Not Registered</span>`;
+                        btnReg.classList.remove('hidden'); btnMark.classList.add('hidden');
                     }
                 }
             },
-
             requestRegistration: async function() {
                 const name = document.getElementById('s-name').value;
                 const roll = document.getElementById('s-roll').value;
                 if(!name || !roll) { alert("Enter Name & Roll No"); return; }
-
                 try {
-                    // Send Browser Info along with Request
                     await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll), {
-                        name, roll, 
-                        deviceToken: this.deviceToken, 
-                        userAgent: navigator.userAgent,
-                        browserName: this.getBrowserName(),
-                        timestamp: Date.now()
+                        name, roll, deviceToken: this.deviceToken, browserName: this.getBrowserName(), timestamp: Date.now()
                     });
                     localStorage.setItem('sa_student_roll', roll);
-                    alert("Request Sent! Ask your faculty to approve.");
-                    this.checkRegistrationStatus(roll);
+                    alert("Request Sent!"); this.checkRegistrationStatus(roll);
                 } catch(e) { console.error(e); alert("Error sending request."); }
             },
 
-            // --- FACULTY: DEVICE APPROVAL ---
+            // --- FACULTY: DEVICE MGMT ---
             loadDeviceRequests: async function() {
-                const list = document.getElementById('device-list');
+                const list = document.getElementById('dev-pending-list');
                 list.innerHTML = '<p class="text-center text-gray-400">Loading...</p>';
-                
                 const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'device_requests'), orderBy("timestamp", "desc"));
                 const snaps = await getDocs(q);
-                
                 if(snaps.empty) { list.innerHTML = '<p class="text-center text-gray-400 py-4">No pending requests.</p>'; return; }
-
                 list.innerHTML = '';
                 snaps.forEach(d => {
                     const r = d.data();
                     const el = document.createElement('div');
                     el.className = "bg-white p-3 rounded border flex justify-between items-center mb-2 shadow-sm";
-                    el.innerHTML = `
-                        <div>
-                            <div class="font-bold text-gray-800">${r.name}</div>
-                            <div class="text-xs text-gray-500">Roll: ${r.roll}</div>
-                            <div class="text-[10px] text-indigo-500 font-bold bg-indigo-50 px-1 rounded inline-block mt-1">${r.browserName}</div>
-                        </div>
-                        <div class="flex gap-2">
-                            <button class="bg-red-50 text-red-600 px-3 py-1 rounded text-xs border border-red-200 hover:bg-red-100" onclick="smartAtt.rejectDevice('${r.roll}')">Reject</button>
-                            <button class="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700 shadow" onclick="smartAtt.approveDevice('${r.roll}', '${r.name}', '${r.deviceToken}', '${r.browserName}')">Approve</button>
-                        </div>
-                    `;
+                    el.innerHTML = `<div><div class="font-bold text-gray-800">${r.name}</div><div class="text-xs text-gray-500">${r.roll} (${r.browserName})</div></div>
+                        <div class="flex gap-2"><button class="text-red-500 text-xs px-2" onclick="smartAtt.rejectDevice('${r.roll}')"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="bg-green-600 text-white px-2 py-1 rounded text-xs shadow" onclick="smartAtt.approveDevice('${r.roll}', '${r.name}', '${r.deviceToken}', '${r.browserName}')">Approve</button></div>`;
                     list.appendChild(el);
                 });
             },
-
-            approveDevice: async function(roll, name, token, browser) {
-                if(!confirm(`Approve ${name} on ${browser}?`)) return;
-                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll), {
-                    roll, name, 
-                    deviceToken: token, 
-                    browserName: browser,
-                    approvedAt: Date.now(), 
-                    approvedBy: this.user.uid
+            loadApprovedDevices: async function() {
+                const list = document.getElementById('dev-approved-list');
+                list.innerHTML = '<p class="text-center text-gray-400">Loading...</p>';
+                const q = query(collection(db, 'artifacts', appId, 'public', 'data', 'registered_devices'));
+                const snaps = await getDocs(q);
+                if(snaps.empty) { list.innerHTML = '<p class="text-center text-gray-400 py-4">No devices registered.</p>'; return; }
+                list.innerHTML = '';
+                snaps.forEach(d => {
+                    const r = d.data();
+                    const el = document.createElement('div');
+                    el.className = "bg-white p-3 rounded border flex justify-between items-center mb-2 shadow-sm";
+                    el.innerHTML = `<div><div class="font-bold text-gray-800">${r.name}</div><div class="text-xs text-gray-500">${r.roll}</div><div class="text-[10px] text-gray-400 font-mono">ID: ${r.deviceToken.substring(0,6)}...</div></div>
+                        <button class="text-red-600 border border-red-200 bg-red-50 px-2 py-1 rounded text-xs hover:bg-red-100" onclick="smartAtt.revokeDevice('${r.roll}')">Revoke</button>`;
+                    list.appendChild(el);
                 });
-                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll));
-                this.loadDeviceRequests();
             },
-
+            approveDevice: async function(roll, name, token, browser) {
+                if(!confirm(`Approve ${name}?`)) return;
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll), { roll, name, deviceToken: token, browserName: browser, approvedAt: Date.now(), approvedBy: this.user.uid });
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll));
+                this.switchDeviceSubTab('pending');
+            },
             rejectDevice: async function(roll) {
-                if(!confirm("Reject request?")) return;
+                if(!confirm("Reject?")) return;
                 await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'device_requests', roll));
-                this.loadDeviceRequests();
+                this.switchDeviceSubTab('pending');
+            },
+            revokeDevice: async function(roll) {
+                if(!confirm(`Revoke device access for Roll ${roll}? They will need to re-register.`)) return;
+                await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'registered_devices', roll));
+                this.switchDeviceSubTab('approved');
             },
 
-            // --- FACULTY: CLOCK IN/OUT ---
+            // --- DATA CLEANUP ---
+            clearData: async function(type) {
+                if (!confirm(`WARNING: This will delete ALL ${type === 'student' ? 'Student Class History' : 'Faculty Attendance Logs'}. This cannot be undone. Continue?`)) return;
+                const btnId = type === 'student' ? 'btn-clear-stu' : 'btn-clear-fac';
+                const btn = document.getElementById(btnId);
+                const originalText = btn.innerText;
+                btn.disabled = true; btn.innerText = "Deleting...";
+                try {
+                    let collectionName = type === 'student' ? 'sessions' : 'faculty_logs';
+                    let uidField = type === 'student' ? 'teacher_uid' : 'uid';
+                    const q = query(collection(db, 'artifacts', appId, 'public', 'data', collectionName), where(uidField, "==", this.user.uid));
+                    const snapshot = await getDocs(q);
+                    const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+                    await Promise.all(deletePromises);
+                    alert(`${type === 'student' ? 'Student' : 'Faculty'} data cleared.`);
+                    if(!document.getElementById('tab-report-view').classList.contains('hidden')) { this.loadAllReports(); }
+                } catch(e) { console.error(e); alert("Error: " + e.message); } 
+                finally { btn.disabled = false; btn.innerText = originalText; }
+            },
+
+            // --- FACULTY ATTENDANCE ---
             checkFacultyStatus: async function() {
                 const today = new Date().toLocaleDateString().replace(/\//g, '-');
                 const lastAction = localStorage.getItem('fac_last_action_' + today);
                 if(lastAction === 'in') {
                     document.getElementById('fac-status').innerHTML = '<span class="text-green-600 font-bold">● On Duty</span>';
-                    document.getElementById('btn-clock-in').classList.add('hidden');
-                    document.getElementById('btn-clock-out').classList.remove('hidden');
+                    document.getElementById('btn-clock-in').classList.add('hidden'); document.getElementById('btn-clock-out').classList.remove('hidden');
                 } else {
                     document.getElementById('fac-status').innerHTML = '<span class="text-gray-400">● Off Duty</span>';
-                    document.getElementById('btn-clock-in').classList.remove('hidden');
-                    document.getElementById('btn-clock-out').classList.add('hidden');
+                    document.getElementById('btn-clock-in').classList.remove('hidden'); document.getElementById('btn-clock-out').classList.add('hidden');
                 }
             },
             logFacultyAction: async function(action) {
                 const name = document.getElementById('fac-name').value; 
                 if(!name) { alert("Enter Your Name first"); return; }
                 const btn = action === 'Clock In' ? document.getElementById('btn-clock-in') : document.getElementById('btn-clock-out');
-                btn.disabled = true; btn.innerText = "Processing...";
+                btn.disabled = true; btn.innerText = "...";
                 if(!navigator.geolocation) { alert("GPS Required"); return; }
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     const logId = Date.now().toString();
@@ -325,7 +325,7 @@
                 }, (err) => { alert("GPS Failed"); btn.disabled = false; btn.innerText = action; }, {enableHighAccuracy:true});
             },
 
-            // --- CLASS MANAGEMENT ---
+            // --- CLASS MGMT ---
             loadSavedMasterList: function() {
                 const saved = localStorage.getItem('sa_master_list'); if(saved) document.getElementById('master-list').value = saved;
                 const savedName = localStorage.getItem('fac_name'); if(savedName) document.getElementById('fac-name').value = savedName;
@@ -337,7 +337,7 @@
                 const masterStr = document.getElementById('master-list').value;
                 if(!subject || !section) { alert("Subject & Section required"); return; }
                 if(!navigator.geolocation) { alert("GPS Required"); return; }
-                const btn = document.querySelector('#btn-launch'); btn.disabled = true; btn.innerText = "Acquiring GPS...";
+                const btn = document.querySelector('#btn-launch'); btn.disabled = true; btn.innerText = "GPS...";
                 navigator.geolocation.getCurrentPosition(async (pos) => {
                     localStorage.setItem('sa_master_list', masterStr);
                     const masterList = masterStr.split(',').map(s=>s.trim()).filter(s=>s);
@@ -382,7 +382,7 @@
                 this.showSection('faculty-dash'); this.switchDashTab('action');
             },
 
-            // --- STUDENT VERIFICATION ---
+            // --- STUDENT MARKING ---
             verifyAndMark: async function() {
                 const btn = document.getElementById('btn-mark');
                 const pin = parseInt(document.getElementById('s-pin').value);
@@ -402,81 +402,111 @@
                         if(!targetDoc) { alert("Invalid/Expired Code"); this.resetBtn(); return; }
                         const data = targetDoc.data();
 
-                        // 1. GEO FENCE
                         if (data.lat && data.lng) {
                             const dist = this.getDist(data.lat, data.lng, pos.coords.latitude, pos.coords.longitude);
                             if (dist > 50) { alert(`Too far (${Math.round(dist)}m). Move closer.`); this.resetBtn(); return; }
                         }
-
-                        // 2. CROSS-BROWSER PROXY CHECK (IP + HARDWARE)
-                        // If another student (different Roll) has used the same IP + Hardware signature in this session, BLOCK IT.
-                        const ip = await this.getPublicIP();
-                        const hardwareSig = this.getHardwareSignature();
-                        
-                        // Look for a conflicting entry: Same IP/Hardware BUT Different Roll No
-                        if (ip !== 'unknown_ip') {
-                            const conflict = data.attendees.find(a => 
-                                a.ip === ip && 
-                                a.hardwareSig === hardwareSig && 
-                                a.roll !== roll
-                            );
-                            
-                            if (conflict) {
-                                alert(`⚠️ SECURITY ALERT ⚠️\n\nThis physical device was ALREADY used by: ${conflict.name} (${conflict.roll}).\n\nSwitching browsers does not hide your device! Attendance Rejected.`);
-                                this.resetBtn(); return;
-                            }
-                        }
-
-                        // 3. CHECK DUPLICATE ROLL
-                        if(data.attendees.some(a => a.roll === roll)) { alert("Your Roll No is already present."); this.resetBtn(); return; }
+                        if(data.attendees.some(a => a.roll === roll)) { alert("Roll No already marked."); this.resetBtn(); return; }
 
                         await updateDoc(targetDoc.ref, {
-                            attendees: arrayUnion({ 
-                                uid: this.user.uid, 
-                                deviceToken: this.deviceToken, 
-                                ip: ip, 
-                                hardwareSig: hardwareSig,
-                                name, roll, 
-                                time: new Date().toLocaleTimeString() 
-                            })
+                            attendees: arrayUnion({ uid: this.user.uid, deviceToken: this.deviceToken, ip: await this.getPublicIP(), hardwareSig: this.getHardwareSignature(), name, roll, time: new Date().toLocaleTimeString() })
                         });
                         document.getElementById('student-input-area').classList.add('hidden');
                         document.getElementById('student-success').classList.remove('hidden');
-                    } catch(e) { console.error(e); alert("System Error: " + e.message); this.resetBtn(); }
+                    } catch(e) { console.error(e); alert("System Error"); this.resetBtn(); }
                 }, (err) => { alert("GPS Error"); this.resetBtn(); }, {enableHighAccuracy:true, timeout:10000, maximumAge:0});
             },
             resetBtn: function() { const btn = document.getElementById('btn-mark'); btn.disabled=false; btn.innerHTML = 'Mark Attendance'; },
 
-            // --- REPORTS ---
+            // --- REPORTS & ANALYTICS (NEW) ---
             loadAllReports: async function() {
                 document.getElementById('report-loading').classList.remove('hidden'); document.getElementById('report-content').classList.add('hidden');
+                
+                // Fetch Student Data
                 const q1 = query(collection(db, 'artifacts', appId, 'public', 'data', 'sessions'), where("teacher_uid", "==", this.user.uid));
                 const snap1 = await getDocs(q1);
                 this.historyStudents = []; snap1.forEach(d => { let r = d.data(); r.id = d.id; this.historyStudents.push(r); });
                 this.historyStudents.sort((a,b) => b.created_at - a.created_at);
+                
+                // Fetch Faculty Data
                 const q2 = query(collection(db, 'artifacts', appId, 'public', 'data', 'faculty_logs'), where("uid", "==", this.user.uid));
                 const snap2 = await getDocs(q2);
                 this.historyFaculty = []; snap2.forEach(d => { let r = d.data(); this.historyFaculty.push(r); });
                 this.historyFaculty.sort((a,b) => b.timestamp - a.timestamp);
+                
+                // GENERATE ANALYTICS
+                this.generateAnalytics();
+
                 document.getElementById('report-loading').classList.add('hidden'); document.getElementById('report-content').classList.remove('hidden');
                 this.switchReportType('student'); 
             },
+
+            generateAnalytics: function() {
+                // 1. Student Analytics
+                const studentStats = {};
+                let totalClasses = this.historyStudents.length;
+                
+                this.historyStudents.forEach(session => {
+                    session.attendees.forEach(student => {
+                        const key = student.roll;
+                        if(!studentStats[key]) studentStats[key] = { name: student.name, present: 0 };
+                        studentStats[key].present++;
+                    });
+                });
+
+                // Generate HTML for Student Stats
+                let html = '<div class="text-xs uppercase font-bold text-gray-400 mb-2">Student Performance</div>';
+                if(Object.keys(studentStats).length === 0) html += '<p class="text-gray-400 text-xs">No data yet.</p>';
+                else {
+                    html += `<div class="bg-white rounded border overflow-hidden text-sm">
+                        <div class="bg-gray-100 p-2 flex font-bold text-xs"><div class="flex-1">Student</div><div class="w-10 text-center">Pres</div><div class="w-10 text-center">Abs</div><div class="w-10 text-center">%</div></div>`;
+                    
+                    Object.keys(studentStats).forEach(roll => {
+                        const s = studentStats[roll];
+                        const absent = totalClasses - s.present;
+                        const pct = Math.round((s.present / totalClasses) * 100);
+                        let color = pct >= 75 ? 'text-green-600' : (pct >= 50 ? 'text-yellow-600' : 'text-red-600');
+                        
+                        html += `<div class="flex p-2 border-b last:border-0 items-center">
+                            <div class="flex-1 truncate"><div class="font-bold">${s.name}</div><div class="text-xs text-gray-500">${roll}</div></div>
+                            <div class="w-10 text-center font-bold text-gray-700">${s.present}</div>
+                            <div class="w-10 text-center text-red-400">${absent}</div>
+                            <div class="w-10 text-center font-bold ${color}">${pct}%</div>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+                document.getElementById('report-analytics').innerHTML = html;
+
+                // 2. Faculty Analytics
+                const uniqueDays = new Set(this.historyFaculty.map(f => f.date)).size;
+                document.getElementById('fac-total-days').innerText = uniqueDays;
+            },
+
             switchReportType: function(type) {
                 const list = document.getElementById('report-list');
-                const btnStud = document.getElementById('rep-type-student');
-                const btnFac = document.getElementById('rep-type-faculty');
+                const analyticsPanel = document.getElementById('report-analytics');
+                const facPanel = document.getElementById('fac-analytics-panel');
+                
+                document.getElementById('rep-type-student').className = type === 'student' ? 'flex-1 py-1 rounded text-xs font-bold bg-indigo-600 text-white transition' : 'flex-1 py-1 rounded text-xs font-bold text-gray-600 hover:bg-gray-200 transition';
+                document.getElementById('rep-type-faculty').className = type === 'faculty' ? 'flex-1 py-1 rounded text-xs font-bold bg-indigo-600 text-white transition' : 'flex-1 py-1 rounded text-xs font-bold text-gray-600 hover:bg-gray-200 transition';
+
                 if(type === 'student') {
-                    btnStud.classList.add('bg-indigo-600', 'text-white'); btnStud.classList.remove('bg-gray-200', 'text-gray-700');
-                    btnFac.classList.remove('bg-indigo-600', 'text-white'); btnFac.classList.add('bg-gray-200', 'text-gray-700');
+                    analyticsPanel.classList.remove('hidden');
+                    facPanel.classList.add('hidden');
+                    
                     if(this.historyStudents.length === 0) list.innerHTML = '<p class="text-center text-gray-400 py-4">No Class History</p>';
                     else list.innerHTML = this.historyStudents.map((h, i) => `<div onclick="smartAtt.openDetails(${i})" class="bg-white p-3 rounded mb-2 border shadow-sm cursor-pointer hover:bg-gray-50 flex justify-between"><div><div class="font-bold text-indigo-700">${h.subject}</div><div class="text-xs text-gray-500">${h.section} | ${h.date}</div></div><div class="text-right"><span class="font-bold">${h.attendees.length}</span><div class="text-[10px]">Present</div></div></div>`).join('');
                 } else {
-                    btnFac.classList.add('bg-indigo-600', 'text-white'); btnFac.classList.remove('bg-gray-200', 'text-gray-700');
-                    btnStud.classList.remove('bg-indigo-600', 'text-white'); btnStud.classList.add('bg-gray-200', 'text-gray-700');
+                    analyticsPanel.classList.add('hidden');
+                    facPanel.classList.remove('hidden');
+
                     if(this.historyFaculty.length === 0) list.innerHTML = '<p class="text-center text-gray-400 py-4">No Attendance Logs</p>';
                     else list.innerHTML = this.historyFaculty.map(h => `<div class="bg-white p-3 rounded mb-2 border border-l-4 ${h.action === 'Clock In' ? 'border-l-green-500' : 'border-l-red-500'} shadow-sm flex justify-between"><div><div class="font-bold text-gray-800">${h.action}</div><div class="text-xs text-gray-500">${h.date}</div></div><div class="text-right font-mono text-sm pt-1">${h.time}</div></div>`).join('');
                 }
             },
+            
+            // ... (Export Logic remains same)
             exportData: function(type) {
                 if(type === 'student') {
                     let csv = "Date,Subject,Section,Hours,Name,Roll,Time\n";
@@ -539,6 +569,15 @@
             <button onclick="smartAtt.enterStudentMode()" class="bg-indigo-600 text-white p-5 rounded-xl font-bold hover:bg-indigo-800 shadow-lg flex items-center justify-center gap-3"><i class="fa-solid fa-user-check text-xl"></i> Student Check-In</button>
         </div>
 
+        <!-- WARNING SCREEN -->
+        <div id="chrome-warning" class="hidden absolute inset-0 bg-white z-50 flex flex-col items-center justify-center p-6 text-center">
+            <i class="fa-brands fa-chrome text-6xl text-red-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-gray-800">Chrome Required</h2>
+            <p class="text-gray-500 mt-2 text-sm">To ensure secure attendance marking, this app only works on <strong>Google Chrome</strong>.</p>
+            <p class="text-xs text-gray-400 mt-4">Please open this link in Chrome.</p>
+            <button onclick="location.reload()" class="mt-6 bg-gray-200 px-4 py-2 rounded text-sm">Refresh</button>
+        </div>
+
         <!-- FACULTY LOGIN -->
         <div id="login-modal" class="hidden absolute inset-0 bg-black/50 z-50 flex items-center justify-center backdrop-blur-sm">
             <div class="bg-white p-6 rounded-xl w-72 shadow-2xl">
@@ -574,24 +613,47 @@
                         <textarea id="master-list" placeholder="Paste Master List (comma sep)" class="w-full p-2 border rounded bg-gray-50 text-xs h-16"></textarea>
                         <button id="btn-launch" onclick="smartAtt.startClass()" class="w-full bg-indigo-600 text-white py-3 rounded font-bold shadow-md">Launch Session</button>
                     </div>
-                </div>
-                <!-- DEVICE APPROVALS -->
-                <div id="tab-device-view" class="hidden">
-                    <div class="flex justify-between items-center mb-3">
-                        <h3 class="font-bold text-gray-700">Device Requests</h3>
-                        <button onclick="smartAtt.loadDeviceRequests()" class="text-xs text-indigo-600 underline">Refresh</button>
+                    <!-- Data Reset -->
+                    <div class="mt-6 pt-4 border-t border-gray-200">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase mb-2">Danger Zone</h3>
+                        <div class="flex gap-2">
+                            <button id="btn-clear-stu" onclick="smartAtt.clearData('student')" class="flex-1 bg-red-100 text-red-600 py-2 rounded text-xs font-bold border border-red-200 hover:bg-red-200">Clear Class History</button>
+                            <button id="btn-clear-fac" onclick="smartAtt.clearData('faculty')" class="flex-1 bg-red-100 text-red-600 py-2 rounded text-xs font-bold border border-red-200 hover:bg-red-200">Clear Staff Logs</button>
+                        </div>
                     </div>
-                    <div id="device-list" class="space-y-2"></div>
                 </div>
-                <!-- REPORTS -->
+                <!-- DEVICE APPROVALS (UPDATED) -->
+                <div id="tab-device-view" class="hidden">
+                    <div class="flex gap-2 mb-3 bg-gray-100 p-1 rounded-lg">
+                        <button id="btn-sub-pending" onclick="smartAtt.switchDeviceSubTab('pending')" class="flex-1 py-1 rounded text-xs font-bold bg-indigo-100 text-indigo-700">Pending</button>
+                        <button id="btn-sub-approved" onclick="smartAtt.switchDeviceSubTab('approved')" class="flex-1 py-1 rounded text-xs font-bold text-gray-500 hover:bg-gray-200">Approved</button>
+                    </div>
+                    <div id="dev-pending-list" class="space-y-2"></div>
+                    <div id="dev-approved-list" class="space-y-2 hidden"></div>
+                </div>
+                <!-- REPORTS (UPDATED) -->
                 <div id="tab-report-view" class="hidden">
                     <div class="flex gap-2 mb-4 bg-gray-100 p-1 rounded-lg">
                         <button id="rep-type-student" onclick="smartAtt.switchReportType('student')" class="flex-1 py-1 rounded text-xs font-bold bg-indigo-600 text-white">Students</button>
                         <button id="rep-type-faculty" onclick="smartAtt.switchReportType('faculty')" class="flex-1 py-1 rounded text-xs font-bold text-gray-700">Faculty Log</button>
                     </div>
                     <div id="report-loading" class="hidden text-center py-4"><i class="fa-solid fa-spinner fa-spin text-gray-400"></i></div>
+                    
+                    <!-- NEW: FACULTY ANALYTICS PANEL -->
+                    <div id="fac-analytics-panel" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <h4 class="text-xs font-bold text-blue-700 uppercase mb-2">My Performance</h4>
+                        <div class="flex justify-between items-end">
+                            <div><span class="text-3xl font-bold text-gray-800" id="fac-total-days">0</span><span class="text-xs text-gray-500 ml-1">Days on Duty</span></div>
+                            <i class="fa-solid fa-calendar-check text-blue-300 text-3xl"></i>
+                        </div>
+                    </div>
+
+                    <!-- NEW: STUDENT ANALYTICS PANEL -->
+                    <div id="report-analytics" class="mb-4 space-y-2"></div>
+
                     <div id="report-content">
                         <div class="flex justify-end mb-2"><button onclick="smartAtt.exportData(document.getElementById('rep-type-student').classList.contains('bg-indigo-600') ? 'student' : 'faculty')" class="text-xs text-indigo-600 font-bold underline">Download CSV</button></div>
+                        <h3 class="text-xs font-bold text-gray-400 mb-2 uppercase">Log History</h3>
                         <div id="report-list" class="space-y-2"></div>
                     </div>
                 </div>
