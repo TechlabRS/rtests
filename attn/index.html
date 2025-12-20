@@ -3,34 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Portal - Compact View</title>
+    <title>Attendance Pro - Cloud Sync & Reports</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
         
-        /* High-density list layout */
         .student-list-container {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
         }
         
         .student-row {
             display: flex;
             align-items: center;
-            padding: 8px 12px;
-            border-radius: 8px;
-            transition: all 0.15s ease;
+            padding: 12px 16px;
+            border-radius: 12px;
+            transition: all 0.1s ease;
             cursor: pointer;
             border: 1px solid transparent;
             user-select: none;
-        }
-
-        .present { 
-            background-color: #ffffff; 
-            border-color: #e2e8f0;
-            color: #475569;
         }
 
         .absent { 
@@ -40,8 +33,12 @@
             box-shadow: inset 4px 0 0 #ef4444;
         }
 
-        .absent .status-dot { background-color: #ef4444; }
-        .present .status-dot { background-color: #22c55e; }
+        .present { 
+            background-color: #f0fdf4; 
+            border-color: #bbf7d0;
+            color: #166534;
+            box-shadow: inset 4px 0 0 #22c55e;
+        }
 
         .status-dot {
             width: 8px;
@@ -50,140 +47,145 @@
             margin-right: 12px;
         }
 
+        .absent .status-dot { background-color: #ef4444; }
+        .present .status-dot { background-color: #22c55e; }
+
         .sticky-summary { 
-            position: fixed; 
-            bottom: 0; 
-            left: 0; 
-            right: 0;
-            background: rgba(255, 255, 255, 0.9);
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.95);
             backdrop-filter: blur(10px);
             border-top: 1px solid #e2e8f0;
-            padding: 12px;
-            z-index: 50;
+            padding: 12px; z-index: 50;
         }
-        
-        /* Search bar styling */
-        .search-input {
-            transition: all 0.2s ease;
+
+        .loading-shimmer {
+            animation: shimmer 1.5s infinite linear;
+            background: linear-gradient(to right, #f1f5f9 4%, #e2e8f0 25%, #f1f5f9 36%);
+            background-size: 1000px 100%;
         }
-        .search-input:focus {
-            background-color: #fff;
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+
+        @keyframes shimmer {
+            0% { background-position: -1000px 0; }
+            100% { background-position: 1000px 0; }
         }
     </style>
 </head>
 <body class="bg-slate-50 text-slate-900 pb-24">
 
     <div id="app" class="max-w-xl mx-auto p-4">
-        <!-- Compact Header -->
-        <header class="flex justify-between items-center mb-4">
+        <!-- Header -->
+        <header class="flex justify-between items-center mb-6">
             <div>
-                <h1 class="text-xl font-black text-blue-600 tracking-tight">Attendance</h1>
+                <h1 class="text-2xl font-black text-blue-600 tracking-tight">Attendance Pro</h1>
                 <p id="status-badge" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connecting...</p>
             </div>
-            <div class="text-right">
-                <span id="cloud-count" class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase">0 Records</span>
+            <div id="auth-status" class="px-3 py-1 rounded-full bg-slate-100 text-slate-500 text-[10px] font-black uppercase">
+                Initializing...
             </div>
         </header>
 
-        <!-- Tabs -->
-        <div class="flex bg-slate-200 p-1 rounded-lg mb-4 text-xs">
-            <button onclick="window.switchTab('mark')" id="tab-mark" class="flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm">MARK</button>
-            <button onclick="window.switchTab('report')" id="tab-report" class="flex-1 py-1.5 rounded-md font-bold text-slate-500">REPORTS</button>
+        <!-- Navigation Tabs -->
+        <div class="flex bg-slate-200 p-1 rounded-xl mb-6 text-xs">
+            <button onclick="window.switchTab('mark')" id="tab-mark" class="flex-1 py-2.5 rounded-lg font-bold bg-white shadow-sm transition-all">TAKE ATTENDANCE</button>
+            <button onclick="window.switchTab('report')" id="tab-report" class="flex-1 py-2.5 rounded-lg font-bold text-slate-500 transition-all">REPORTS</button>
         </div>
 
-        <!-- Sync Alert -->
-        <div id="sync-alert" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-2 mb-4 flex justify-between items-center">
-            <span class="text-amber-800 text-[10px] font-bold">⚠️ <span id="pending-count">0</span> Pending</span>
-            <button onclick="window.syncAllPending()" class="bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold">SYNC</button>
-        </div>
-
-        <!-- VIEW 1: MARKING -->
-        <div id="view-mark" class="space-y-3">
-            <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200 grid grid-cols-2 gap-3">
+        <!-- MARKING VIEW -->
+        <div id="view-mark" class="space-y-4">
+            <div class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200 grid grid-cols-2 gap-3">
                 <div class="col-span-2">
-                    <input type="text" id="facultyName" placeholder="Faculty Name" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
+                    <input type="text" id="facultyName" placeholder="Faculty Name" oninput="window.saveMeta()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-500/20">
                 </div>
+                <div><input type="date" id="attendanceDate" onchange="window.initSectionLoad()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none"></div>
                 <div>
-                    <input type="date" id="attendanceDate" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
-                </div>
-                <div>
-                    <select id="hourSelect" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
+                    <select id="hourSelect" onchange="window.initSectionLoad()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                         <option value="1-2">Hour 1-2</option>
                         <option value="3-4">Hour 3-4</option>
                         <option value="5-6">Hour 5-6</option>
-                        <option value="6-7">Hour 6-7</option>
+						<option value="6-7">Hour 6-7</option>
                     </select>
                 </div>
                 <div>
-                    <select id="sectionSelect" onchange="window.renderStudents()" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm font-bold text-blue-600 outline-none">
+                    <select id="sectionSelect" onchange="window.initSectionLoad()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-blue-600 outline-none">
                         <option value="">Section...</option>
-                        <option value="All">All Sections</option>
                         <option value="A">Section A</option>
                         <option value="B">Section B</option>
                         <option value="C">Section C</option>
                         <option value="D">Section D</option>
+                        <option value="All">All Sections</option>
                     </select>
                 </div>
                 <div>
-                    <select id="subjectSelect" onchange="window.renderStudents()" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
+                    <select id="subjectSelect" onchange="window.initSectionLoad()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none">
                         <option value="">Subject...</option>
+                        <option value="Optimization Techniques">Optimization Techniques</option>
+                        <option value="Machine Learning">Machine Learning</option>
+                        <option value="DBMS">Database Management Systems</option>
+						<option value="P&S">Probability & Statistics</option>
+						<option value="DLCO">Digital Logic and Computer Organization</option>
+						<option value="FS">Full Stack Development</option>
+						<option value="DTI">Design Thinking & Innovation</option>
+						
+						<option value="ML LAB">Machine Learning Lab</option>
+						<option value="DB LAB">Database Management Systems Lab</option>
                     </select>
                 </div>
             </div>
 
-            <!-- Workspace with Search -->
-            <div id="workspace" class="hidden">
-                <div class="mb-3">
-                    <div class="relative group">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                        </div>
-                        <input 
-                            type="text" 
-                            id="studentSearch" 
-                            oninput="window.renderStudents()" 
-                            placeholder="Search by name or roll number..." 
-                            class="search-input w-full pl-9 p-2 bg-slate-100 border border-slate-200 rounded-lg text-sm outline-none"
-                        >
-                    </div>
+            <div id="workspace" class="hidden animate-in fade-in duration-300">
+                <div class="flex gap-2 mb-4">
+                    <button onclick="window.bulkMark(true)" class="flex-1 py-3 bg-green-50 text-green-700 rounded-xl text-[10px] font-black uppercase border border-green-200">Mark All Present</button>
+                    <button onclick="window.bulkMark(false)" class="flex-1 py-3 bg-red-50 text-red-700 rounded-xl text-[10px] font-black uppercase border border-red-200">Mark All Absent</button>
                 </div>
 
-                <div class="flex justify-between items-center px-1 mb-2">
-                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Class List</span>
-                    <button onclick="window.clearMarks()" class="text-[10px] font-bold text-red-500 uppercase">Reset All</button>
+                <div class="mb-4 relative">
+                    <input type="text" id="studentSearch" oninput="window.renderStudents()" placeholder="Search roll or name..." class="w-full pl-11 p-3.5 bg-white border border-slate-200 rounded-2xl text-sm outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">🔍</span>
+                </div>
+
+                <div class="flex justify-between items-center mb-2 px-1">
+                    <span id="data-source-badge" class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Local Session</span>
+                    <span id="list-info" class="text-[9px] font-bold text-slate-500 uppercase"></span>
                 </div>
                 <div id="student-list" class="student-list-container"></div>
             </div>
 
-            <div id="empty-state" class="text-center py-12 text-slate-300 border border-dashed border-slate-200 rounded-xl text-sm">
-                Select Section & Subject to Load List
+            <div id="empty-state" class="text-center py-20 bg-white border-2 border-dashed border-slate-200 rounded-3xl">
+                <p class="text-sm font-medium text-slate-400">Configure session details above</p>
             </div>
         </div>
 
-        <!-- VIEW 2: REPORTS -->
-        <div id="view-report" class="hidden space-y-3">
-            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
-                <div class="grid grid-cols-2 gap-2 mb-3">
-                    <input type="date" id="reportFrom" class="p-2 bg-slate-50 rounded text-xs border border-slate-100">
-                    <input type="date" id="reportTo" class="p-2 bg-slate-50 rounded text-xs border border-slate-100">
+        <!-- REPORTS VIEW -->
+        <div id="view-report" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-black mb-3 text-slate-600 uppercase">Range Export</h3>
+                <div class="grid grid-cols-2 gap-3 mb-4">
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">From</label>
+                        <input type="date" id="reportFrom" class="w-full p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
+                    </div>
+                    <div>
+                        <label class="text-[9px] font-bold text-slate-400 uppercase ml-1">To</label>
+                        <input type="date" id="reportTo" class="w-full p-3 bg-slate-50 rounded-xl text-xs border border-slate-100">
+                    </div>
                 </div>
-                <button onclick="window.generateReport()" class="w-full py-2 bg-blue-600 text-white rounded font-bold text-xs shadow-md">LOAD HISTORY</button>
+                <div class="flex gap-2">
+                    <button onclick="window.generateReport()" class="flex-[2] py-4 bg-blue-600 text-white rounded-2xl font-black text-sm shadow-lg shadow-blue-200">FETCH RECORDS</button>
+                    <button id="btn-export" onclick="window.exportToCSV()" class="flex-1 py-4 bg-emerald-600 text-white rounded-2xl font-black text-sm hidden">EXPORT CSV</button>
+                </div>
             </div>
-            <div id="report-results" class="space-y-2"></div>
-            <button onclick="window.exportToCSV()" id="csv-btn" class="hidden w-full py-2 bg-white text-blue-600 border border-blue-100 rounded font-bold text-xs">DOWNLOAD CSV</button>
+            <div id="report-results" class="space-y-3"></div>
         </div>
 
-        <!-- Fixed Submit Bar -->
+        <!-- Sticky Footer -->
         <div id="sticky-bar" class="sticky-summary hidden">
-            <div class="max-w-xl mx-auto flex gap-3">
-                <div class="flex-1">
-                    <p class="text-[9px] font-black text-slate-400 uppercase leading-none">Total Absent</p>
-                    <p id="absent-count" class="text-xl font-black text-red-600">0</p>
+            <div class="max-w-xl mx-auto flex gap-4 items-center">
+                <div class="flex-1 text-center bg-slate-50 py-2 rounded-xl">
+                    <p class="text-[8px] font-black text-slate-400 uppercase">Absentees</p>
+                    <p id="absent-count" class="text-xl font-black text-red-600 leading-tight">0</p>
                 </div>
-                <button onclick="window.submitAttendance()" class="flex-[2] bg-blue-600 text-white rounded-lg font-bold text-sm shadow-lg active:scale-95 transition-transform">
-                    SUBMIT DATA
+                <button onclick="window.submitAttendance()" class="flex-[3] bg-slate-900 text-white py-4 rounded-2xl font-black text-sm shadow-xl hover:bg-black active:scale-95 transition-all">
+                    SYNC TO CLOUD
                 </button>
             </div>
         </div>
@@ -191,27 +193,27 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
-		
-        const fallbackConfig = { apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
   authDomain: "stuattnd.firebaseapp.com",
   projectId: "stuattnd",
   storageBucket: "stuattnd.firebasestorage.app",
   messagingSenderId: "511533506488",
   appId: "1:511533506488:web:aca4de3d513915d012f94d",
-  measurementId: "G-9PZZM5LFKX" };
-        const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : fallbackConfig;
-        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'attendance-system-v1';
-        
+  measurementId: "G-9PZZM5LFKX"
+        };
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'attendance-v6-stable';
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
 
-        const STATE_KEY = `att_state_${appId}`;
-        let currentAbsentees = new Set(JSON.parse(localStorage.getItem(STATE_KEY) || '[]'));
-        let localQueue = JSON.parse(localStorage.getItem(`att_q_${appId}`) || '[]');
-        
+        let currentUser = null;
+        let currentAbsentees = new Set();
+        let reportData = []; // Store fetched records for export
+
         let studentsList = [
     { "roll": "23091A3335", "name": "MOGALIPALLI RAM CHARAN TEJA", "section": "A" },
     { "roll": "24091A3301", "name": "MOGHAL AAHIL BAIG", "section": "A" },
@@ -479,214 +481,204 @@
     }
 ];
 
-        const subjects = [
-            "Optimization Techniques", "Probability & Statistics", "Machine Learning", 
-            "DBMS", "Digital Logic", "Full Stack Dev", "Design Thinking", "ML Lab", "DBMS Lab"
-        ];
-
+        // Initialize App
         window.onload = async () => {
-            const subjectSelect = document.getElementById('subjectSelect');
-            subjects.forEach(s => subjectSelect.add(new Option(s, s)));
+            const initAuth = async () => {
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch (e) { console.error("Auth Failure:", e); }
+            };
             
             await initAuth();
-            updateQueueUI();
-            
-            const today = new Date();
-            document.getElementById('attendanceDate').valueAsDate = today;
-            document.getElementById('reportTo').valueAsDate = today;
-            
-            window.addEventListener('online', updateConnectionStatus);
-            window.addEventListener('offline', updateConnectionStatus);
-            updateConnectionStatus();
+            onAuthStateChanged(auth, (user) => {
+                currentUser = user;
+                document.getElementById('auth-status').innerText = user ? "Connected" : "Offline";
+                document.getElementById('auth-status').className = `px-3 py-1 rounded-full text-[10px] font-black uppercase ${user ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`;
+                updateConnectionStatus();
+            });
+
+            document.getElementById('attendanceDate').valueAsDate = new Date();
+            document.getElementById('reportFrom').valueAsDate = new Date();
+            document.getElementById('reportTo').valueAsDate = new Date();
+            document.getElementById('facultyName').value = localStorage.getItem('last_faculty') || "";
         };
 
-        async function initAuth() {
-            try {
-                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
-                    await signInWithCustomToken(auth, window.__initial_auth_token);
-                } else { await signInAnonymously(auth); }
-            } catch(e) { console.error(e); }
-
-            onAuthStateChanged(auth, (user) => {
-                if(user) {
-                    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
-                        document.getElementById('cloud-count').innerText = `${snap.size} Records`;
-                    });
-                }
-            });
-        }
-
-        function updateConnectionStatus() {
-            const badge = document.getElementById('status-badge');
-            if (badge) {
-                badge.innerText = navigator.onLine ? "● System Online" : "○ Offline Mode";
-                badge.className = `text-[10px] font-bold uppercase tracking-widest ${navigator.onLine ? 'text-green-500' : 'text-red-400'}`;
-            }
-        }
+        window.saveMeta = () => {
+            localStorage.setItem('last_faculty', document.getElementById('facultyName').value);
+        };
 
         window.switchTab = (tab) => {
             const isMark = tab === 'mark';
             document.getElementById('view-mark').classList.toggle('hidden', !isMark);
             document.getElementById('view-report').classList.toggle('hidden', isMark);
-            document.getElementById('sticky-bar').classList.toggle('hidden', !isMark || document.getElementById('workspace').classList.contains('hidden'));
-            
-            document.getElementById('tab-mark').className = isMark ? "flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm" : "flex-1 py-1.5 rounded-md font-bold text-slate-500";
-            document.getElementById('tab-report').className = !isMark ? "flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm" : "flex-1 py-1.5 rounded-md font-bold text-slate-500";
+            document.getElementById('tab-mark').className = isMark ? "flex-1 py-2.5 rounded-lg font-bold bg-white shadow-sm" : "flex-1 py-2.5 rounded-lg font-bold text-slate-500";
+            document.getElementById('tab-report').className = !isMark ? "flex-1 py-2.5 rounded-lg font-bold bg-white shadow-sm" : "flex-1 py-2.5 rounded-lg font-bold text-slate-500";
+        };
+
+        window.initSectionLoad = async () => {
+            const date = document.getElementById('attendanceDate').value;
+            const hour = document.getElementById('hourSelect').value;
+            const section = document.getElementById('sectionSelect').value;
+            const subject = document.getElementById('subjectSelect').value;
+
+            if(!section || !subject) {
+                document.getElementById('workspace').classList.add('hidden');
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('empty-state').classList.add('hidden');
+            document.getElementById('workspace').classList.remove('hidden');
+            currentAbsentees.clear();
+
+            // Default: All present
+            window.renderStudents();
         };
 
         window.renderStudents = () => {
             const section = document.getElementById('sectionSelect').value;
-            const subject = document.getElementById('subjectSelect').value;
-            const query = document.getElementById('studentSearch').value.toLowerCase();
+            const queryText = document.getElementById('studentSearch').value.toLowerCase();
             const listContainer = document.getElementById('student-list');
-            
-            if(!section || !subject) {
-                document.getElementById('workspace').classList.add('hidden');
-                document.getElementById('sticky-bar').classList.add('hidden');
-                document.getElementById('empty-state').classList.remove('hidden');
-                return;
-            }
-            
-            document.getElementById('workspace').classList.remove('hidden');
-            document.getElementById('sticky-bar').classList.remove('hidden');
-            document.getElementById('empty-state').classList.add('hidden');
             
             const filtered = studentsList.filter(s => {
                 const matchesSection = (section === 'All' || s.section === section);
-                const matchesSearch = s.name.toLowerCase().includes(query) || s.roll.toLowerCase().includes(query);
+                const matchesSearch = s.name.toLowerCase().includes(queryText) || s.roll.toLowerCase().includes(queryText);
                 return matchesSection && matchesSearch;
             });
 
-            if (filtered.length === 0) {
-                listContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-8">No students match your criteria</p>';
-            } else {
-                listContainer.innerHTML = filtered.map(s => `
-                    <div onclick="window.toggleAbsent('${s.roll}')" id="row-${s.roll}" class="student-row ${currentAbsentees.has(s.roll) ? 'absent' : 'present'}">
+            document.getElementById('list-info').innerText = `${filtered.length} Students`;
+            
+            listContainer.innerHTML = filtered.map(s => {
+                const isAbsent = currentAbsentees.has(s.roll);
+                return `
+                    <div onclick="window.toggleStatus('${s.roll}')" class="student-row ${isAbsent ? 'absent' : 'present'}">
                         <div class="status-dot"></div>
-                        <div class="flex-1 text-left">
+                        <div class="flex-1">
                             <p class="text-xs font-bold leading-none">${s.name}</p>
                             <p class="text-[9px] opacity-60 font-mono mt-1">${s.roll} • Sec ${s.section}</p>
                         </div>
-                        <div class="text-[10px] font-bold uppercase">
-                            ${currentAbsentees.has(s.roll) ? 'Absent' : 'Present'}
-                        </div>
+                        <div class="text-[9px] font-black uppercase tracking-tighter">${isAbsent ? 'ABSENT' : 'PRESENT'}</div>
                     </div>
-                `).join('');
-            }
-            updateStats();
+                `;
+            }).join('');
+
+            document.getElementById('absent-count').innerText = currentAbsentees.size;
+            document.getElementById('sticky-bar').classList.remove('hidden');
         };
 
-        window.toggleAbsent = (roll) => {
+        window.toggleStatus = (roll) => {
             if(currentAbsentees.has(roll)) currentAbsentees.delete(roll);
             else currentAbsentees.add(roll);
-            localStorage.setItem(STATE_KEY, JSON.stringify(Array.from(currentAbsentees)));
             window.renderStudents();
         };
 
-        function updateStats() {
-            document.getElementById('absent-count').innerText = currentAbsentees.size;
-        }
-
-        window.clearMarks = () => {
-            if(confirm("Clear current selection?")) { currentAbsentees.clear(); localStorage.removeItem(STATE_KEY); window.renderStudents(); }
+        window.bulkMark = (asPresent) => {
+            const section = document.getElementById('sectionSelect').value;
+            studentsList.forEach(s => {
+                if(section === 'All' || s.section === section) {
+                    if(asPresent) currentAbsentees.delete(s.roll);
+                    else currentAbsentees.add(s.roll);
+                }
+            });
+            window.renderStudents();
         };
 
         window.submitAttendance = async () => {
+            if (!currentUser) return alert("System still connecting to cloud...");
+            const faculty = document.getElementById('facultyName').value;
+            if(!faculty) return alert("Enter Faculty Name");
+
+            const date = document.getElementById('attendanceDate').value;
+            const hour = document.getElementById('hourSelect').value;
+            const section = document.getElementById('sectionSelect').value;
+            const subject = document.getElementById('subjectSelect').value;
+
             const entry = {
-                id: crypto.randomUUID(),
-                date: document.getElementById('attendanceDate').value,
-                hour: document.getElementById('hourSelect').value,
-                faculty: document.getElementById('facultyName').value,
-                section: document.getElementById('sectionSelect').value,
-                subject: document.getElementById('subjectSelect').value,
+                date, hour, faculty, section, subject,
                 absentees: Array.from(currentAbsentees),
                 timestamp: Date.now()
             };
-            
-            if(!entry.faculty) return alert("Enter Faculty Name");
-            
-            localQueue.push(entry);
-            localStorage.setItem(`att_q_${appId}`, JSON.stringify(localQueue));
-            currentAbsentees.clear();
-            localStorage.removeItem(STATE_KEY);
-            updateQueueUI();
-            window.renderStudents();
-            window.syncAllPending();
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), entry);
+                alert("Cloud Sync Successful!");
+            } catch(e) { alert("Failed to sync. Check connection."); }
         };
 
         window.generateReport = async () => {
+            if (!currentUser) return alert("Cloud not ready.");
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
-            const container = document.getElementById('report-results');
-            
-            if(!from || !to) return alert("Select dates");
-            container.innerHTML = '<p class="text-center text-[10px] text-slate-400 py-4 uppercase font-bold tracking-widest">LOADING HISTORY...</p>';
-            
+
+            const resDiv = document.getElementById('report-results');
+            resDiv.innerHTML = `<div class="p-10 text-center text-xs animate-pulse text-slate-400">Querying records...</div>`;
+
             try {
                 const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'));
-                let history = [];
+                reportData = [];
                 snap.forEach(doc => {
-                    const d = doc.data();
-                    if (d.date >= from && d.date <= to) history.push(d);
+                    const data = doc.data();
+                    if(data.date >= from && data.date <= to) reportData.push(data);
                 });
 
-                history.sort((a, b) => b.timestamp - a.timestamp);
-                window.fetchedHistory = history;
-
-                if(history.length === 0) {
-                    container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No records found for selected range.</p>';
-                    document.getElementById('csv-btn').classList.add('hidden');
+                if(reportData.length === 0) {
+                    resDiv.innerHTML = `<div class="bg-white p-10 rounded-2xl border border-dashed border-slate-200 text-center text-slate-400 text-xs">No records found</div>`;
+                    document.getElementById('btn-export').classList.add('hidden');
                     return;
                 }
 
-                document.getElementById('csv-btn').classList.remove('hidden');
-                container.innerHTML = history.map(item => `
-                    <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-xs">
-                        <div class="flex justify-between items-center font-black">
-                            <span>${item.subject}</span>
-                            <span class="text-red-500">${item.absentees.length} Absent</span>
+                reportData.sort((a,b) => b.date.localeCompare(a.date));
+                document.getElementById('btn-export').classList.remove('hidden');
+
+                resDiv.innerHTML = reportData.map(r => `
+                    <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h4 class="text-xs font-black text-blue-600">${r.date} • ${r.hour}</h4>
+                                <p class="text-[10px] font-bold text-slate-500">${r.subject} (${r.section})</p>
+                            </div>
+                            <span class="text-[9px] font-black text-red-500 bg-red-50 px-2 py-1 rounded">${r.absentees.length} ABSENT</span>
                         </div>
-                        <p class="text-[9px] text-slate-400 uppercase font-bold mt-1">${item.date} • Hr ${item.hour} • ${item.section}</p>
-                        <p class="text-[9px] text-slate-500 mt-2 font-mono bg-slate-50 p-1.5 rounded truncate">${item.absentees.join(", ")}</p>
+                        <div class="text-[9px] text-slate-400 font-mono break-all bg-slate-50 p-2 rounded">
+                            ${r.absentees.length > 0 ? r.absentees.join(", ") : "Perfect Attendance"}
+                        </div>
                     </div>
                 `).join('');
-            } catch(e) { container.innerHTML = `<p class="text-red-500 text-center text-xs">Error loading data</p>`; }
+            } catch(e) { resDiv.innerHTML = `<p class="text-red-500 text-xs text-center">Sync Error</p>`; }
         };
 
         window.exportToCSV = () => {
-            if(!window.fetchedHistory) return;
-            let csv = "Date,Hour,Subject,Section,AbsentCount,Rolls\n";
-            window.fetchedHistory.forEach(i => {
-                csv += `${i.date},${i.hour},"${i.subject}",${i.section},${i.absentees.length},"${i.absentees.join(';')}"\n`;
+            if(reportData.length === 0) return;
+            
+            const headers = ["Date", "Hour", "Faculty", "Section", "Subject", "Absentees_Count", "Absent_Rolls"];
+            let csv = headers.join(",") + "\n";
+            
+            reportData.forEach(r => {
+                const rolls = `"${r.absentees.join(", ")}"`;
+                csv += `${r.date},${r.hour},"${r.faculty}",${r.section},"${r.subject}",${r.absentees.length},${rolls}\n`;
             });
-            const blob = new Blob([csv], { type: 'text/csv' });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Attendance_Report_${Date.now()}.csv`;
-            a.click();
+            link.setAttribute("href", url);
+            link.setAttribute("download", `Attendance_Report_${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         };
 
-        function updateQueueUI() {
-            const count = localQueue.length;
-            const pc = document.getElementById('pending-count');
-            const alertBox = document.getElementById('sync-alert');
-            if(pc) pc.innerText = count;
-            if(alertBox) alertBox.classList.toggle('hidden', count === 0);
+        function updateConnectionStatus() {
+            const badge = document.getElementById('status-badge');
+            const isOnline = navigator.onLine && !!currentUser;
+            badge.innerText = isOnline ? "● System Online" : "○ Syncing...";
+            badge.className = `text-[10px] font-bold uppercase ${isOnline ? 'text-green-500' : 'text-slate-400'}`;
         }
-
-        window.syncAllPending = async () => {
-            if(!navigator.onLine || !auth.currentUser) return;
-            for(const item of [...localQueue]) {
-                try {
-                    const { id, ...data } = item;
-                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), data);
-                    localQueue = localQueue.filter(i => i.id !== id);
-                    localStorage.setItem(`att_q_${appId}`, JSON.stringify(localQueue));
-                    updateQueueUI();
-                } catch(e) { console.error(e); }
-            }
-        };
     </script>
 </body>
 </html>
