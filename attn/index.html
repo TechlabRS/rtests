@@ -3,172 +3,195 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Portal - Bulk Marking</title>
+    <title>Attendance Portal - Compact View</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
         body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
-        .student-grid { 
-            display: grid; 
-            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
-            gap: 0.75rem; 
-        }
-        .student-card {
-            aspect-ratio: 1 / 1;
+        
+        /* High-density list layout */
+        .student-list-container {
             display: flex;
             flex-direction: column;
+            gap: 4px;
+        }
+        
+        .student-row {
+            display: flex;
             align-items: center;
-            justify-content: center;
-            border-radius: 1rem;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            transition: all 0.15s ease;
             cursor: pointer;
+            border: 1px solid transparent;
             user-select: none;
         }
-        .student-card:active { transform: scale(0.92); }
-        .present { background-color: #f0fdf4; border: 2px solid #bbf7d0; color: #166534; }
-        .absent { background-color: #fef2f2; border: 2px solid #fecaca; color: #991b1b; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
-        .sticky-summary { position: sticky; bottom: 1rem; z-index: 40; }
-        .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .report-table th, .report-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+
+        .present { 
+            background-color: #ffffff; 
+            border-color: #e2e8f0;
+            color: #475569;
+        }
+
+        .absent { 
+            background-color: #fef2f2; 
+            border-color: #fecaca;
+            color: #991b1b;
+            box-shadow: inset 4px 0 0 #ef4444;
+        }
+
+        .absent .status-dot { background-color: #ef4444; }
+        .present .status-dot { background-color: #22c55e; }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 12px;
+        }
+
+        .sticky-summary { 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            border-top: 1px solid #e2e8f0;
+            padding: 12px;
+            z-index: 50;
+        }
+        
+        /* Search bar styling */
+        .search-input {
+            transition: all 0.2s ease;
+        }
+        .search-input:focus {
+            background-color: #fff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 pb-32">
+<body class="bg-slate-50 text-slate-900 pb-24">
 
-    <div id="app" class="max-w-2xl mx-auto p-4">
-        <!-- Header -->
-        <header class="bg-white rounded-2xl shadow-sm p-6 mb-4 text-center border border-slate-200">
-            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Bulk Attendance</h1>
-            <div class="flex justify-center gap-2 mt-2">
-                <span id="status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500">Connecting...</span>
-                <span id="cloud-count" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">0 Cloud Records</span>
+    <div id="app" class="max-w-xl mx-auto p-4">
+        <!-- Compact Header -->
+        <header class="flex justify-between items-center mb-4">
+            <div>
+                <h1 class="text-xl font-black text-blue-600 tracking-tight">Attendance</h1>
+                <p id="status-badge" class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Connecting...</p>
+            </div>
+            <div class="text-right">
+                <span id="cloud-count" class="px-2 py-1 rounded bg-blue-50 text-blue-600 text-[10px] font-bold uppercase">0 Records</span>
             </div>
         </header>
 
-        <!-- Navigation Tabs -->
-        <div class="flex bg-slate-200 p-1 rounded-xl mb-6">
-            <button onclick="window.switchTab('mark')" id="tab-mark" class="flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm">Mark Attendance</button>
-            <button onclick="window.switchTab('report')" id="tab-report" class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500">View Reports</button>
+        <!-- Tabs -->
+        <div class="flex bg-slate-200 p-1 rounded-lg mb-4 text-xs">
+            <button onclick="window.switchTab('mark')" id="tab-mark" class="flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm">MARK</button>
+            <button onclick="window.switchTab('report')" id="tab-report" class="flex-1 py-1.5 rounded-md font-bold text-slate-500">REPORTS</button>
         </div>
 
-        <!-- SYNC ALERT -->
-        <div id="sync-alert" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex justify-between items-center">
-            <span class="text-amber-800 text-xs font-bold">⚠️ <span id="pending-count">0</span> unsynced records</span>
-            <button onclick="window.syncAllPending()" class="bg-amber-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm">Sync Now</button>
+        <!-- Sync Alert -->
+        <div id="sync-alert" class="hidden bg-amber-50 border border-amber-200 rounded-lg p-2 mb-4 flex justify-between items-center">
+            <span class="text-amber-800 text-[10px] font-bold">⚠️ <span id="pending-count">0</span> Pending</span>
+            <button onclick="window.syncAllPending()" class="bg-amber-600 text-white px-2 py-1 rounded text-[10px] font-bold">SYNC</button>
         </div>
 
-        <!-- VIEW 1: MARK ATTENDANCE -->
-        <div id="view-mark">
-            <div class="bg-white rounded-2xl shadow-sm p-5 mb-6 border border-slate-200 space-y-4">
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Date</label>
-                        <input type="date" id="attendanceDate" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Class Hour</label>
-                        <select id="hourSelect" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <option value="">Select Hour...</option>
-                            <option value="1-2">1 - 2</option>
-                            <option value="3-4">3 - 4</option>
-                            <option value="5-6">5 - 6</option>
-                            <option value="6-7">6 - 7</option>
-                        </select>
-                    </div>
+        <!-- VIEW 1: MARKING -->
+        <div id="view-mark" class="space-y-3">
+            <div class="bg-white rounded-xl shadow-sm p-4 border border-slate-200 grid grid-cols-2 gap-3">
+                <div class="col-span-2">
+                    <input type="text" id="facultyName" placeholder="Faculty Name" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
                 </div>
-
                 <div>
-                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Faculty Name</label>
-                    <input type="text" id="facultyName" placeholder="Enter Name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                    <input type="date" id="attendanceDate" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
                 </div>
-
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Target Section</label>
-                        <select id="sectionSelect" onchange="window.handleSectionChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <option value="">Select Section...</option>
-                            <option value="All" class="font-bold text-blue-600">All Sections</option>
-                            <option value="A">Section A</option>
-                            <option value="B">Section B</option>
-                            <option value="C">Section C</option>
-                            <option value="D">Section D</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Subject</label>
-                        <select id="subjectSelect" onchange="window.renderStudents()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
-                            <option value="">Select Subject...</option>
-                        </select>
-                    </div>
+                <div>
+                    <select id="hourSelect" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
+                        <option value="1-2">Hour 1-2</option>
+                        <option value="3-4">Hour 3-4</option>
+                        <option value="5-6">Hour 5-6</option>
+                        <option value="6-7">Hour 6-7</option>
+                    </select>
                 </div>
-            </div>
-
-            <div id="workspace" class="hidden space-y-4">
-                <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
-                    <div>
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Current Session</p>
-                        <button onclick="window.clearMarks()" class="text-[10px] font-bold text-red-500 underline uppercase">Clear All Marks</button>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[10px] font-bold text-slate-400 uppercase">Absentees</p>
-                        <p id="absent-count" class="text-lg font-black text-red-600">0</p>
-                    </div>
+                <div>
+                    <select id="sectionSelect" onchange="window.renderStudents()" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm font-bold text-blue-600 outline-none">
+                        <option value="">Section...</option>
+                        <option value="All">All Sections</option>
+                        <option value="A">Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                        <option value="D">Section D</option>
+                    </select>
                 </div>
-
-                <div id="student-list" class="student-grid"></div>
-
-                <div class="sticky-summary">
-                    <button onclick="window.submitAttendance()" class="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-2xl active:scale-95 transition-transform flex justify-between items-center px-8">
-                        <span>SUBMIT ATTENDANCE</span>
-                        <span id="submit-count" class="bg-blue-500 px-3 py-1 rounded-lg text-sm">0 Marked</span>
-                    </button>
+                <div>
+                    <select id="subjectSelect" onchange="window.renderStudents()" class="w-full p-2 bg-slate-50 border border-slate-100 rounded text-sm outline-none">
+                        <option value="">Subject...</option>
+                    </select>
                 </div>
             </div>
 
-            <div id="empty-state" class="text-center py-24 text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl">
-                <p>Select <b>Section</b> & <b>Subject</b> to view class</p>
+            <!-- Workspace with Search -->
+            <div id="workspace" class="hidden">
+                <div class="mb-3">
+                    <div class="relative group">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input 
+                            type="text" 
+                            id="studentSearch" 
+                            oninput="window.renderStudents()" 
+                            placeholder="Search by name or roll number..." 
+                            class="search-input w-full pl-9 p-2 bg-slate-100 border border-slate-200 rounded-lg text-sm outline-none"
+                        >
+                    </div>
+                </div>
+
+                <div class="flex justify-between items-center px-1 mb-2">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Class List</span>
+                    <button onclick="window.clearMarks()" class="text-[10px] font-bold text-red-500 uppercase">Reset All</button>
+                </div>
+                <div id="student-list" class="student-list-container"></div>
+            </div>
+
+            <div id="empty-state" class="text-center py-12 text-slate-300 border border-dashed border-slate-200 rounded-xl text-sm">
+                Select Section & Subject to Load List
             </div>
         </div>
 
         <!-- VIEW 2: REPORTS -->
-        <div id="view-report" class="hidden space-y-4">
-            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
-                <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Report Filters</h2>
-                <div class="grid grid-cols-2 gap-4 mb-4">
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400">From</label>
-                        <input type="date" id="reportFrom" class="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200">
-                    </div>
-                    <div>
-                        <label class="text-[10px] font-bold text-slate-400">To</label>
-                        <input type="date" id="reportTo" class="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200">
-                    </div>
+        <div id="view-report" class="hidden space-y-3">
+            <div class="bg-white rounded-xl p-4 border border-slate-200 shadow-sm">
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <input type="date" id="reportFrom" class="p-2 bg-slate-50 rounded text-xs border border-slate-100">
+                    <input type="date" id="reportTo" class="p-2 bg-slate-50 rounded text-xs border border-slate-100">
                 </div>
-                <button onclick="window.generateReport()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm mb-2 shadow-lg">Load History</button>
-                <button onclick="window.exportToCSV()" id="csv-btn" class="hidden w-full py-3 bg-white text-blue-600 border border-blue-200 rounded-xl font-bold text-sm">Download as CSV</button>
+                <button onclick="window.generateReport()" class="w-full py-2 bg-blue-600 text-white rounded font-bold text-xs shadow-md">LOAD HISTORY</button>
             </div>
-
-            <div id="report-results" class="space-y-4">
-                <!-- Injected report items -->
-            </div>
+            <div id="report-results" class="space-y-2"></div>
+            <button onclick="window.exportToCSV()" id="csv-btn" class="hidden w-full py-2 bg-white text-blue-600 border border-blue-100 rounded font-bold text-xs">DOWNLOAD CSV</button>
         </div>
 
-        <!-- Footer Stats -->
-        <div id="footer-stats" class="mt-8 flex justify-center items-center gap-4 text-slate-400">
-            <div class="text-center">
-                <span class="text-[10px] uppercase font-bold tracking-tighter block">Queue</span>
-                <span id="queue-count" class="text-lg font-black text-slate-700">0</span>
-            </div>
-            <div class="h-8 w-px bg-slate-200"></div>
-            <div class="text-center">
-                <span class="text-[10px] uppercase font-bold tracking-tighter block">Session Status</span>
-                <span id="session-sync-status" class="text-[10px] font-black text-blue-500">STANDBY</span>
+        <!-- Fixed Submit Bar -->
+        <div id="sticky-bar" class="sticky-summary hidden">
+            <div class="max-w-xl mx-auto flex gap-3">
+                <div class="flex-1">
+                    <p class="text-[9px] font-black text-slate-400 uppercase leading-none">Total Absent</p>
+                    <p id="absent-count" class="text-xl font-black text-red-600">0</p>
+                </div>
+                <button onclick="window.submitAttendance()" class="flex-[2] bg-blue-600 text-white rounded-lg font-bold text-sm shadow-lg active:scale-95 transition-transform">
+                    SUBMIT DATA
+                </button>
             </div>
         </div>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
-        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
 		
         const fallbackConfig = { apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
@@ -188,164 +211,384 @@
         const STATE_KEY = `att_state_${appId}`;
         let currentAbsentees = new Set(JSON.parse(localStorage.getItem(STATE_KEY) || '[]'));
         let localQueue = JSON.parse(localStorage.getItem(`att_q_${appId}`) || '[]');
-        let studentsList = [];
-        let fetchedHistory = [];
+        
+        let studentsList = [
+    { "roll": "23091A3335", "name": "MOGALIPALLI RAM CHARAN TEJA", "section": "A" },
+    { "roll": "24091A3301", "name": "MOGHAL AAHIL BAIG", "section": "A" },
+    { "roll": "24091A3303", "name": "MUCHUMARI ADITYA", "section": "A" },
+    { "roll": "24091A3307", "name": "GOPAVARAM AKHILA", "section": "A" },
+    { "roll": "24091A3308", "name": "THOTA AKSHAYA", "section": "A" },
+    { "roll": "24091A3318", "name": "RUPANAGUDI BABA BEE", "section": "A" },
+    { "roll": "24091A3327", "name": "CHINTHA CHANDRIKA", "section": "A" },
+    { "roll": "24091A3330", "name": "KUNCHAMA CHINNA", "section": "A" },
+    { "roll": "24091A3331", "name": "MARKA DARSHINI", "section": "A" },
+    { "roll": "24091A3334", "name": "KAKANURU DEVAKI", "section": "A" },
+    { "roll": "24091A3339", "name": "MALLU GANESH KUMAR REDDY", "section": "A" },
+    { "roll": "24091A3340", "name": "GOPISETTY GEETHA", "section": "A" },
+    { "roll": "24091A3343", "name": "SONTAM GOWTHAMI", "section": "A" },
+    { "roll": "24091A3345", "name": "DUGGINENI GURAPPADU", "section": "A" },
+    { "roll": "24091A3352", "name": "SANKULA HARSHAVARDHAN", "section": "A" },
+    { "roll": "24091A3353", "name": "YARRAGUNTLA HARSHITHA KUMARI", "section": "A" },
+    { "roll": "24091A3354", "name": "KONDLA PALLI HEMALATHA", "section": "A" },
+    { "roll": "24091A3355", "name": "YARRAM HEMANTH KUMAR REDDY", "section": "A" },
+    { "roll": "24091A3356", "name": "SIDDAVATAM HIMA SREE", "section": "A" },
+    { "roll": "24091A3357", "name": "PANYAM DUDEKULA HUSSAIN MOULI", "section": "A" },
+    { "roll": "24091A3365", "name": "BOGABATHINA JAYA SREE", "section": "A" },
+    { "roll": "24091A3374", "name": "SHAIK KHALIL BASHA", "section": "A" },
+    { "roll": "24091A3379", "name": "ATHIKARI LAKSHMI DEEPAK", "section": "A" },
+    { "roll": "24091A3383", "name": "MALLENI LIKITH", "section": "A" },
+    { "roll": "24091A3387", "name": "KAMMARI LOKESH", "section": "A" },
+    { "roll": "24091A3389", "name": "MARENNAGARI MADHUSUDHAN", "section": "A" },
+    { "roll": "24091A3394", "name": "THAPPETA MALLESH KUMAR", "section": "A" },
+    { "roll": "24091A3399", "name": "ASKANURU MANJUNATH", "section": "A" },
+    { "roll": "24091A33A3", "name": "THAMMANENI MITHIN KUMAR REDDY", "section": "A" },
+    { "roll": "24091A33A5", "name": "SHAIK MOHAMMAD KAIF", "section": "A" },
+    { "roll": "24091A33B2", "name": "KAMPILI MUKESH", "section": "A" },
+    { "roll": "24091A33D2", "name": "DOMBARI PEDDA VENKATESWARLU", "section": "A" },
+    { "roll": "24091A33D3", "name": "KONKA PRADEEP KUMAR", "section": "A" },
+    { "roll": "24091A33D5", "name": "GOSA PRASHANTH KUMAR", "section": "A" },
+    { "roll": "24091A33D8", "name": "RACHARLA PRATHAP", "section": "A" },
+    { "roll": "24091A33E3", "name": "REPALLI RAJESH", "section": "A" },
+    { "roll": "24091A33E4", "name": "MAILA RAM CHARAN", "section": "A" },
+    { "roll": "24091A33E6", "name": "ITIKELA RAVI CHANDRIKA", "section": "A" },
+    { "roll": "24091A33E7", "name": "UPPARA RAVI KUMAR", "section": "A" },
+    { "roll": "24091A33E8", "name": "AVULA REVANTH", "section": "A" },
+    { "roll": "24091A33F0", "name": "CHOWDAM RITHEESH", "section": "A" },
+    { "roll": "24091A33F1", "name": "BUDEDU ROSHAN SREERAM", "section": "A" },
+    { "roll": "24091A33F6", "name": "KONDURU SAI BHARATH KUMAR RAJU", "section": "A" },
+    { "roll": "24091A33F8", "name": "SOMA SAI CHARAN", "section": "A" },
+    { "roll": "24091A33F9", "name": "NERAVATI SAI GNANESH", "section": "A" },
+    { "roll": "24091A33G1", "name": "MUKKAMALLA SAI KARTHIK REDDY", "section": "A" },
+    { "roll": "24091A33G2", "name": "KENCHERLA SAI KUMAR", "section": "A" },
+    { "roll": "24091A33G3", "name": "TEPPA SAI PAVITHRA", "section": "A" },
+    { "roll": "24091A33G4", "name": "BANDA SAIKIRAN", "section": "A" },
+    { "roll": "24091A33G6", "name": "SHAIK SAMI", "section": "A" },
+    { "roll": "24091A33G8", "name": "YEDDULA SANDEEP REDDY", "section": "A" },
+    { "roll": "24091A33H1", "name": "SHAIK SANIYA", "section": "A" },
+    { "roll": "24091A33H4", "name": "CHALLA SANTHOSH", "section": "A" },
+    { "roll": "24091A33H5", "name": "TAPPETA SANTHOSH", "section": "A" },
+    { "roll": "24091A33H6", "name": "TADIMARRI SATISH REDDY", "section": "A" },
+    { "roll": "24091A33H7", "name": "BAIRAPURAM SHANKAR", "section": "A" },
+    { "roll": "24091A33J0", "name": "SUNKU SHARMITH", "section": "A" },
+    { "roll": "24091A33J7", "name": "SHAIK CHENNURU SOHAIL", "section": "A" },
+    { "roll": "24091A33M6", "name": "ARIKE SURYA KUMAR", "section": "A" },
+    { "roll": "24091A33P7", "name": "PASUPULETI VENKATA KOUSHIK", "section": "A" },
+    { "roll": "24091A33R1", "name": "KAMIREDDY VISHNUVARDHAN REDDY", "section": "A" },
+    { "roll": "24091A33R2", "name": "SOMALA VIVEK", "section": "A" },
+    { "roll": "25095A3301", "name": "SYED ABID BASHA", "section": "A" },
+    { "roll": "25095A3307", "name": "KOVURRI GURU TEJA", "section": "A" },
+    { "roll": "25095A3313", "name": "CHINTAKUNTLA MALLIKARJUNA REDDY", "section": "A" },
+    { "roll": "25095A3315", "name": "SHAIK MASULDAR ALTHAF", "section": "A" },
+    { "roll": "25095A3322", "name": "PASUVULA RISHI", "section": "A" },
+    { "roll": "25095A3325", "name": "CHOWDAM SASIDHAR", "section": "A" },
+    { "roll": "25095A3330", "name": "SYED VASEEM", "section": "A" },
+    { "roll": "25095A3332", "name": "GAVIREDDY YASWANTH REDDY", "section": "A" },
+    { "roll": "24091A3311", "name": "PAGIDYALA ANANDA JYOTHI", "section": "B" },
+    { "roll": "24091A3313", "name": "KURUBA ANIL", "section": "B" },
+    { "roll": "24091A3319", "name": "ALVAKONDA BABU", "section": "B" },
+    { "roll": "24091A3320", "name": "TALARI BALAVARDHAN", "section": "B" },
+    { "roll": "24091A3322", "name": "MANTHAKANTI BHAVANA PRIYA", "section": "B" },
+    { "roll": "24091A3326", "name": "BANDI CHANDRA SUMANTH REDDY", "section": "B" },
+    { "roll": "24091A3328", "name": "UTUKURU CHANDU", "section": "B" },
+    { "roll": "24091A3329", "name": "MIDDE CHARAN TEJA", "section": "B" },
+    { "roll": "24091A3335", "name": "RAMAYANAPU DEVENDRA PRASAD", "section": "B" },
+    { "roll": "24091A3337", "name": "AKULA DILEEP KUMAR", "section": "B" },
+    { "roll": "24091A3338", "name": "MULLA FEDHA HUSSEN", "section": "B" },
+    { "roll": "24091A3341", "name": "SOMULA GIREESH KUMAR REDDY", "section": "B" },
+    { "roll": "24091A3342", "name": "EDIGA GIRI", "section": "B" },
+    { "roll": "24091A3346", "name": "GALI GURU CHARAN", "section": "B" },
+    { "roll": "24091A3347", "name": "THUPAKULA GURU MADAN", "section": "B" },
+    { "roll": "24091A3348", "name": "CHELLUBOINA HARI SUDARSHAN", "section": "B" },
+    { "roll": "24091A3349", "name": "NAGURU HARINATH REDDY", "section": "B" },
+    { "roll": "24091A3351", "name": "L HARSHAVARDHAN", "section": "B" },
+    { "roll": "24091A3358", "name": "SHAIK ILIYAS", "section": "B" },
+    { "roll": "24091A3362", "name": "PAMULURU JAHNAVI REDDY", "section": "B" },
+    { "roll": "24091A3363", "name": "YERUVA JAYASANKAR REDDY", "section": "B" },
+    { "roll": "24091A3364", "name": "GOPI JAYASIMHA", "section": "B" },
+    { "roll": "24091A3366", "name": "T JOHN PAUL", "section": "B" },
+    { "roll": "24091A3367", "name": "SHAIK KARISHMA", "section": "B" },
+    { "roll": "24091A3369", "name": "ROKKAM KARTHIK REDDY", "section": "B" },
+    { "roll": "24091A3370", "name": "MAMILLA KAVYA SREE", "section": "B" },
+    { "roll": "24091A3371", "name": "CHEPURI KEERTHANA", "section": "B" },
+    { "roll": "24091A3373", "name": "KUNDAVARAM KEERTHI", "section": "B" },
+    { "roll": "24091A3375", "name": "ERAPOGU KHOWSHIK MATTHEW", "section": "B" },
+    { "roll": "24091A3376", "name": "YERASI KRISHNA PRIYA", "section": "B" },
+    { "roll": "24091A3380", "name": "MALLISETTY LAKSHMI", "section": "B" },
+    { "roll": "24091A3381", "name": "JAMMULA LAKSHMI PRASANNA", "section": "B" },
+    { "roll": "24091A3384", "name": "ALLU LIKITHA", "section": "B" },
+    { "roll": "24091A3391", "name": "ESARI MAHESH BABU", "section": "B" },
+    { "roll": "24091A3395", "name": "CHIMALA MALLI KARJUNA", "section": "B" },
+    { "roll": "24091A3396", "name": "BAINIGERI MANASA", "section": "B" },
+    { "roll": "24091A33A0", "name": "PUTTA MANJUNATH NAIDU", "section": "B" },
+    { "roll": "24091A33A2", "name": "CHAKALI MEGHANA", "section": "B" },
+    { "roll": "24091A33A8", "name": "DEREDDY MOUNIKA", "section": "B" },
+    { "roll": "24091A33B0", "name": "GANGA MOUNIKA JOICE", "section": "B" },
+    { "roll": "24091A33B1", "name": "PALAGIRI MOUNIKA", "section": "B" },
+    { "roll": "24091A33B3", "name": "MOMIN MUSFIRA JAHAN", "section": "B" },
+    { "roll": "24091A33B4", "name": "MD MUSKAAN KHANAM", "section": "B" },
+    { "roll": "24091A33B9", "name": "SOMULA NAGASREE CHAITRA", "section": "B" },
+    { "roll": "24091A33C2", "name": "PENETI NANDINI", "section": "B" },
+    { "roll": "24091A33C4", "name": "JANA NEERAJ", "section": "B" },
+    { "roll": "24091A33C7", "name": "SINGA PADMAVATHI", "section": "B" },
+    { "roll": "24091A33C8", "name": "NAGURU PALLAVI", "section": "B" },
+    { "roll": "24091A33D0", "name": "BANDAPALLI PAVANI", "section": "B" },
+    { "roll": "24091A33D4", "name": "SINGAMPALLI PRANATHEE", "section": "B" },
+    { "roll": "24091A33J2", "name": "MARAM SHIVA KISHORE", "section": "B" },
+    { "roll": "24091A33K1", "name": "PASAM SRAVYA", "section": "B" },
+    { "roll": "24091A33K6", "name": "PINJARI STREET MABUSUBANI", "section": "B" },
+    { "roll": "24091A33M1", "name": "PEBBETI SUJITHA", "section": "B" },
+    { "roll": "24091A33M7", "name": "BAILLA SUSHEEL KUMAR", "section": "B" },
+    { "roll": "24091A33N1", "name": "PICHHIGUNTLA TARAKA RAMUDU", "section": "B" },
+    { "roll": "24091A33N5", "name": "GUDIPATI UDAY SANTHOSH", "section": "B" },
+    { "roll": "24091A33Q6", "name": "KAVALI VENUGOPAL", "section": "B" },
+    { "roll": "25095A3303", "name": "SHAIK ASIYAH", "section": "B" },
+    { "roll": "25095A3304", "name": "DUDEKULA AYESHA BEGUM", "section": "B" },
+    { "roll": "25095A3305", "name": "KATTUBADI FARHEEN", "section": "B" },
+    { "roll": "25095A3308", "name": "VALLEPU HARIPRIYA", "section": "B" },
+    { "roll": "25095A3309", "name": "MADAKA HARSHA VARDHAN", "section": "B" },
+    { "roll": "25095A3314", "name": "PALAKU MANOJ", "section": "B" },
+    { "roll": "25095A3316", "name": "BOMMANA MUKUNDA REDDY", "section": "B" },
+    { "roll": "25095A3318", "name": "GORANTLA PRASANNA LAKSHMI", "section": "B" },
+    { "roll": "25095A3321", "name": "THAVALAM REDDY ROHITH", "section": "B" },
+    { "roll": "25095A3324", "name": "GUNDA SAI KRISHNA", "section": "B" },
+    { "roll": "25095A3329", "name": "KAMPAMALLA SUNANDA", "section": "B" },
+    { "roll": "25095A3331", "name": "BOYA VEERANJINEYULU", "section": "B" },
+    { "roll": "24091A3302", "name": "MADHAVARAM ABHITHA AKSHAYANI", "section": "C" },
+    { "roll": "24091A3304", "name": "SHAIK AEJAZ AHAMMAD", "section": "C" },
+    { "roll": "24091A3305", "name": "SHAIK AFIFA", "section": "C" },
+    { "roll": "24091A3315", "name": "SHAIK ASHRAFUDDINSHA", "section": "C" },
+    { "roll": "24091A3317", "name": "SHAIK AYESHA", "section": "C" },
+    { "roll": "24091A3321", "name": "PALLE BHANU PRIYA", "section": "C" },
+    { "roll": "24091A3323", "name": "CHAMA VENKATA BHAVITHA REDDY", "section": "C" },
+    { "roll": "24091A3324", "name": "ENJAMURI BHAVYA", "section": "C" },
+    { "roll": "24091A3332", "name": "UMMINENI DEEPIKA", "section": "C" },
+    { "roll": "24091A3336", "name": "KODURU DHARANI", "section": "C" },
+    { "roll": "24091A3350", "name": "POSA HARINI", "section": "C" },
+    { "roll": "24091A3361", "name": "ANGADI JAHNAVI", "section": "C" },
+    { "roll": "24091A3378", "name": "VALLURU KRISHNA VENI", "section": "C" },
+    { "roll": "24091A3385", "name": "PABBATHI LOHITHA", "section": "C" },
+    { "roll": "24091A3388", "name": "CHENCHUGARI MADHURIMA", "section": "C" },
+    { "roll": "24091A3393", "name": "BOGGARAPU MAHITHA", "section": "C" },
+    { "roll": "24091A3398", "name": "CHITTEPU MANISHA", "section": "C" },
+    { "roll": "24091A33A9", "name": "DUDEKULA MOUNIKA", "section": "C" },
+    { "roll": "24091A33B7", "name": "ALUVALA NAGA PUJITHA", "section": "C" },
+    { "roll": "24091A33D1", "name": "SUDHAPRATHI PAVANKUMAR", "section": "C" },
+    { "roll": "24091A33D6", "name": "AVULASETTI PRASHANTHI", "section": "C" },
+    { "roll": "24091A33D7", "name": "RAMAVATH PRATHAP NAIK", "section": "C" },
+    { "roll": "24091A33D9", "name": "KURUVA PRAVEEN KUMAR", "section": "C" },
+    { "roll": "24091A33E1", "name": "VADLAMUDI PRIYANKA", "section": "C" },
+    { "roll": "24091A33E2", "name": "VADDE RAGHU", "section": "C" },
+    { "roll": "24091A33E5", "name": "BANDI RAMA SUPRIYA", "section": "C" },
+    { "roll": "24091A33F7", "name": "BODAPATI SAI BINDU", "section": "C" },
+    { "roll": "24091A33G5", "name": "GAVIREDDY SAISUSMITHA", "section": "C" },
+    { "roll": "24091A33G7", "name": "SHAIK SANA KOUSAR", "section": "C" },
+    { "roll": "24091A33H2", "name": "SHAIK SANIYA", "section": "C" },
+    { "roll": "24091A33H8", "name": "BANALA SHANMUKHA SRI PRIYA", "section": "C" },
+    { "roll": "24091A33H9", "name": "ARAVETI SHARANYA", "section": "C" },
+    { "roll": "24091A33J1", "name": "MEDAM SHILPA", "section": "C" },
+    { "roll": "24091A33J3", "name": "VEMPALLE SIVA MADHURIMA", "section": "C" },
+    { "roll": "24091A33J4", "name": "RASAPUTHRA SIVA NANDINI", "section": "C" },
+    { "roll": "24091A33J6", "name": "PEBBATI SNEHA", "section": "C" },
+    { "roll": "24091A33J8", "name": "SINGIRIGARI SPURTHI", "section": "C" },
+    { "roll": "24091A33K0", "name": "BHAVANASI SRAVANTHI", "section": "C" },
+    { "roll": "24091A33K5", "name": "YELAGGARI SRIVANI", "section": "C" },
+    { "roll": "24091A33K8", "name": "UPPARI SUBHARATHI", "section": "C" },
+    { "roll": "24091A33K9", "name": "MANTI SUCHARITHA", "section": "C" },
+    { "roll": "24091A33M9", "name": "PALLU SUSMITHA", "section": "C" },
+    { "roll": "24091A33N8", "name": "POOJARI VANDANA", "section": "C" },
+    { "roll": "24091A33P2", "name": "MANDLA VASANTHI", "section": "C" },
+    { "roll": "24091A33P5", "name": "KULLU VENKATA DINESH KUMAR", "section": "C" },
+    { "roll": "24091A33R5", "name": "THARIGONDA YASWITHA", "section": "C" },
+    { "roll": "24091A33R7", "name": "ANGADI YESHWINI", "section": "C" },
+    { "roll": "25095A3302", "name": "ANCHA AMULYA VISHNU SAI", "section": "C" },
+    { "roll": "25095A3306", "name": "PENDEM GANESWARI", "section": "C" },
+    { "roll": "25095A3310", "name": "THUNGA LIKHITHA", "section": "C" },
+    { "roll": "25095A3320", "name": "GOLLA RAMYA", "section": "C" },
+    { "roll": "25095A3323", "name": "PERUGU ROHINI", "section": "C" },
+    { "roll": "25095A3326", "name": "VADDI SOWMYASRI", "section": "C" },
+    { "roll": "22091A3337", "name": "BOYA PAVAN KUMAR", "section": "D" },
+    { "roll": "24091A3310", "name": "SIRIGI REDDY AMRUTHA", "section": "D" },
+    { "roll": "24091A3312", "name": "KOTHAMASI ANANDA MANI", "section": "D" },
+    { "roll": "24091A3314", "name": "DARA ARUNA", "section": "D" },
+    { "roll": "24091A3325", "name": "KAMITKAR BHAVYA", "section": "D" },
+    { "roll": "24091A3360", "name": "BOORAGALA JAHIRA BEE", "section": "D" },
+    { "roll": "24091A3368", "name": "RAGE KARTHIK GOWD", "section": "D" },
+    { "roll": "24091A3372", "name": "MARAPPAGARI KEERTHANA", "section": "D" },
+    { "roll": "24091A3377", "name": "K C KRISHNA SAI", "section": "D" },
+    { "roll": "24091A3382", "name": "NALLABOTHULA LAVANYA", "section": "D" },
+    { "roll": "24091A3386", "name": "BANDI LOKESH", "section": "D" },
+    { "roll": "24091A3390", "name": "POTHIREDDY MAHA LAKSHMI", "section": "D" },
+    { "roll": "24091A3397", "name": "VATTIVALLA MANASA", "section": "D" },
+    { "roll": "24091A33A1", "name": "GADDAM MANOJ KUMAR", "section": "D" },
+    { "roll": "24091A33A6", "name": "DAFADAR MOHAMMAD MUZAMMIL", "section": "D" },
+    { "roll": "24091A33B6", "name": "BETHAMSETTY NAGA DEEKSHITHA", "section": "D" },
+    { "roll": "24091A33B8", "name": "KOPPULA NAGA SANDEEP", "section": "D" },
+    { "roll": "24091A33C3", "name": "GUNTHA NAVEEN TEJA", "section": "D" },
+    { "roll": "24091A33C5", "name": "NUKALA NIHITH", "section": "D" },
+    { "roll": "24091A33C6", "name": "CHINTHALAPALLI NIRANJAN REDDY", "section": "D" },
+    { "roll": "24091A33C9", "name": "BACHHILI PARTHASARADHI REDDY", "section": "D" },
+    { "roll": "24091A33E0", "name": "TALARI PRIYANKA", "section": "D" },
+    { "roll": "24091A33E9", "name": "CHINTHAMANU REVATHI", "section": "D" },
+    { "roll": "24091A33F2", "name": "GATE RUSHDA TABASSUM", "section": "D" },
+    { "roll": "24091A33F3", "name": "KETHAPALLI RUTHIKA", "section": "D" },
+    { "roll": "24091A33F4", "name": "SHAIK SABERIN", "section": "D" },
+    { "roll": "24091A33F5", "name": "DODLA SAHITHI", "section": "D" },
+    { "roll": "24091A33G9", "name": "VADLA SANGEETHA", "section": "D" },
+    { "roll": "24091A33H0", "name": "YERUVA SANGEETHA", "section": "D" },
+    { "roll": "24091A33H3", "name": "PAGIDI SANJEEVA SAI SREEJA", "section": "D" },
+    { "roll": "24091A33K2", "name": "NAKKA SREELEKHA", "section": "D" },
+    { "roll": "24091A33K3", "name": "DASARI SREEVALLI", "section": "D" },
+    { "roll": "24091A33K4", "name": "VADDAMANU SRINIVAS", "section": "D" },
+    { "roll": "24091A33K7", "name": "KAKARLA SUBHAN BASHA", "section": "D" },
+    { "roll": "24091A33M2", "name": "SALKAPURAM SUMANTH TEJA", "section": "D" },
+    { "roll": "24091A33M3", "name": "SHAIK SUMAYA", "section": "D" },
+    { "roll": "24091A33M4", "name": "VIDUDALA SUNIL", "section": "D" },
+    { "roll": "24091A33M5", "name": "SHAIK SURAYYA KOUSAR", "section": "D" },
+    { "roll": "24091A33M8", "name": "RAYAVARAM SUSHMA SREE", "section": "D" },
+    { "roll": "24091A33N0", "name": "SHAIK TABASSUM", "section": "D" },
+    { "roll": "24091A33N2", "name": "MASEEDU TEJA", "section": "D" },
+    { "roll": "24091A33N3", "name": "PODILI THANSI PRIYA", "section": "D" },
+    { "roll": "24091A33N4", "name": "DASARI THULASIKRISHNA", "section": "D" },
+    { "roll": "24091A33N6", "name": "SEELAM UDAYA SREE", "section": "D" },
+    { "roll": "24091A33N7", "name": "KALINGIRI VAMSI KRISHNA", "section": "D" },
+    { "roll": "24091A33N9", "name": "SANNAPUREDDY VARA LAKSHMI", "section": "D" },
+    { "roll": "24091A33P0", "name": "T VARSHINI", "section": "D" },
+    { "roll": "24091A33P1", "name": "KURUVA VASANTHA", "section": "D" },
+    { "roll": "24091A33P3", "name": "KAUKUNTLA VEDA PRIYA", "section": "D" },
+    { "roll": "24091A33P4", "name": "BANNURU VENKAT MADHU KOUSHIK", "section": "D" },
+    { "roll": "24091A33P6", "name": "PAIDIMARRI VENKATA HARSHITHA", "section": "D" },
+    { "roll": "24091A33P8", "name": "JYOTHULA VENKATA MAHENDRA", "section": "D" },
+    { "roll": "24091A33P9", "name": "ONTEDDU VENKATA MUNI SRIJANA", "section": "D" },
+    { "roll": "24091A33Q0", "name": "POTHURAJU VENKATA NAGA PRAVALLIKA", "section": "D" },
+    { "roll": "24091A33Q1", "name": "MULINTI VENKATA POOJITHA", "section": "D" },
+    { "roll": "24091A33Q2", "name": "DEVARAPALLI VENKATA SUNANDINI", "section": "D" },
+    { "roll": "24091A33Q3", "name": "SABBELLA VENKATA SURENDRA REDDY", "section": "D" },
+    { "roll": "24091A33Q4", "name": "SIDDAVATAM VENKATESWARLU", "section": "D" },
+    { "roll": "24091A33Q5", "name": "KURUVA VENU KUMAR", "section": "D" },
+    { "roll": "24091A33Q7", "name": "CHAMALA VIJAY LINGESWARA REDDY", "section": "D" },
+    { "roll": "24091A33R0", "name": "RAMIREDDY VINEETHA", "section": "D" },
+    { "roll": "24091A33R3", "name": "REDDY YASASWINI", "section": "D" },
+    { "roll": "24091A33R6", "name": "YELUKURU SUMEDHA", "section": "D" },
+    { "roll": "24091A33R8", "name": "PINJARI ZULEKHA", "section": "D" },
+    { "roll": "25095A3311", "name": "JALAL MAHAMMAD SOHAIL", "section": "D" },
+    { "roll": "25095A3312", "name": "BUDURU MAHESH", "section": "D" },
+    { "roll": "25095A3317", "name": "GANGARAPU PRANESH REDDY", "section": "D" },
+    { "roll": "25095A3319", "name": "MUHAMMAD QUAYYUM SALEEM", "section": "D" },
+    { "roll": "25095A3327", "name": "JAMPANA SUBBA NARASIMHA REDDY", "section": "D" },
+    { "roll": "25095A3328", "name": "C SUDARSH", "section": "D"
+    }
+];
 
-        const sections = ['A', 'B', 'C', 'D'];
         const subjects = [
-            { name: "Optimization Techniques", type: "Class" },
-            { name: "Probability & Statistics", type: "Class" },
-            { name: "Machine Learning", type: "Class" },
-            { name: "Database Management Systems", type: "Class" },
-            { name: "Digital Logic and Computer Organization", type: "Class" },
-            { name: "Full Stack Development", type: "Class" },
-            { name: "Design Thinking & Innovation", type: "Class" },
-            { name: "Machine Learning Lab", type: "Lab" },
-            { name: "Database Management Systems Lab", type: "Lab" }
+            "Optimization Techniques", "Probability & Statistics", "Machine Learning", 
+            "DBMS", "Digital Logic", "Full Stack Dev", "Design Thinking", "ML Lab", "DBMS Lab"
         ];
 
         window.onload = async () => {
-            initStudents();
-            initSubjects();
+            const subjectSelect = document.getElementById('subjectSelect');
+            subjects.forEach(s => subjectSelect.add(new Option(s, s)));
+            
             await initAuth();
             updateQueueUI();
             
-            // Default dates
             const today = new Date();
-            const lastWeek = new Date(today);
-            lastWeek.setDate(today.getDate() - 7);
-            
             document.getElementById('attendanceDate').valueAsDate = today;
             document.getElementById('reportTo').valueAsDate = today;
-            document.getElementById('reportFrom').valueAsDate = lastWeek;
-
+            
             window.addEventListener('online', updateConnectionStatus);
             window.addEventListener('offline', updateConnectionStatus);
             updateConnectionStatus();
-            
-            if (document.getElementById('sectionSelect').value) window.renderStudents();
         };
-
-        function initStudents() {
-            sections.forEach(sec => {
-                let start = sec === 'A' ? 1000 : sec === 'B' ? 2000 : sec === 'C' ? 3000 : 4000;
-                for (let i = 1; i <= 65; i++) {
-                    studentsList.push({ roll: String(start + i), name: `S${i}`, section: sec });
-                }
-            });
-        }
-
-        function initSubjects() {
-            const select = document.getElementById('subjectSelect');
-            const theory = document.createElement('optgroup'); theory.label = "Theory Classes";
-            const labs = document.createElement('optgroup'); labs.label = "Lab Sessions";
-            subjects.forEach(s => {
-                const opt = new Option(s.name, s.name);
-                if(s.type === 'Class') theory.appendChild(opt);
-                else labs.appendChild(opt);
-            });
-            select.appendChild(theory);
-            select.appendChild(labs);
-        }
 
         async function initAuth() {
             try {
                 if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
                     await signInWithCustomToken(auth, window.__initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch(e) { console.error("Auth error:", e); }
+                } else { await signInAnonymously(auth); }
+            } catch(e) { console.error(e); }
 
             onAuthStateChanged(auth, (user) => {
                 if(user) {
-                    setupSyncListener();
-                    updateConnectionStatus();
+                    onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), (snap) => {
+                        document.getElementById('cloud-count').innerText = `${snap.size} Records`;
+                    });
                 }
-            });
-        }
-
-        function setupSyncListener() {
-            const q = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
-            onSnapshot(q, (snap) => {
-                const countEl = document.getElementById('cloud-count');
-                if (countEl) countEl.innerText = `${snap.size} Cloud Records`;
             });
         }
 
         function updateConnectionStatus() {
             const badge = document.getElementById('status-badge');
-            if (!badge) return;
-            badge.innerText = navigator.onLine ? "● Online" : "○ Offline";
-            badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${navigator.onLine ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+            if (badge) {
+                badge.innerText = navigator.onLine ? "● System Online" : "○ Offline Mode";
+                badge.className = `text-[10px] font-bold uppercase tracking-widest ${navigator.onLine ? 'text-green-500' : 'text-red-400'}`;
+            }
         }
 
-        // --- NAVIGATION ---
         window.switchTab = (tab) => {
-            const markBtn = document.getElementById('tab-mark');
-            const reportBtn = document.getElementById('tab-report');
-            const markView = document.getElementById('view-mark');
-            const reportView = document.getElementById('view-report');
-
-            if (tab === 'mark') {
-                markView.classList.remove('hidden');
-                reportView.classList.add('hidden');
-                markBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm";
-                reportBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500";
-            } else {
-                markView.classList.add('hidden');
-                reportView.classList.remove('hidden');
-                reportBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm";
-                markBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500";
-            }
+            const isMark = tab === 'mark';
+            document.getElementById('view-mark').classList.toggle('hidden', !isMark);
+            document.getElementById('view-report').classList.toggle('hidden', isMark);
+            document.getElementById('sticky-bar').classList.toggle('hidden', !isMark || document.getElementById('workspace').classList.contains('hidden'));
+            
+            document.getElementById('tab-mark').className = isMark ? "flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm" : "flex-1 py-1.5 rounded-md font-bold text-slate-500";
+            document.getElementById('tab-report').className = !isMark ? "flex-1 py-1.5 rounded-md font-bold bg-white shadow-sm" : "flex-1 py-1.5 rounded-md font-bold text-slate-500";
         };
 
-        // --- MARKING LOGIC ---
-        window.handleSectionChange = () => window.renderStudents();
-        
         window.renderStudents = () => {
             const section = document.getElementById('sectionSelect').value;
             const subject = document.getElementById('subjectSelect').value;
+            const query = document.getElementById('studentSearch').value.toLowerCase();
             const listContainer = document.getElementById('student-list');
+            
             if(!section || !subject) {
                 document.getElementById('workspace').classList.add('hidden');
+                document.getElementById('sticky-bar').classList.add('hidden');
                 document.getElementById('empty-state').classList.remove('hidden');
                 return;
             }
+            
             document.getElementById('workspace').classList.remove('hidden');
+            document.getElementById('sticky-bar').classList.remove('hidden');
             document.getElementById('empty-state').classList.add('hidden');
             
-            const filtered = studentsList.filter(s => (section === 'All' || s.section === section));
-            listContainer.innerHTML = filtered.map(s => `
-                <div onclick="window.toggleAbsent('${s.roll}')" id="card-${s.roll}" class="student-card ${currentAbsentees.has(s.roll) ? 'absent' : 'present'}">
-                    <span class="text-[10px] font-bold opacity-50 uppercase">${s.section}</span>
-                    <span class="text-lg font-black tracking-tighter">${s.roll.slice(-2)}</span>
-                    <span class="text-[9px] font-medium opacity-70">${s.roll}</span>
-                </div>
-            `).join('');
+            const filtered = studentsList.filter(s => {
+                const matchesSection = (section === 'All' || s.section === section);
+                const matchesSearch = s.name.toLowerCase().includes(query) || s.roll.toLowerCase().includes(query);
+                return matchesSection && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                listContainer.innerHTML = '<p class="text-center text-xs text-slate-400 py-8">No students match your criteria</p>';
+            } else {
+                listContainer.innerHTML = filtered.map(s => `
+                    <div onclick="window.toggleAbsent('${s.roll}')" id="row-${s.roll}" class="student-row ${currentAbsentees.has(s.roll) ? 'absent' : 'present'}">
+                        <div class="status-dot"></div>
+                        <div class="flex-1 text-left">
+                            <p class="text-xs font-bold leading-none">${s.name}</p>
+                            <p class="text-[9px] opacity-60 font-mono mt-1">${s.roll} • Sec ${s.section}</p>
+                        </div>
+                        <div class="text-[10px] font-bold uppercase">
+                            ${currentAbsentees.has(s.roll) ? 'Absent' : 'Present'}
+                        </div>
+                    </div>
+                `).join('');
+            }
             updateStats();
         };
 
         window.toggleAbsent = (roll) => {
-            const card = document.getElementById(`card-${roll}`);
-            if(currentAbsentees.has(roll)) {
-                currentAbsentees.delete(roll);
-                card.classList.replace('absent', 'present');
-            } else {
-                currentAbsentees.add(roll);
-                card.classList.replace('present', 'absent');
-            }
+            if(currentAbsentees.has(roll)) currentAbsentees.delete(roll);
+            else currentAbsentees.add(roll);
             localStorage.setItem(STATE_KEY, JSON.stringify(Array.from(currentAbsentees)));
-            updateStats();
+            window.renderStudents();
         };
 
         function updateStats() {
             document.getElementById('absent-count').innerText = currentAbsentees.size;
-            document.getElementById('submit-count').innerText = `${currentAbsentees.size} Absent`;
         }
 
         window.clearMarks = () => {
-            if(confirm("Clear selection?")) { currentAbsentees.clear(); localStorage.removeItem(STATE_KEY); window.renderStudents(); }
+            if(confirm("Clear current selection?")) { currentAbsentees.clear(); localStorage.removeItem(STATE_KEY); window.renderStudents(); }
         };
 
         window.submitAttendance = async () => {
@@ -359,7 +602,8 @@
                 absentees: Array.from(currentAbsentees),
                 timestamp: Date.now()
             };
-            if(!entry.date || !entry.section || !entry.subject) return alert("Fill all details");
+            
+            if(!entry.faculty) return alert("Enter Faculty Name");
             
             localQueue.push(entry);
             localStorage.setItem(`att_q_${appId}`, JSON.stringify(localQueue));
@@ -367,89 +611,73 @@
             localStorage.removeItem(STATE_KEY);
             updateQueueUI();
             window.renderStudents();
-            alert("Saved to queue");
             window.syncAllPending();
         };
 
-        // --- REPORTING LOGIC ---
         window.generateReport = async () => {
             const from = document.getElementById('reportFrom').value;
             const to = document.getElementById('reportTo').value;
             const container = document.getElementById('report-results');
-            const csvBtn = document.getElementById('csv-btn');
             
-            if(!from || !to) return alert("Select date range");
-            
-            container.innerHTML = '<p class="text-center text-slate-400 py-10">Fetching history...</p>';
+            if(!from || !to) return alert("Select dates");
+            container.innerHTML = '<p class="text-center text-[10px] text-slate-400 py-4 uppercase font-bold tracking-widest">LOADING HISTORY...</p>';
             
             try {
-                // Fetching all and filtering in memory to avoid index requirements
-                const q = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
-                const snap = await getDocs(q);
-                
-                fetchedHistory = [];
+                const snap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'));
+                let history = [];
                 snap.forEach(doc => {
                     const d = doc.data();
-                    if (d.date >= from && d.date <= to) fetchedHistory.push(d);
+                    if (d.date >= from && d.date <= to) history.push(d);
                 });
 
-                fetchedHistory.sort((a, b) => b.date.localeCompare(a.date));
+                history.sort((a, b) => b.timestamp - a.timestamp);
+                window.fetchedHistory = history;
 
-                if(fetchedHistory.length === 0) {
-                    container.innerHTML = '<p class="text-center text-slate-400 py-10">No records found for this range.</p>';
-                    csvBtn.classList.add('hidden');
+                if(history.length === 0) {
+                    container.innerHTML = '<p class="text-center text-xs text-slate-400 py-4">No records found for selected range.</p>';
+                    document.getElementById('csv-btn').classList.add('hidden');
                     return;
                 }
 
-                csvBtn.classList.remove('hidden');
-                container.innerHTML = fetchedHistory.map(item => `
-                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <h3 class="text-sm font-black text-slate-800">${item.subject}</h3>
-                                <p class="text-[10px] text-slate-500 font-bold uppercase">${item.date} • Hour ${item.hour}</p>
-                            </div>
-                            <span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-[10px] font-black">${item.absentees.length} ABSENT</span>
+                document.getElementById('csv-btn').classList.remove('hidden');
+                container.innerHTML = history.map(item => `
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 shadow-sm text-xs">
+                        <div class="flex justify-between items-center font-black">
+                            <span>${item.subject}</span>
+                            <span class="text-red-500">${item.absentees.length} Absent</span>
                         </div>
-                        <div class="text-[10px] text-slate-400 font-mono break-words bg-slate-50 p-2 rounded-lg">
-                            ${item.absentees.length > 0 ? item.absentees.join(", ") : "None"}
-                        </div>
-                        <p class="text-[9px] mt-2 text-slate-400 italic">Faculty: ${item.faculty}</p>
+                        <p class="text-[9px] text-slate-400 uppercase font-bold mt-1">${item.date} • Hr ${item.hour} • ${item.section}</p>
+                        <p class="text-[9px] text-slate-500 mt-2 font-mono bg-slate-50 p-1.5 rounded truncate">${item.absentees.join(", ")}</p>
                     </div>
                 `).join('');
-
-            } catch(e) {
-                container.innerHTML = `<p class="text-red-500 text-center py-10">Error: ${e.message}</p>`;
-            }
+            } catch(e) { container.innerHTML = `<p class="text-red-500 text-center text-xs">Error loading data</p>`; }
         };
 
         window.exportToCSV = () => {
-            const headers = ["Date", "Hour", "Subject", "Faculty", "Section", "TotalAbsent", "AbsentRolls"];
-            let csv = headers.join(",") + "\n";
-            fetchedHistory.forEach(item => {
-                csv += `${item.date},${item.hour},"${item.subject}","${item.faculty}",${item.section},${item.absentees.length},"${item.absentees.join('; ')}"\n`;
+            if(!window.fetchedHistory) return;
+            let csv = "Date,Hour,Subject,Section,AbsentCount,Rolls\n";
+            window.fetchedHistory.forEach(i => {
+                csv += `${i.date},${i.hour},"${i.subject}",${i.section},${i.absentees.length},"${i.absentees.join(';')}"\n`;
             });
             const blob = new Blob([csv], { type: 'text/csv' });
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `Attendance_Report_${document.getElementById('reportFrom').value}_to_${document.getElementById('reportTo').value}.csv`;
+            a.download = `Attendance_Report_${Date.now()}.csv`;
             a.click();
         };
 
-        // --- SYNC TOOLS ---
         function updateQueueUI() {
             const count = localQueue.length;
-            document.getElementById('queue-count').innerText = count;
-            document.getElementById('pending-count').innerText = count;
-            document.getElementById('sync-alert').classList.toggle('hidden', count === 0);
+            const pc = document.getElementById('pending-count');
+            const alertBox = document.getElementById('sync-alert');
+            if(pc) pc.innerText = count;
+            if(alertBox) alertBox.classList.toggle('hidden', count === 0);
         }
 
         window.syncAllPending = async () => {
             if(!navigator.onLine || !auth.currentUser) return;
-            const toSync = [...localQueue];
-            document.getElementById('session-sync-status').innerText = "SYNCING...";
-            for(const item of toSync) {
+            for(const item of [...localQueue]) {
                 try {
                     const { id, ...data } = item;
                     await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), data);
@@ -458,7 +686,6 @@
                     updateQueueUI();
                 } catch(e) { console.error(e); }
             }
-            document.getElementById('session-sync-status').innerText = "STANDBY";
         };
     </script>
 </body>
