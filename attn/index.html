@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Portal - Bulk Marking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; -webkit-tap-highlight-color: transparent; }
+        .student-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); 
+            gap: 0.75rem; 
+        }
+        .student-card {
+            aspect-ratio: 1 / 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border-radius: 1rem;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            cursor: pointer;
+            user-select: none;
+        }
+        .student-card:active { transform: scale(0.92); }
+        .present { background-color: #f0fdf4; border: 2px solid #bbf7d0; color: #166534; }
+        .absent { background-color: #fef2f2; border: 2px solid #fecaca; color: #991b1b; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
+        .sticky-summary { position: sticky; bottom: 1rem; z-index: 40; }
+        .report-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        .report-table th, .report-table td { border: 1px solid #e2e8f0; padding: 8px; text-align: left; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 pb-32">
+
+    <div id="app" class="max-w-2xl mx-auto p-4">
+        <!-- Header -->
+        <header class="bg-white rounded-2xl shadow-sm p-6 mb-4 text-center border border-slate-200">
+            <h1 class="text-2xl font-black text-blue-600 tracking-tight">Bulk Attendance</h1>
+            <div class="flex justify-center gap-2 mt-2">
+                <span id="status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-slate-100 text-slate-500">Connecting...</span>
+                <span id="cloud-count" class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-blue-100 text-blue-700">0 Cloud Records</span>
+            </div>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <div class="flex bg-slate-200 p-1 rounded-xl mb-6">
+            <button onclick="window.switchTab('mark')" id="tab-mark" class="flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm">Mark Attendance</button>
+            <button onclick="window.switchTab('report')" id="tab-report" class="flex-1 py-2 rounded-lg text-sm font-bold text-slate-500">View Reports</button>
+        </div>
+
+        <!-- SYNC ALERT -->
+        <div id="sync-alert" class="hidden bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 flex justify-between items-center">
+            <span class="text-amber-800 text-xs font-bold">⚠️ <span id="pending-count">0</span> unsynced records</span>
+            <button onclick="window.syncAllPending()" class="bg-amber-600 text-white px-3 py-1 rounded-lg text-xs font-bold shadow-sm">Sync Now</button>
+        </div>
+
+        <!-- VIEW 1: MARK ATTENDANCE -->
+        <div id="view-mark">
+            <div class="bg-white rounded-2xl shadow-sm p-5 mb-6 border border-slate-200 space-y-4">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Date</label>
+                        <input type="date" id="attendanceDate" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Class Hour</label>
+                        <select id="hourSelect" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option value="">Select Hour...</option>
+                            <option value="1-2">1 - 2</option>
+                            <option value="3-4">3 - 4</option>
+                            <option value="5-6">5 - 6</option>
+                            <option value="6-7">6 - 7</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Faculty Name</label>
+                    <input type="text" id="facultyName" placeholder="Enter Name" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Target Section</label>
+                        <select id="sectionSelect" onchange="window.handleSectionChange()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option value="">Select Section...</option>
+                            <option value="All" class="font-bold text-blue-600">All Sections</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                            <option value="D">Section D</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400 uppercase ml-1">Subject</label>
+                        <select id="subjectSelect" onchange="window.renderStudents()" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none">
+                            <option value="">Select Subject...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="workspace" class="hidden space-y-4">
+                <div class="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200">
+                    <div>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Current Session</p>
+                        <button onclick="window.clearMarks()" class="text-[10px] font-bold text-red-500 underline uppercase">Clear All Marks</button>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[10px] font-bold text-slate-400 uppercase">Absentees</p>
+                        <p id="absent-count" class="text-lg font-black text-red-600">0</p>
+                    </div>
+                </div>
+
+                <div id="student-list" class="student-grid"></div>
+
+                <div class="sticky-summary">
+                    <button onclick="window.submitAttendance()" class="w-full p-5 bg-blue-600 text-white rounded-2xl font-black shadow-2xl active:scale-95 transition-transform flex justify-between items-center px-8">
+                        <span>SUBMIT ATTENDANCE</span>
+                        <span id="submit-count" class="bg-blue-500 px-3 py-1 rounded-lg text-sm">0 Marked</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="empty-state" class="text-center py-24 text-slate-300 border-2 border-dashed border-slate-200 rounded-3xl">
+                <p>Select <b>Section</b> & <b>Subject</b> to view class</p>
+            </div>
+        </div>
+
+        <!-- VIEW 2: REPORTS -->
+        <div id="view-report" class="hidden space-y-4">
+            <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+                <h2 class="text-xs font-black text-slate-400 uppercase mb-4 tracking-widest">Report Filters</h2>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">From</label>
+                        <input type="date" id="reportFrom" class="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-bold text-slate-400">To</label>
+                        <input type="date" id="reportTo" class="w-full p-2 bg-slate-50 rounded-lg text-xs border border-slate-200">
+                    </div>
+                </div>
+                <button onclick="window.generateReport()" class="w-full py-3 bg-blue-600 text-white rounded-xl font-bold text-sm mb-2 shadow-lg">Load History</button>
+                <button onclick="window.exportToCSV()" id="csv-btn" class="hidden w-full py-3 bg-white text-blue-600 border border-blue-200 rounded-xl font-bold text-sm">Download as CSV</button>
+            </div>
+
+            <div id="report-results" class="space-y-4">
+                <!-- Injected report items -->
+            </div>
+        </div>
+
+        <!-- Footer Stats -->
+        <div id="footer-stats" class="mt-8 flex justify-center items-center gap-4 text-slate-400">
+            <div class="text-center">
+                <span class="text-[10px] uppercase font-bold tracking-tighter block">Queue</span>
+                <span id="queue-count" class="text-lg font-black text-slate-700">0</span>
+            </div>
+            <div class="h-8 w-px bg-slate-200"></div>
+            <div class="text-center">
+                <span class="text-[10px] uppercase font-bold tracking-tighter block">Session Status</span>
+                <span id="session-sync-status" class="text-[10px] font-black text-blue-500">STANDBY</span>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+		
+        const fallbackConfig = { apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+  measurementId: "G-9PZZM5LFKX" };
+        const firebaseConfig = typeof window.__firebase_config !== 'undefined' ? JSON.parse(window.__firebase_config) : fallbackConfig;
+        const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'attendance-system-v1';
+        
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        const STATE_KEY = `att_state_${appId}`;
+        let currentAbsentees = new Set(JSON.parse(localStorage.getItem(STATE_KEY) || '[]'));
+        let localQueue = JSON.parse(localStorage.getItem(`att_q_${appId}`) || '[]');
+        let studentsList = [];
+        let fetchedHistory = [];
+
+        const sections = ['A', 'B', 'C', 'D'];
+        const subjects = [
+            { name: "Optimization Techniques", type: "Class" },
+            { name: "Probability & Statistics", type: "Class" },
+            { name: "Machine Learning", type: "Class" },
+            { name: "Database Management Systems", type: "Class" },
+            { name: "Digital Logic and Computer Organization", type: "Class" },
+            { name: "Full Stack Development", type: "Class" },
+            { name: "Design Thinking & Innovation", type: "Class" },
+            { name: "Machine Learning Lab", type: "Lab" },
+            { name: "Database Management Systems Lab", type: "Lab" }
+        ];
+
+        window.onload = async () => {
+            initStudents();
+            initSubjects();
+            await initAuth();
+            updateQueueUI();
+            
+            // Default dates
+            const today = new Date();
+            const lastWeek = new Date(today);
+            lastWeek.setDate(today.getDate() - 7);
+            
+            document.getElementById('attendanceDate').valueAsDate = today;
+            document.getElementById('reportTo').valueAsDate = today;
+            document.getElementById('reportFrom').valueAsDate = lastWeek;
+
+            window.addEventListener('online', updateConnectionStatus);
+            window.addEventListener('offline', updateConnectionStatus);
+            updateConnectionStatus();
+            
+            if (document.getElementById('sectionSelect').value) window.renderStudents();
+        };
+
+        function initStudents() {
+            sections.forEach(sec => {
+                let start = sec === 'A' ? 1000 : sec === 'B' ? 2000 : sec === 'C' ? 3000 : 4000;
+                for (let i = 1; i <= 65; i++) {
+                    studentsList.push({ roll: String(start + i), name: `S${i}`, section: sec });
+                }
+            });
+        }
+
+        function initSubjects() {
+            const select = document.getElementById('subjectSelect');
+            const theory = document.createElement('optgroup'); theory.label = "Theory Classes";
+            const labs = document.createElement('optgroup'); labs.label = "Lab Sessions";
+            subjects.forEach(s => {
+                const opt = new Option(s.name, s.name);
+                if(s.type === 'Class') theory.appendChild(opt);
+                else labs.appendChild(opt);
+            });
+            select.appendChild(theory);
+            select.appendChild(labs);
+        }
+
+        async function initAuth() {
+            try {
+                if (typeof window.__initial_auth_token !== 'undefined' && window.__initial_auth_token) {
+                    await signInWithCustomToken(auth, window.__initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch(e) { console.error("Auth error:", e); }
+
+            onAuthStateChanged(auth, (user) => {
+                if(user) {
+                    setupSyncListener();
+                    updateConnectionStatus();
+                }
+            });
+        }
+
+        function setupSyncListener() {
+            const q = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
+            onSnapshot(q, (snap) => {
+                const countEl = document.getElementById('cloud-count');
+                if (countEl) countEl.innerText = `${snap.size} Cloud Records`;
+            });
+        }
+
+        function updateConnectionStatus() {
+            const badge = document.getElementById('status-badge');
+            if (!badge) return;
+            badge.innerText = navigator.onLine ? "● Online" : "○ Offline";
+            badge.className = `px-2 py-0.5 rounded-full text-[10px] font-bold uppercase ${navigator.onLine ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`;
+        }
+
+        // --- NAVIGATION ---
+        window.switchTab = (tab) => {
+            const markBtn = document.getElementById('tab-mark');
+            const reportBtn = document.getElementById('tab-report');
+            const markView = document.getElementById('view-mark');
+            const reportView = document.getElementById('view-report');
+
+            if (tab === 'mark') {
+                markView.classList.remove('hidden');
+                reportView.classList.add('hidden');
+                markBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm";
+                reportBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500";
+            } else {
+                markView.classList.add('hidden');
+                reportView.classList.remove('hidden');
+                reportBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold bg-white shadow-sm";
+                markBtn.className = "flex-1 py-2 rounded-lg text-sm font-bold text-slate-500";
+            }
+        };
+
+        // --- MARKING LOGIC ---
+        window.handleSectionChange = () => window.renderStudents();
+        
+        window.renderStudents = () => {
+            const section = document.getElementById('sectionSelect').value;
+            const subject = document.getElementById('subjectSelect').value;
+            const listContainer = document.getElementById('student-list');
+            if(!section || !subject) {
+                document.getElementById('workspace').classList.add('hidden');
+                document.getElementById('empty-state').classList.remove('hidden');
+                return;
+            }
+            document.getElementById('workspace').classList.remove('hidden');
+            document.getElementById('empty-state').classList.add('hidden');
+            
+            const filtered = studentsList.filter(s => (section === 'All' || s.section === section));
+            listContainer.innerHTML = filtered.map(s => `
+                <div onclick="window.toggleAbsent('${s.roll}')" id="card-${s.roll}" class="student-card ${currentAbsentees.has(s.roll) ? 'absent' : 'present'}">
+                    <span class="text-[10px] font-bold opacity-50 uppercase">${s.section}</span>
+                    <span class="text-lg font-black tracking-tighter">${s.roll.slice(-2)}</span>
+                    <span class="text-[9px] font-medium opacity-70">${s.roll}</span>
+                </div>
+            `).join('');
+            updateStats();
+        };
+
+        window.toggleAbsent = (roll) => {
+            const card = document.getElementById(`card-${roll}`);
+            if(currentAbsentees.has(roll)) {
+                currentAbsentees.delete(roll);
+                card.classList.replace('absent', 'present');
+            } else {
+                currentAbsentees.add(roll);
+                card.classList.replace('present', 'absent');
+            }
+            localStorage.setItem(STATE_KEY, JSON.stringify(Array.from(currentAbsentees)));
+            updateStats();
+        };
+
+        function updateStats() {
+            document.getElementById('absent-count').innerText = currentAbsentees.size;
+            document.getElementById('submit-count').innerText = `${currentAbsentees.size} Absent`;
+        }
+
+        window.clearMarks = () => {
+            if(confirm("Clear selection?")) { currentAbsentees.clear(); localStorage.removeItem(STATE_KEY); window.renderStudents(); }
+        };
+
+        window.submitAttendance = async () => {
+            const entry = {
+                id: crypto.randomUUID(),
+                date: document.getElementById('attendanceDate').value,
+                hour: document.getElementById('hourSelect').value,
+                faculty: document.getElementById('facultyName').value,
+                section: document.getElementById('sectionSelect').value,
+                subject: document.getElementById('subjectSelect').value,
+                absentees: Array.from(currentAbsentees),
+                timestamp: Date.now()
+            };
+            if(!entry.date || !entry.section || !entry.subject) return alert("Fill all details");
+            
+            localQueue.push(entry);
+            localStorage.setItem(`att_q_${appId}`, JSON.stringify(localQueue));
+            currentAbsentees.clear();
+            localStorage.removeItem(STATE_KEY);
+            updateQueueUI();
+            window.renderStudents();
+            alert("Saved to queue");
+            window.syncAllPending();
+        };
+
+        // --- REPORTING LOGIC ---
+        window.generateReport = async () => {
+            const from = document.getElementById('reportFrom').value;
+            const to = document.getElementById('reportTo').value;
+            const container = document.getElementById('report-results');
+            const csvBtn = document.getElementById('csv-btn');
+            
+            if(!from || !to) return alert("Select date range");
+            
+            container.innerHTML = '<p class="text-center text-slate-400 py-10">Fetching history...</p>';
+            
+            try {
+                // Fetching all and filtering in memory to avoid index requirements
+                const q = collection(db, 'artifacts', appId, 'public', 'data', 'attendance');
+                const snap = await getDocs(q);
+                
+                fetchedHistory = [];
+                snap.forEach(doc => {
+                    const d = doc.data();
+                    if (d.date >= from && d.date <= to) fetchedHistory.push(d);
+                });
+
+                fetchedHistory.sort((a, b) => b.date.localeCompare(a.date));
+
+                if(fetchedHistory.length === 0) {
+                    container.innerHTML = '<p class="text-center text-slate-400 py-10">No records found for this range.</p>';
+                    csvBtn.classList.add('hidden');
+                    return;
+                }
+
+                csvBtn.classList.remove('hidden');
+                container.innerHTML = fetchedHistory.map(item => `
+                    <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <h3 class="text-sm font-black text-slate-800">${item.subject}</h3>
+                                <p class="text-[10px] text-slate-500 font-bold uppercase">${item.date} • Hour ${item.hour}</p>
+                            </div>
+                            <span class="bg-red-100 text-red-700 px-2 py-1 rounded-md text-[10px] font-black">${item.absentees.length} ABSENT</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 font-mono break-words bg-slate-50 p-2 rounded-lg">
+                            ${item.absentees.length > 0 ? item.absentees.join(", ") : "None"}
+                        </div>
+                        <p class="text-[9px] mt-2 text-slate-400 italic">Faculty: ${item.faculty}</p>
+                    </div>
+                `).join('');
+
+            } catch(e) {
+                container.innerHTML = `<p class="text-red-500 text-center py-10">Error: ${e.message}</p>`;
+            }
+        };
+
+        window.exportToCSV = () => {
+            const headers = ["Date", "Hour", "Subject", "Faculty", "Section", "TotalAbsent", "AbsentRolls"];
+            let csv = headers.join(",") + "\n";
+            fetchedHistory.forEach(item => {
+                csv += `${item.date},${item.hour},"${item.subject}","${item.faculty}",${item.section},${item.absentees.length},"${item.absentees.join('; ')}"\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Attendance_Report_${document.getElementById('reportFrom').value}_to_${document.getElementById('reportTo').value}.csv`;
+            a.click();
+        };
+
+        // --- SYNC TOOLS ---
+        function updateQueueUI() {
+            const count = localQueue.length;
+            document.getElementById('queue-count').innerText = count;
+            document.getElementById('pending-count').innerText = count;
+            document.getElementById('sync-alert').classList.toggle('hidden', count === 0);
+        }
+
+        window.syncAllPending = async () => {
+            if(!navigator.onLine || !auth.currentUser) return;
+            const toSync = [...localQueue];
+            document.getElementById('session-sync-status').innerText = "SYNCING...";
+            for(const item of toSync) {
+                try {
+                    const { id, ...data } = item;
+                    await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'), data);
+                    localQueue = localQueue.filter(i => i.id !== id);
+                    localStorage.setItem(`att_q_${appId}`, JSON.stringify(localQueue));
+                    updateQueueUI();
+                } catch(e) { console.error(e); }
+            }
+            document.getElementById('session-sync-status').innerText = "STANDBY";
+        };
+    </script>
+</body>
+</html>
