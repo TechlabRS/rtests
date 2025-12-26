@@ -773,7 +773,7 @@
                         const newCode = Math.floor(1000 + Math.random() * 9000);
                         this.updateRollingCode(newCode);
                         await updateDoc(sessionRef, { current_code: newCode });
-                    }, 15000); 
+                    }, 25000); 
                     onSnapshot(sessionRef, (snap) => { if(snap.exists()) { this.renderLiveStats(snap.data().attendees || [], snap.data().master_list || []); } });
                     btn.disabled = false; btn.innerText = "Launch";
                 }, (err) => {
