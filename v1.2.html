@@ -373,7 +373,7 @@
         // HASHED ADMIN KEY (SHA-256 for "ADMIN123")
         const MASTER_KEY_HASH = "b257d4499962eb197c6f57ca98113d9dd244aa007a5cb27ae067567135ba8fb9"; 
         
-        const ATTENDANCE_RADIUS_METERS = 300; 
+        const ATTENDANCE_RADIUS_METERS = 50; 
         const FACE_MATCH_THRESHOLD = 0.38; // STRICTER THRESHOLD (Lower is stricter)
         const OTP_REFRESH_RATE = 30; 
         const PHOTO_RETENTION_DAYS = 3;
@@ -567,42 +567,47 @@
         }
         
         async function loadStudentProfile() {
-			if(!window.appState.userId) return;
-			
-			try {
-				const docSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'students', window.appState.userId));
-				
-				if (docSnap.exists()) {
-					const profile = docSnap.data();
-					
-					// ARCHITECT FIX 1: Set a default section immediately so the UI doesn't crash 
-					// if the master fetch is slow or fails.
-					profile.section = profile.section || 'A'; 
+    if(!window.appState.userId) return;
+    
+    try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', window.appState.userId);
+        const docSnap = await getDoc(docRef);
+        
+        let profile;
+        if (docSnap.exists()) {
+            profile = docSnap.data();
+        } else {
+            // GRACEFUL FALLBACK: Create a temp profile if document is missing
+            console.warn("No student document found in Firestore. Using defaults.");
+            profile = { 
+                name: "New Student", 
+                rollNo: window.appState.userId.substring(0,8), // Use part of ID as temp roll
+                section: 'A' 
+            };
+        }
 
-					if (profile.rollNo) {
-						try {
-							const masterRef = doc(db, 'artifacts', appId, 'public', 'data', 'master_students', profile.rollNo);
-							const masterSnap = await getDoc(masterRef);
-							
-							if(masterSnap.exists()) {
-								// ARCHITECT FIX 2: Override with verified section from Master List
-								profile.section = masterSnap.data().section || 'A';
-							}
-						} catch(e) { 
-							console.error("Section fetch error (Network/Permission):", e); 
-						}
-					}
+        // ARCHITECT FIX: Handle master list cross-reference
+        if (profile.rollNo) {
+            try {
+                const masterRef = doc(db, 'artifacts', appId, 'public', 'data', 'master_students', profile.rollNo);
+                const masterSnap = await getDoc(masterRef);
+                if(masterSnap.exists()) {
+                    profile.section = masterSnap.data().section || profile.section;
+                    profile.name = masterSnap.data().name || profile.name; // Get verified name
+                }
+            } catch(e) { console.error("Master fetch error:", e); }
+        }
 
-					// ARCHITECT FIX 3: Final state update
-					window.appState.studentProfile = profile;
-					
-					// Trigger a UI refresh if necessary
-					if(window.appState.role === 'student') renderStudentDashboard();
-				}
-			} catch (err) {
-				console.error("Critical Profile Load Error:", err);
-			}
-		}
+        window.appState.studentProfile = profile;
+        
+        if(window.appState.role === 'student') {
+            renderStudentDashboard(document.getElementById('main-view'), profile);
+        }
+    } catch (err) {
+        console.error("Critical Profile Load Error:", err);
+        showToast("Profile load failed", "error");
+    }
+}
 
         async function checkFacultyRegistration() {
             if(!window.appState.userId) return;
@@ -1776,28 +1781,85 @@
         };
 
         function renderStudentDashboard(container, p) {
-            const hasFace = !!window.appState.faceDescriptor;
-            
-            container.innerHTML = `
-                <div class="p-6 space-y-8">
-                    <header class="flex justify-between items-center">
-                        <div><h1 class="text-2xl font-bold text-slate-800">Hi, ${p.name.split(' ')[0]}</h1><p class="text-xs font-mono text-slate-400 tracking-wider">${p.rollNo}</p></div>
-                        <button onclick="renderProfile(document.getElementById('main-view'), true)" class="w-10 h-10 bg-white border border-slate-100 rounded-full flex items-center justify-center shadow-sm text-slate-600 hover:text-blue-600 transition-colors"><i class="fa-solid fa-user-gear"></i></button>
-                    </header>
-                    
-                    ${!hasFace ? `<div onclick="renderProfile(document.getElementById('main-view'), true)" class="bg-red-50 border border-red-100 p-4 rounded-xl flex items-center justify-between cursor-pointer active:scale-95 transition-transform"><div class="flex items-center gap-3"><div class="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center"><i class="fa-solid fa-face-frown text-xl"></i></div><div><h3 class="text-sm font-bold text-red-700">Setup Face ID</h3><p class="text-[10px] text-red-500">Required for attendance</p></div></div><i class="fa-solid fa-chevron-right text-red-300"></i></div>` : ''}
+    // 1. SECURITY & NULL CHECK
+    // If 'p' is passed, use it; otherwise fallback to appState
+    const profile = p || window.appState.studentProfile;
+    
+    if (!profile || !profile.name) {
+        console.log("Dashboard render deferred: Profile data missing or loading...");
+        // If the container is valid, show a loading state instead of blank
+        if(container) container.innerHTML = '<div class="p-10 text-center text-slate-400">Loading Profile...</div>';
+        return; 
+    }
 
-                    <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 grid grid-cols-3 gap-2 text-center">
-                        <div class="p-2"><p class="text-[10px] font-bold text-slate-400 uppercase">Present</p><p class="text-2xl font-bold text-green-600" id="stat-present">-</p></div>
-                        <div class="p-2 border-l border-slate-50"><p class="text-[10px] font-bold text-slate-400 uppercase">Absent</p><p class="text-2xl font-bold text-red-500" id="stat-absent">-</p></div>
-                        <div class="p-2 border-l border-slate-50"><p class="text-[10px] font-bold text-slate-400 uppercase">Total</p><p class="text-2xl font-bold text-slate-800" id="stat-total">-</p></div>
-                    </div>
-                    <div><h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2"><div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Active Classes</h2><div id="active-sessions-list" class="space-y-4"></div></div>
-                    <div><h2 class="font-bold text-slate-800 mb-4 text-sm">Attendance History</h2><div id="history-list" class="space-y-2 max-h-48 overflow-y-auto"></div></div>
+    // 2. STATE CHECKS
+    const hasFace = !!window.appState.faceDescriptor;
+    const studentName = profile.name || "Student";
+    const firstName = studentName.split(' ')[0];
+
+    // 3. RENDER UI
+    container.innerHTML = `
+        <div class="p-6 space-y-8">
+            <header class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-slate-800">Hi, ${firstName}</h1>
+                    <p class="text-xs font-mono text-slate-400 tracking-wider">${profile.rollNo || ''}</p>
                 </div>
-            `;
-            loadStudentStats(); listenForActiveSessions(); loadStudentHistory();
-        }
+                <button onclick="renderProfile(document.getElementById('main-view'), true)" 
+                        class="w-10 h-10 bg-white border border-slate-100 rounded-full flex items-center justify-center shadow-sm text-slate-600 hover:text-blue-600 transition-colors">
+                    <i class="fa-solid fa-user-gear"></i>
+                </button>
+            </header>
+            
+            ${!hasFace ? `
+                <div onclick="renderProfile(document.getElementById('main-view'), true)" 
+                     class="bg-red-50 border border-red-100 p-4 rounded-xl flex items-center justify-between cursor-pointer active:scale-95 transition-transform">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-red-100 text-red-500 flex items-center justify-center">
+                            <i class="fa-solid fa-face-frown text-xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-red-700">Setup Face ID</h3>
+                            <p class="text-[10px] text-red-500">Required for attendance</p>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-right text-red-300"></i>
+                </div>` : ''}
+
+            <div class="bg-white rounded-2xl p-4 shadow-sm border border-slate-100 grid grid-cols-3 gap-2 text-center">
+                <div class="p-2">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Present</p>
+                    <p class="text-2xl font-bold text-green-600" id="stat-present">-</p>
+                </div>
+                <div class="p-2 border-l border-slate-50">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Absent</p>
+                    <p class="text-2xl font-bold text-red-500" id="stat-absent">-</p>
+                </div>
+                <div class="p-2 border-l border-slate-50">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Total</p>
+                    <p class="text-2xl font-bold text-slate-800" id="stat-total">-</p>
+                </div>
+            </div>
+
+            <div>
+                <h2 class="font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-blue-500"></div> Active Classes
+                </h2>
+                <div id="active-sessions-list" class="space-y-4"></div>
+            </div>
+
+            <div>
+                <h2 class="font-bold text-slate-800 mb-4 text-sm">Attendance History</h2>
+                <div id="history-list" class="space-y-2 max-h-48 overflow-y-auto"></div>
+            </div>
+        </div>
+    `;
+
+    // 4. DATA LOADERS
+    loadStudentStats(); 
+    listenForActiveSessions(); 
+    loadStudentHistory();
+}
 
         // --- ADDED MISSING FUNCTION: loadStudentStats ---
         async function loadStudentStats() {
