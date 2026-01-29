@@ -158,6 +158,7 @@
                     <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500">Student</span><span id="review-name" class="font-bold text-slate-800"></span></div>
                     <div class="flex justify-between border-b border-slate-200 pb-2"><span class="text-slate-500">Roll No</span><span id="review-roll" class="font-mono font-bold text-slate-800"></span></div>
                     <div class="flex justify-between"><span class="text-slate-500">Marked At</span><span id="review-time" class="font-mono text-xs text-slate-600"></span></div>
+					<div class="flex justify-between"><span class="text-slate-500">Reason</span><span id="appr-req" class="font-mono text-xs text-slate-600"></span></div>
                 </div>
                 
                 <div class="mt-4 flex flex-col gap-2">
@@ -1563,6 +1564,7 @@
                  document.getElementById('review-enrolled-loader').classList.remove('hidden');
                  document.getElementById('review-name').innerText = record.studentName;
                  document.getElementById('review-roll').innerText = record.studentRoll;
+				 document.getElementById('appr-req').innerText = record.manualReason;
                  document.getElementById('review-time').innerText = record.timestamp ? new Date(record.timestamp.seconds*1000).toLocaleString() : 'N/A';
                  document.getElementById('review-live-img').src = record.capturedPhoto || '';
                  
@@ -2734,6 +2736,7 @@ async function batchWriteHelper(dataArray, collectionPathFn, docIdField = '_id')
             // Set text details
             document.getElementById('review-name').innerText = record.studentName;
             document.getElementById('review-roll').innerText = record.studentRoll;
+			document.getElementById('appr-req').innerText = record.manualReason;
             document.getElementById('review-time').innerText = record.timestamp ? new Date(record.timestamp.seconds*1000).toLocaleString() : 'N/A';
             
             // Set Captured Image
