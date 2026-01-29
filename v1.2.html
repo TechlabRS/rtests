@@ -573,39 +573,39 @@
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'students', window.appState.userId);
         const docSnap = await getDoc(docRef);
         
-        let profile;
         if (docSnap.exists()) {
-            profile = docSnap.data();
+            const profile = docSnap.data();
+            
+            // Sync with Master List for verified Section/Name
+            if (profile.rollNo) {
+                try {
+                    const masterSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'master_students', profile.rollNo));
+                    if(masterSnap.exists()) {
+                        profile.section = masterSnap.data().section || profile.section;
+                        profile.name = masterSnap.data().name || profile.name;
+                    }
+                } catch(e) { console.error("Master Sync Error:", e); }
+            }
+
+            window.appState.studentProfile = profile;
+            
+            if(window.appState.role === 'student') {
+                renderStudentDashboard(document.getElementById('main-view'), profile);
+            }
         } else {
-            // GRACEFUL FALLBACK: Create a temp profile if document is missing
-            console.warn("No student document found in Firestore. Using defaults.");
-            profile = { 
-                name: "New Student", 
-                rollNo: window.appState.userId.substring(0,8), // Use part of ID as temp roll
-                section: 'A' 
-            };
-        }
-
-        // ARCHITECT FIX: Handle master list cross-reference
-        if (profile.rollNo) {
-            try {
-                const masterRef = doc(db, 'artifacts', appId, 'public', 'data', 'master_students', profile.rollNo);
-                const masterSnap = await getDoc(masterRef);
-                if(masterSnap.exists()) {
-                    profile.section = masterSnap.data().section || profile.section;
-                    profile.name = masterSnap.data().name || profile.name; // Get verified name
-                }
-            } catch(e) { console.error("Master fetch error:", e); }
-        }
-
-        window.appState.studentProfile = profile;
-        
-        if(window.appState.role === 'student') {
-            renderStudentDashboard(document.getElementById('main-view'), profile);
+            // NO PROFILE FOUND: Force Enrollment
+            console.log("No profile found. Redirecting to Enrollment...");
+            window.appState.studentProfile = null; // Ensure it's null
+            
+            if(window.appState.role === 'student') {
+                showToast("Please complete your profile enrollment", "info");
+                // Pass 'true' or equivalent to renderProfile to show the edit/enrollment form
+                renderProfile(document.getElementById('main-view'), true); 
+            }
         }
     } catch (err) {
         console.error("Critical Profile Load Error:", err);
-        showToast("Profile load failed", "error");
+        showToast("Connection Error", "error");
     }
 }
 
