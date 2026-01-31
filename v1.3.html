@@ -771,19 +771,23 @@
                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-3 block flex items-center">
                         <i class="fa-solid fa-book-open mr-2 text-indigo-500"></i> Select Subject
                     </label>
-                    <div class="grid grid-cols-1 gap-2.5 max-h-52 overflow-y-auto pr-2 custom-scrollbar" id="subject-container">
-                        ${subjects.map(sub => `
-                            <div onclick="handleModernSelect('subject', this, '${sub}')" class="selection-card p-3 rounded-2xl cursor-pointer relative group">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-8 h-8 rounded-xl bg-indigo-50 flex items-center justify-center text-[10px] text-indigo-600 group-hover:bg-indigo-100 transition-colors">
-                                        <i class="fa-solid fa-graduation-cap"></i>
-                                    </div>
-                                    <span class="text-slate-600 font-bold text-[11px] leading-tight">${sub}</span>
-                                </div>
-                                <div class="check-indicator"><i class="fa-solid fa-check"></i></div>
+                    <div class="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto pr-2 custom-scrollbar" id="subject-container">
+                    ${subjects.map(sub => `
+                        <div onclick="handleModernSelect('subject', this, '${sub}')" 
+                            class="selection-card p-3 rounded-2xl cursor-pointer relative group flex flex-col justify-between min-h-[80px]">
+                            
+                            <div class="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[10px] text-indigo-600 group-hover:bg-indigo-100 transition-colors mb-2">
+                                <i class="fa-solid fa-graduation-cap"></i>
                             </div>
-                        `).join('')}
-                    </div>
+                            
+                            <span class="subject-text text-slate-600 font-bold text-[10px] leading-tight">
+                                ${sub}
+                            </span>
+
+                            <div class="check-indicator"><i class="fa-solid fa-check"></i></div>
+                        </div>
+                    `).join('')}
+                </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-4 mb-8">
@@ -811,7 +815,7 @@
                             <div onclick="handleModernSelect('section', this, 'C')" class="selection-card p-2.5 rounded-xl text-center text-[10px] text-slate-500 font-bold cursor-pointer">
                                 Section C <div class="check-indicator"><i class="fa-solid fa-check"></i></div>
                             </div>
-                            <div onclick="handleModernSelect('section', this, 'C')" class="selection-card p-2.5 rounded-xl text-center text-[10px] text-slate-500 font-bold cursor-pointer">
+                            <div onclick="handleModernSelect('section', this, 'D')" class="selection-card p-2.5 rounded-xl text-center text-[10px] text-slate-500 font-bold cursor-pointer">
                                 Section D <div class="check-indicator"><i class="fa-solid fa-check"></i></div>
                             </div>
                         </div>
@@ -2171,29 +2175,73 @@
         }
 
         async function loadStudentHistory() {
-            try {
-                const q = query(getAttPath(), where("studentId", "==", window.appState.userId));
-                const snap = await getDocs(q);
-                const list = document.getElementById('history-list');
-                if (snap.empty) { list.innerHTML = '<p class="text-center text-xs text-slate-400">No history available.</p>'; return; }
-                const sessionsSnap = await getDocs(getSessionPath());
-                const sessionMap = {}; sessionsSnap.forEach(s => sessionMap[s.id] = s.data());
-                let html = '';
-                snap.forEach(d => {
-                    const r = d.data();
-                    // SHOW ALL IN HISTORY, but differentiate
-                    const session = sessionMap[r.sessionId];
-                    const dateStr = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleDateString() : 'N/A';
-                    
-                    const badge = r.status === 'present' 
-                        ? '<span class="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Present</span>' 
-                        : '<span class="text-[10px] font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded">Pending</span>';
+    try {
+        const list = document.getElementById('history-list');
+        // 1. Optimize Query: Sort by timestamp descending and limit to 7 records
+        const q = query(
+            getAttPath(), 
+            where("studentId", "==", window.appState.userId),
+            orderBy("timestamp", "desc"), 
+            limit(7)
+        );
 
-                    html += `<div class="bg-white p-3 rounded-xl border border-slate-50 flex justify-between items-center shadow-sm"><div><p class="font-bold text-xs text-slate-700">${session ? session.subject : 'Unknown Subject'}</p><p class="text-[10px] text-slate-400">${dateStr} | ${session ? session.timeSlot : ''}</p></div>${badge}</div>`;
-                });
-                list.innerHTML = html;
-            } catch(e) { console.error("History Error", e); }
+        const snap = await getDocs(q);
+        
+        if (snap.empty) { 
+            list.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-8 opacity-40">
+                    <i class="fa-solid fa-clock-rotate-left text-2xl mb-2"></i>
+                    <p class="text-xs font-bold uppercase tracking-widest">No Recent History</p>
+                </div>`; 
+            return; 
         }
+
+        // 2. Fetch all sessions once for mapping (to avoid multiple sub-queries)
+        const sessionsSnap = await getDocs(getSessionPath());
+        const sessionMap = {}; 
+        sessionsSnap.forEach(s => sessionMap[s.id] = s.data());
+
+        let html = '';
+        snap.forEach(d => {
+            const r = d.data();
+            const session = sessionMap[r.sessionId];
+            
+            // Format Date safely
+            const dateStr = r.timestamp ? new Date(r.timestamp.seconds * 1000).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short'
+            }) : 'N/A';
+            
+            // UI Status Badges
+            const badge = r.status === 'present' 
+                ? '<span class="text-[9px] font-extrabold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100 uppercase tracking-tighter">Present</span>' 
+                : '<span class="text-[9px] font-extrabold text-amber-600 bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-100 uppercase tracking-tighter">Pending</span>';
+
+            html += `
+            <div class="bg-white p-4 rounded-2xl border border-slate-100 flex justify-between items-center shadow-sm hover:border-indigo-100 transition-colors mb-2">
+                <div class="overflow-hidden">
+                    <p class="font-bold text-xs text-slate-800 truncate pr-2">${session ? session.subject : 'Attendance Recorded'}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="text-[10px] text-slate-400 font-medium">${dateStr}</span>
+                        <span class="w-1 h-1 rounded-full bg-slate-200"></span>
+                        <span class="text-[10px] text-slate-400 font-medium">${session ? session.timeSlot : 'Session Closed'}</span>
+                    </div>
+                </div>
+                <div class="shrink-0">
+                    ${badge}
+                </div>
+            </div>`;
+        });
+        
+        list.innerHTML = html;
+    } catch(e) { 
+        console.error("History Error", e);
+        // Fallback for Index Error: If you haven't created a Firestore Index yet, it might fail.
+        if(e.message.includes('index')) {
+            showToast("Setting up history... Try again in a minute.", "info");
+        }
+    }
+}
 
         // --- CAMERA & LIVENESS (Updated & Fixed) ---
 let videoStream = null; 
