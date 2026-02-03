@@ -2340,7 +2340,7 @@ async function startLivenessLoop(video) {
                     status.innerText = "Face Detected";
                     if (detections.detection.score > 0.7) {
                         state = 'CHALLENGE';
-                        challengeBox.classList.remove('hidden'); [cite: 10, 61]
+                        challengeBox.classList.remove('hidden'); 
                         challengeText.innerText = challengeNames[challengeType];
                     }
                 } 
@@ -2373,7 +2373,7 @@ async function startLivenessLoop(video) {
                                 challengeBox.classList.remove('challenge-success'); 
                                 challengeIcon.innerHTML = '<i class="fa-solid fa-camera"></i>';
                                 challengeText.innerText = "Look Straight";
-                                stabilizationCounter = 0; [cite: 22, 73]
+                                stabilizationCounter = 0;
                             }
                         }, 600); // Faster transition to ALIGN [cite: 71]
                     }
@@ -2411,30 +2411,30 @@ async function startLivenessLoop(video) {
                         challengeText.innerText = "Look Straight";
                         if(!isCloseEnough) status.innerText = "Move Closer";
                         else if(!isFacingFront) status.innerText = "Face Forward";
-                        else status.innerText = "Align Face in Frame"; [cite: 85]
+                        else status.innerText = "Align Face in Frame"; 
                     }
                 } 
                 else if (state === 'CAPTURE') {
                     const capCanvas = document.createElement('canvas');
                     capCanvas.width = 400; capCanvas.height = 400;
                     const ctx2 = capCanvas.getContext('2d');
-                    ctx2.translate(400, 0); ctx2.scale(-1, 1); [cite: 45, 86]
+                    ctx2.translate(400, 0); ctx2.scale(-1, 1); 
                     // Center crop logic [cite: 87]
                     ctx2.drawImage(video, (video.videoWidth-video.videoHeight)/2, 0, video.videoHeight, video.videoHeight, 0, 0, 400, 400);
                     
                     const imgData = capCanvas.toDataURL('image/jpeg', 0.7);
-                    closeCamera(); [cite: 46, 88]
+                    closeCamera(); 
                     if (typeof onCaptureCallback === 'function') {
-                        onCaptureCallback(detections.descriptor, detections.detection.score, imgData); [cite: 89]
+                        onCaptureCallback(detections.descriptor, detections.detection.score, imgData);
                     }
                     return; // Exit recursion [cite: 91]
                 }
             } else { 
                 status.innerText = "No Face Detected";
-                stabilizationCounter = 0; [cite: 92]
+                stabilizationCounter = 0;
             }
         } catch (err) {
-            console.error("Detection Error:", err); [cite: 93]
+            console.error("Detection Error:", err);
         }
         
         if (window.appState.isCameraOpen) {
@@ -2444,7 +2444,6 @@ async function startLivenessLoop(video) {
     
     loop(); 
 }
-
 
         // --- OTP & EXPORT/IMPORT ---
         let otpResolve = null;
