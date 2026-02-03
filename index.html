@@ -2937,6 +2937,7 @@ async function batchWriteHelper(dataArray, collectionPathFn, docIdField = '_id')
                         timestamp: serverTimestamp(), 
                         status: 'present', 
                         verified: true, 
+						manualReason: 'AUTO',
                         capturedPhoto: img 
                     };
                     await addDoc(getAttPath(), attData);
