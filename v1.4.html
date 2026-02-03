@@ -101,9 +101,41 @@
         
         #liveness-challenge { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
         .challenge-success { background-color: rgba(34, 197, 94, 0.9) !important; border-color: transparent !important; }
+		
+		/* Minimalist Pre-load Overlay */
+		#init-overlay {
+			position: fixed; inset: 0; background: #0a0a0c; z-index: 9999;
+			display: flex; flex-direction: column; align-items: center; justify-content: center;
+			transition: opacity 0.5s ease;
+		}
+		.check-item {
+			display: flex; align-items: center; gap: 12px; margin: 10px 0;
+			color: #94a3b8; font-size: 0.9rem;
+		}
+		.check-item.success { color: #10b981; }
+		.check-item.error { color: #ef4444; }
+		.loader-bar {
+			width: 200px; height: 4px; background: #1e1e26; border-radius: 2px; overflow: hidden;
+		}
+		#init-progress {
+			width: 0%; height: 100%; background: #00f0ff; transition: width 0.3s;
+		}
+		
     </style>
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col text-slate-800">
+
+	<div id="init-overlay">
+		<div class="mb-6 text-center">
+			<h2 class="text-white text-xl font-bold">System Check</h2>
+			<p class="text-gray-400 text-sm">Verifying requirements...</p>
+		</div>
+		<div id="check-list">
+			<div class="check-item" id="check-gps"><i class="fas fa-location-dot"></i> GPS Access</div>
+			<div class="check-item" id="check-cam"><i class="fas fa-video"></i> Camera Permission</div>
+		</div>
+		<div class="loader-bar mt-6"><div id="init-progress"></div></div>
+	</div>
 
     <div id="toast-container" class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none p-4"></div>
 
@@ -423,10 +455,62 @@
         // HASHED ADMIN KEY (SHA-256 for "ADMIN123")
         const MASTER_KEY_HASH = "b257d4499962eb197c6f57ca98113d9dd244aa007a5cb27ae067567135ba8fb9"; 
         
-        const ATTENDANCE_RADIUS_METERS = 50; 
+        const ATTENDANCE_RADIUS_METERS = 300; 
         const FACE_MATCH_THRESHOLD = 0.38; // STRICTER THRESHOLD (Lower is stricter)
         const OTP_REFRESH_RATE = 30; 
         const PHOTO_RETENTION_DAYS = 3;
+		
+		window.appState = { isCameraOpen: false, userLocation: null };
+
+		async function runInitialization() {
+			const progress = document.getElementById('init-progress');
+			const overlay = document.getElementById('init-overlay');
+			
+			const updateUI = (id, success) => {
+				const el = document.getElementById(id);
+				el.classList.add(success ? 'success' : 'error');
+				el.querySelector('i').className = success ? 'fas fa-check-circle' : 'fas fa-times-circle';
+			};
+
+			try {
+				// 1. Check GPS (With Toast on Failure)
+				const coords = await new Promise((resolve, reject) => {
+					navigator.geolocation.getCurrentPosition(
+						pos => resolve(pos.coords),
+						err => reject(err),
+						{ timeout: 5000 }
+					);
+				});
+				window.appState.userLocation = { lat: coords.latitude, lng: coords.longitude };
+				updateUI('check-gps', true);
+				progress.style.width = '50%';
+
+				// 2. Check Camera
+				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+				stream.getTracks().forEach(track => track.stop()); // Close immediately after testing
+				updateUI('check-cam', true);
+				progress.style.width = '100%';
+
+				// 3. Finish
+				setTimeout(() => {
+					overlay.style.opacity = '0';
+					setTimeout(() => overlay.remove(), 500);
+				}, 800);
+
+			} catch (err) {
+				// GPS or Camera Denied - Show Alert
+				let errorMsg = "Verification Failed: ";
+				if (err.code === 1) errorMsg += "Please allow Location and Camera access in your browser settings.";
+				else errorMsg += "Hardware not detected or permission denied.";
+				
+				// Using your toast request
+				alert(errorMsg); 
+				// Keep overlay visible to block app usage if check fails
+			}
+		}
+
+		// Start checks before page fully loads
+		document.addEventListener('DOMContentLoaded', runInitialization);
 
         // --- STATE ---
         window.appState = {
@@ -2299,27 +2383,24 @@ async function startLivenessLoop(video) {
     const displaySize = { width: video.videoWidth, height: video.videoHeight };
     faceapi.matchDimensions(canvas, displaySize);
     
+    // 1. CACHE SELECTORS (FIX DRY)
+    const ctx = canvas.getContext('2d');
     const status = document.getElementById('camera-status');
     const challengeBox = document.getElementById('liveness-challenge');
     const challengeText = document.getElementById('challenge-text');
     const challengeIcon = document.getElementById('challenge-icon');
-
-    // Reset UI State [cite: 53]
-    challengeBox.classList.add('hidden');
-    challengeBox.classList.remove('challenge-success');
     
+    // 2. MOVE OPTIONS OUTSIDE LOOP (PERFORMANCE)
+    const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
+
     let state = 'WAIT';
     let challengeType = Math.floor(Math.random() * 3); 
     const challengeNames = ["Blink Eyes", "Turn Head", "Nod (Up/Down)"];
     let stabilizationCounter = 0;
 
-    // Optimization: Define options outside the loop 
-    const detectorOptions = new faceapi.TinyFaceDetectorOptions({ inputSize: 224, scoreThreshold: 0.5 });
-
     const loop = async () => {
-        // Safety check for active session [cite: 5, 55]
-        if (!window.appState.isCameraOpen) {
-            const ctx = canvas.getContext('2d');
+        // Safety check using the appState from your file
+        if (!window.appState?.isCameraOpen) {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             return;
         }
@@ -2329,18 +2410,17 @@ async function startLivenessLoop(video) {
                 .withFaceLandmarks(true)
                 .withFaceDescriptor();
 
-            const ctx = canvas.getContext('2d'); 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             if (detections) {
                 const dims = faceapi.resizeResults(detections, displaySize);
-                faceapi.draw.drawFaceLandmarks(canvas, dims); // Professional feedback [cite: 59]
+                faceapi.draw.drawFaceLandmarks(canvas, dims);
 
                 if (state === 'WAIT') {
                     status.innerText = "Face Detected";
                     if (detections.detection.score > 0.7) {
                         state = 'CHALLENGE';
-                        challengeBox.classList.remove('hidden'); 
+                        challengeBox.classList.remove('hidden');
                         challengeText.innerText = challengeNames[challengeType];
                     }
                 } 
@@ -2352,14 +2432,13 @@ async function startLivenessLoop(video) {
                     if (challengeType === 0) { // BLINK
                         const lEAR = (getDist(leftEye[1], leftEye[5]) + getDist(leftEye[2], leftEye[4])) / (2 * getDist(leftEye[0], leftEye[3]));
                         const rEAR = (getDist(rightEye[1], rightEye[5]) + getDist(rightEye[2], rightEye[4])) / (2 * getDist(rightEye[0], rightEye[3]));
-                        if ((lEAR + rEAR) / 2 < 0.30) passed = true; // Relaxed EAR [cite: 15]
+                        if ((lEAR + rEAR) / 2 < 0.30) passed = true;
                     } else if (challengeType === 1) { // TURN HEAD
                         const noseX = nose[0].x, boxW = detections.detection.box.width, center = detections.detection.box.x + boxW/2;
-                        if (Math.abs(noseX - center) > boxW * 0.13) passed = true; // Optimized sensitivity [cite: 17]
+                        if (Math.abs(noseX - center) > boxW * 0.13) passed = true;
                     } else if (challengeType === 2) { // NOD
                         const verticalDist = jaw[8].y - nose[6].y, boxH = detections.detection.box.height;
-                        const nodRatio = verticalDist / boxH; 
-                        if(nodRatio < 0.26 || nodRatio > 0.47) passed = true; // Optimized range [cite: 18, 69]
+                        if((verticalDist / boxH) < 0.26 || (verticalDist / boxH) > 0.47) passed = true;
                     }
                     
                     if (passed) {
@@ -2375,7 +2454,7 @@ async function startLivenessLoop(video) {
                                 challengeText.innerText = "Look Straight";
                                 stabilizationCounter = 0;
                             }
-                        }, 600); // Faster transition to ALIGN [cite: 71]
+                        }, 600);
                     }
                 } 
                 else if (state === 'ALIGN') {
@@ -2384,64 +2463,47 @@ async function startLivenessLoop(video) {
                     const jawLine = lm.getJawOutline();
                     const leftEye = lm.getLeftEye(), rightEye = lm.getRightEye();
 
-                    // 1. YAW check [cite: 26, 76]
-                    const distToLeft = Math.abs(noseTip.x - jawLine[0].x);
-                    const distToRight = Math.abs(noseTip.x - jawLine[16].x);
-                    const symmetryRatio = distToLeft / (distToRight || 1);
-                    const isFacingFront = symmetryRatio > 0.75 && symmetryRatio < 1.35; // Wider margin for speed
-
-                    // 2. ROLL check [cite: 31, 78]
+                    // Symmetry & Level Check
+                    const symmetry = Math.abs(noseTip.x - jawLine[0].x) / (Math.abs(noseTip.x - jawLine[16].x) || 1);
                     const dY = (rightEye[0].y + rightEye[3].y)/2 - (leftEye[0].y + leftEye[3].y)/2;
                     const dX = (rightEye[0].x + rightEye[3].x)/2 - (leftEye[0].x + leftEye[3].x)/2;
-                    const isLevel = Math.abs(Math.atan2(dY, dX) * (180 / Math.PI)) < 12; // 12 degrees instead of 10
+                    const angle = Math.abs(Math.atan2(dY, dX) * (180 / Math.PI));
 
-                    // 3. CENTERING & DISTANCE [cite: 34, 80]
                     const box = detections.detection.box;
-                    const isCentered = Math.abs((box.x + box.width/2) - (displaySize.width/2)) < (displaySize.width * 0.20);
-                    const isCloseEnough = box.width > (displaySize.width * 0.25);
+                    const isCentered = Math.abs((box.x + box.width/2) - (displaySize.width/2)) < (displaySize.width * 0.18);
+                    const isClose = box.width > (displaySize.width * 0.28);
 
-                    if (isFacingFront && isLevel && isCentered && isCloseEnough && detections.detection.score > 0.80) {
+                    if (symmetry > 0.75 && symmetry < 1.35 && angle < 12 && isCentered && isClose && detections.detection.score > 0.82) {
                         stabilizationCounter++;
                         challengeText.innerText = "Hold Still...";
                         status.innerText = "Perfect. Capturing...";
-                        if (stabilizationCounter > 4) state = 'CAPTURE'; // Capture after 4 stable frames (~250ms) 
+                        if (stabilizationCounter > 4) state = 'CAPTURE';
                     } else {
-                        // Soft reset: reduce counter instead of clearing to handle minor jitters
-                        if(stabilizationCounter > 0) stabilizationCounter--; 
+                        if (stabilizationCounter > 0) stabilizationCounter--; 
                         challengeText.innerText = "Look Straight";
-                        if(!isCloseEnough) status.innerText = "Move Closer";
-                        else if(!isFacingFront) status.innerText = "Face Forward";
-                        else status.innerText = "Align Face in Frame"; 
+                        status.innerText = !isClose ? "Move Closer" : (angle > 12 ? "Level Your Head" : "Face Forward");
                     }
                 } 
                 else if (state === 'CAPTURE') {
                     const capCanvas = document.createElement('canvas');
                     capCanvas.width = 400; capCanvas.height = 400;
                     const ctx2 = capCanvas.getContext('2d');
-                    ctx2.translate(400, 0); ctx2.scale(-1, 1); 
-                    // Center crop logic [cite: 87]
+                    ctx2.translate(400, 0); ctx2.scale(-1, 1);
                     ctx2.drawImage(video, (video.videoWidth-video.videoHeight)/2, 0, video.videoHeight, video.videoHeight, 0, 0, 400, 400);
                     
                     const imgData = capCanvas.toDataURL('image/jpeg', 0.7);
-                    closeCamera(); 
-                    if (typeof onCaptureCallback === 'function') {
-                        onCaptureCallback(detections.descriptor, detections.detection.score, imgData);
-                    }
-                    return; // Exit recursion [cite: 91]
+                    closeCamera();
+                    if (typeof onCaptureCallback === 'function') onCaptureCallback(detections.descriptor, detections.detection.score, imgData);
+                    return;
                 }
             } else { 
                 status.innerText = "No Face Detected";
                 stabilizationCounter = 0;
             }
-        } catch (err) {
-            console.error("Detection Error:", err);
-        }
+        } catch (err) { console.error("Loop Error:", err); }
         
-        if (window.appState.isCameraOpen) {
-            setTimeout(loop, 60); // High-frequency loop for better responsiveness 
-        }
+        if (window.appState.isCameraOpen) setTimeout(loop, 60);
     };
-    
     loop(); 
 }
 
