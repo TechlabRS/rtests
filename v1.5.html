@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -622,7 +621,7 @@
                 
                 if (!configStr) { document.getElementById('config-modal').classList.remove('hidden'); return; }
 
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'demo2001';
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'demo-only';
                 const firebaseConfig = JSON.parse(configStr);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
