@@ -125,17 +125,7 @@
 </head>
 <body class="h-screen w-screen overflow-hidden flex flex-col text-slate-800">
 
-	<div id="init-overlay">
-		<div class="mb-6 text-center">
-			<h2 class="text-white text-xl font-bold">System Check</h2>
-			<p class="text-gray-400 text-sm">Verifying requirements...</p>
-		</div>
-		<div id="check-list">
-			<div class="check-item" id="check-gps"><i class="fas fa-location-dot"></i> GPS Access</div>
-			<div class="check-item" id="check-cam"><i class="fas fa-video"></i> Camera Permission</div>
-		</div>
-		<div class="loader-bar mt-6"><div id="init-progress"></div></div>
-	</div>
+	
 
     <div id="toast-container" class="fixed top-4 left-0 right-0 z-[100] flex flex-col items-center gap-2 pointer-events-none p-4"></div>
 
@@ -456,61 +446,13 @@
         const MASTER_KEY_HASH = "b257d4499962eb197c6f57ca98113d9dd244aa007a5cb27ae067567135ba8fb9"; 
         
         const ATTENDANCE_RADIUS_METERS = 300; 
-        const FACE_MATCH_THRESHOLD = 0.38; // STRICTER THRESHOLD (Lower is stricter)
+        const FACE_MATCH_THRESHOLD = 0.4; // STRICTER THRESHOLD (Lower is stricter)
         const OTP_REFRESH_RATE = 30; 
         const PHOTO_RETENTION_DAYS = 3;
 		
 		window.appState = { isCameraOpen: false, userLocation: null };
 
-		async function runInitialization() {
-			const progress = document.getElementById('init-progress');
-			const overlay = document.getElementById('init-overlay');
-			
-			const updateUI = (id, success) => {
-				const el = document.getElementById(id);
-				el.classList.add(success ? 'success' : 'error');
-				el.querySelector('i').className = success ? 'fas fa-check-circle' : 'fas fa-times-circle';
-			};
-
-			try {
-				// 1. Check GPS (With Toast on Failure)
-				const coords = await new Promise((resolve, reject) => {
-					navigator.geolocation.getCurrentPosition(
-						pos => resolve(pos.coords),
-						err => reject(err),
-						{ timeout: 5000 }
-					);
-				});
-				window.appState.userLocation = { lat: coords.latitude, lng: coords.longitude };
-				updateUI('check-gps', true);
-				progress.style.width = '50%';
-
-				// 2. Check Camera
-				const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-				stream.getTracks().forEach(track => track.stop()); // Close immediately after testing
-				updateUI('check-cam', true);
-				progress.style.width = '100%';
-
-				// 3. Finish
-				setTimeout(() => {
-					overlay.style.opacity = '0';
-					setTimeout(() => overlay.remove(), 500);
-				}, 800);
-
-			} catch (err) {
-				// GPS or Camera Denied - Show Alert
-				let errorMsg = "Verification Failed: ";
-				if (err.code === 1) errorMsg += "Please allow Location and Camera access in your browser settings.";
-				else errorMsg += "Hardware not detected or permission denied.";
-				
-				// Using your toast request
-				alert(errorMsg); 
-				// Keep overlay visible to block app usage if check fails
-			}
-		}
-
-		// Start checks before page fully loads
-		document.addEventListener('DOMContentLoaded', runInitialization);
+		
 
         // --- STATE ---
         window.appState = {
@@ -621,7 +563,7 @@
                 
                 if (!configStr) { document.getElementById('config-modal').classList.remove('hidden'); return; }
 
-                appId = typeof __app_id !== 'undefined' ? __app_id : 'demo-only';
+                appId = typeof __app_id !== 'undefined' ? __app_id : 'demo2001';
                 const firebaseConfig = JSON.parse(configStr);
                 const app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
