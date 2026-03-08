@@ -316,4 +316,240 @@ apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
 
         let roomUnsub = null;
         function listenToRoom() {
-          
+            if(roomUnsub) roomUnsub();
+            const section = document.getElementById('sel-section').value;
+            roomUnsub = onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'room'), (snap) => {
+                const now = Date.now();
+                activeStudents = {};
+                for(let i=1; i<=100; i++) {
+                    const img = document.getElementById(`img-${i}`);
+                    if(img) img.classList.add('hidden');
+                    const slot = document.getElementById(`slot-${i}`);
+                    if(slot) slot.className = "student-slot is-absent bg-white border-2 border-slate-200 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm";
+                    const name = document.getElementById(`name-${i}`);
+                    if(name) name.innerText = "Empty";
+                }
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    if(data.section === section && (now - data.lastSeen?.toMillis() < 15000)) {
+                        activeStudents[data.rollNo] = { ...data, uid: doc.id };
+                        const roll = data.rollNo;
+                        const matched = data.liveDescriptor && data.descriptor ? faceapi.euclideanDistance(new Float32Array(data.liveDescriptor), new Float32Array(data.descriptor)) < 0.45 : false;
+                        const slot = document.getElementById(`slot-${roll}`);
+                        if(slot) {
+                            slot.className = `student-slot bg-white border-2 p-4 rounded-2xl flex flex-col items-center text-center shadow-md ${matched ? 'is-verified border-emerald-500' : 'is-mismatch border-red-500'}`;
+                            document.getElementById(`img-${roll}`).src = data.snapshot;
+                            document.getElementById(`img-${roll}`).classList.remove('hidden');
+                            document.getElementById(`name-${roll}`).innerText = data.name;
+                        }
+                    }
+                });
+                updateStats();
+            });
+        }
+
+        window.bulkMark = async (type) => {
+            const section = document.getElementById('sel-section').value;
+            const subject = document.getElementById('subject-code').value;
+            const hour = document.getElementById('class-hour').value;
+            const dateStr = new Date().toLocaleDateString();
+            const batch = writeBatch(db);
+            let count = 0;
+
+            if(type === 'identified') {
+                Object.values(activeStudents).forEach(s => {
+                    const matched = s.liveDescriptor ? faceapi.euclideanDistance(new Float32Array(s.liveDescriptor), new Float32Array(s.descriptor)) < 0.45 : false;
+                    if(matched) {
+                        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `${s.uid}_${Date.now()}`);
+                        batch.set(ref, { name: s.name, roll: s.rollNo, section, subject, hour, date: dateStr, status: 'Present', timestamp: serverTimestamp() });
+                        count++;
+                    }
+                });
+            } else {
+                const total = parseInt(document.getElementById('sel-section').options[document.getElementById('sel-section').selectedIndex].getAttribute('data-count'));
+                for(let i=1; i<=total; i++) {
+                    if(!activeStudents[i]) {
+                        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'attendance', `absent_${section}_${i}_${Date.now()}`);
+                        batch.set(ref, { roll: i, section, subject, hour, date: dateStr, status: 'Absent', timestamp: serverTimestamp() });
+                        count++;
+                    }
+                }
+            }
+            await batch.commit();
+            notify(`Logged ${count} Records`);
+        };
+
+        window.cleanLiveRoom = async () => {
+            const q = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'room'));
+            const batch = writeBatch(db);
+            q.forEach(d => batch.delete(d.ref));
+            await batch.commit();
+            notify("Cache Cleared");
+        };
+
+        // --- STUDENT ---
+        function showReg() {
+            document.getElementById('student-reg').classList.remove('hidden');
+            document.getElementById('student-dash').classList.add('hidden');
+            startCamera('reg-video');
+        }
+
+        async function updateStudentUI() {
+            document.getElementById('student-reg').classList.add('hidden');
+            document.getElementById('student-dash').classList.remove('hidden');
+            document.getElementById('dash-name').innerText = profile.name;
+            document.getElementById('dash-meta-sec').innerText = `Sec ${profile.section}`;
+            document.getElementById('dash-meta-roll').innerText = `Roll ${profile.rollNo}`;
+            
+            navigator.geolocation.watchPosition(pos => {
+                userLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                const b = document.getElementById('gps-badge');
+                b.innerText = "GPS: Locked";
+                b.className = "px-2 py-1 rounded bg-emerald-500/30 border border-white/20 text-[9px] font-bold uppercase";
+            }, err => {
+                const b = document.getElementById('gps-badge');
+                b.innerText = "GPS: Denied";
+                b.className = "px-2 py-1 rounded bg-red-500/30 border border-white/20 text-[9px] font-bold uppercase";
+            });
+
+            onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'config', profile.section), (snap) => {
+                const config = snap.data();
+                const overlay = document.getElementById('closed-overlay');
+                const badge = document.getElementById('dash-subject-badge');
+                if(config && config.active) {
+                    overlay.classList.add('hidden');
+                    badge.innerText = `LIVE: ${config.subject} (${config.hour})`;
+                    badge.classList.remove('hidden');
+                    startCamera('live-video');
+                    if(!broadcastTimer) startBroadcastLoop();
+                } else {
+                    overlay.classList.remove('hidden');
+                    badge.classList.add('hidden');
+                    stopCamera('live-video');
+                    if(broadcastTimer) clearInterval(broadcastTimer);
+                    broadcastTimer = null;
+                }
+            });
+        }
+
+        window.registerProfile = async () => {
+            const name = document.getElementById('reg-name').value;
+            const roll = parseInt(document.getElementById('reg-id').value);
+            const section = document.getElementById('reg-sec').value;
+            const video = document.getElementById('reg-video');
+            if(!name || !roll) return notify("Missing data");
+            
+            try {
+                const det = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                if(!det) return notify("No face detected");
+                profile = { name, rollNo: roll, section, descriptor: Array.from(det.descriptor) };
+                await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'), profile);
+                updateStudentUI();
+            } catch(e) { notify("Reg error"); }
+        };
+
+        function startBroadcastLoop() {
+            broadcastTimer = setInterval(async () => {
+                if(currentView !== 'student' || !profile) return;
+                const otpInput = document.getElementById('student-otp-input').value;
+                const configSnap = await getDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', profile.section));
+                const config = configSnap.data();
+
+                if(!config || !config.active || otpInput !== config.otp) {
+                    document.getElementById('ai-status').innerText = "OTP Required";
+                    return;
+                }
+
+                document.getElementById('ai-loading').classList.remove('hidden');
+                const video = document.getElementById('live-video');
+                const det = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+                const canvas = document.createElement('canvas');
+                canvas.width = 150; canvas.height = 150;
+                canvas.getContext('2d').drawImage(video, 0, 0, 150, 150);
+
+                await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'room', user.uid), {
+                    ...profile,
+                    snapshot: canvas.toDataURL('image/jpeg', 0.4),
+                    liveDescriptor: det ? Array.from(det.descriptor) : null,
+                    location: userLocation,
+                    lastSeen: serverTimestamp()
+                });
+                document.getElementById('ai-loading').classList.add('hidden');
+                document.getElementById('ai-status').innerText = det ? "Verified" : "No Face";
+            }, 6000);
+        }
+
+        // --- REPORTS ---
+        async function fetchReports() {
+            const q = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'attendance'));
+            const tbody = document.getElementById('report-body');
+            tbody.innerHTML = "";
+            const data = [];
+            q.forEach(d => data.push(d.data()));
+            data.sort((a,b) => b.timestamp?.toMillis() - a.timestamp?.toMillis());
+            
+            if(data.length === 0) {
+                tbody.innerHTML = "<tr><td colspan='7' class='p-12 text-center text-slate-400'>No records found</td></tr>";
+                return;
+            }
+
+            data.forEach(r => {
+                tbody.innerHTML += `
+                    <tr class="border-b hover:bg-slate-50 transition-colors">
+                        <td class="p-4 text-[10px] text-slate-500">${r.date}</td>
+                        <td class="p-4 font-black text-blue-600">${r.subject}</td>
+                        <td class="p-4 font-medium">${r.hour}</td>
+                        <td class="p-4 font-bold">SEC ${r.section}</td>
+                        <td class="p-4 font-bold text-slate-700">#${r.roll}</td>
+                        <td class="p-4 text-xs font-medium">${r.name || '---'}</td>
+                        <td class="p-4"><span class="px-2 py-1 rounded text-[9px] font-black uppercase ${r.status === 'Present' ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}">${r.status}</span></td>
+                    </tr>`;
+            });
+        }
+
+        window.exportToCSV = () => {
+            const rows = Array.from(document.querySelectorAll('#report-body tr')).map(tr => 
+                Array.from(tr.querySelectorAll('td')).map(td => td.innerText).join(",")
+            );
+            const csvContent = "Date,Subject,Hour,Sec,Roll,Name,Status\n" + rows.join("\n");
+            const blob = new Blob([csvContent], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.setAttribute('hidden', '');
+            a.setAttribute('href', url);
+            a.setAttribute('download', 'Attendance_Report.csv');
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        };
+
+        window.logout = async () => {
+            await deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'profile', 'data'));
+            location.reload();
+        };
+
+        async function startCamera(id) {
+            const v = document.getElementById(id);
+            try {
+                const s = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 320, facingMode: "user" } });
+                v.srcObject = s;
+            } catch(e) { notify("Camera Error"); }
+        }
+        function stopCamera(id) {
+            const v = document.getElementById(id);
+            if(v && v.srcObject) v.srcObject.getTracks().forEach(t => t.stop());
+        }
+        function notify(m) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = m;
+            t.classList.remove('hidden');
+            setTimeout(() => t.classList.add('hidden'), 3000);
+        }
+        function updateStats() {
+            const count = Object.keys(activeStudents).length;
+            const select = document.getElementById('sel-section');
+            document.getElementById('stats-summary').innerText = `${count} Students Online • Sec ${select.value}`;
+        }
+    </script>
+</body>
+</html>
