@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>FaceAuth Enterprise - Secure Attendance</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+    <style>
+        .video-feed { transform: scaleX(-1); }
+        .student-slot { transition: all 0.3s ease; }
+        .is-absent { opacity: 0.5; border-style: dashed; background-color: transparent; }
+        .is-verified { border-color: #10b981; background-color: #ecfdf5; transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(16, 185, 129, 0.1); }
+        .is-mismatch { border-color: #ef4444; background-color: #fef2f2; animation: shake 0.5s; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-2px); } 75% { transform: translateX(2px); } }
+        .classroom-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; }
+        @media (min-width: 768px) { .classroom-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); } }
+        .loader { border: 2px solid #f3f3f3; border-top: 2px solid #3b82f6; border-radius: 50%; width: 16px; height: 16px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen font-sans">
+
+    <header class="bg-white border-b px-6 py-4 sticky top-0 z-50 flex justify-between items-center shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04a11.02 11.02 0 00-2.388 4.684a11.014 11.014 0 006.291 12.728l3.715 1.486l3.715-1.486a11.014 11.014 0 006.291-12.728a11.02 11.02 0 00-2.388-4.684z"></path></svg>
+            </div>
+            <div>
+                <h1 class="text-lg font-bold leading-none">FaceAuth <span class="text-blue-600">Pro</span></h1>
+                <p id="stats-summary" class="text-[10px] font-bold text-slate-400 uppercase mt-1">Ready for Session</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div id="connection-dot" class="w-2.5 h-2.5 rounded-full bg-slate-300"></div>
+            <nav id="top-nav" class="flex gap-1 bg-slate-100 p-1 rounded-xl">
+                <button onclick="changeView('faculty')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all" id="nav-faculty">Faculty</button>
+                <button onclick="changeView('reports')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all" id="nav-reports">Reports</button>
+                <button onclick="changeView('student')" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all" id="nav-student">Student</button>
+            </nav>
+        </div>
+    </header>
+
+    <main class="p-6 max-w-7xl mx-auto">
+        
+        <!-- FACULTY VIEW -->
+        <div id="view-faculty" class="hidden space-y-6">
+            <div class="bg-white p-5 rounded-2xl border shadow-sm space-y-4">
+                <div class="flex flex-wrap gap-4 items-end">
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Section</label>
+                        <select id="sel-section" onchange="initFacultyGrid()" class="block w-24 bg-slate-50 border rounded-lg p-2 font-bold text-sm outline-none">
+                            <option value="A" data-count="75">Sec A</option>
+                            <option value="B" data-count="53">Sec B</option>
+                            <option value="C" data-count="70">Sec C</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Subject</label>
+                        <input type="text" id="subject-code" value="CS101" class="block w-24 bg-slate-50 border rounded-lg p-2 font-bold text-sm outline-none uppercase">
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Hour</label>
+                        <select id="class-hour" class="block w-20 bg-slate-50 border rounded-lg p-2 font-bold text-sm outline-none">
+                            <option>H1</option><option>H2</option><option>H3</option><option>H4</option>
+                        </select>
+                    </div>
+                    <div class="space-y-1">
+                        <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Current OTP</label>
+                        <div class="bg-blue-600 text-white px-4 py-2 rounded-lg font-black text-lg tracking-widest" id="faculty-otp">----</div>
+                    </div>
+                    <div class="flex-grow"></div>
+                    <div class="flex gap-2">
+                        <button id="btn-session" onclick="toggleSession()" class="bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-blue-200">Start Session</button>
+                    </div>
+                </div>
+                
+                <div class="pt-4 border-t flex gap-2">
+                    <button onclick="bulkMark('identified')" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl font-bold text-xs shadow-lg shadow-emerald-200">Mark Present</button>
+                    <button onclick="bulkMark('absent')" class="bg-slate-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs">Mark Absents</button>
+                    <button onclick="cleanLiveRoom()" class="bg-white border text-red-600 px-5 py-2.5 rounded-xl font-bold text-xs ml-auto">Clear Cache</button>
+                </div>
+            </div>
+
+            <div id="classroom-map" class="classroom-grid pb-12"></div>
+        </div>
+
+        <!-- REPORTS VIEW -->
+        <div id="view-reports" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-2xl border shadow-sm">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-xl font-bold">Attendance Records</h2>
+                    <button onclick="exportToCSV()" class="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold shadow-md">Export CSV</button>
+                </div>
+                <div class="overflow-x-auto rounded-xl border">
+                    <table class="w-full text-left text-sm">
+                        <thead class="bg-slate-50 border-b font-bold text-[10px] text-slate-400 uppercase">
+                            <tr>
+                                <th class="p-4">Date/Time</th>
+                                <th class="p-4">Subject</th>
+                                <th class="p-4">Hour</th>
+                                <th class="p-4">Sec</th>
+                                <th class="p-4">Roll</th>
+                                <th class="p-4">Name</th>
+                                <th class="p-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="report-body">
+                            <tr><td colspan="7" class="p-12 text-center text-slate-400">Loading records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- STUDENT VIEW -->
+        <div id="view-student" class="hidden max-w-md mx-auto space-y-6">
+            <!-- Step 1: Registration -->
+            <div id="student-reg" class="hidden bg-white p-8 rounded-[2.5rem] shadow-2xl border text-center animate-in fade-in zoom-in duration-300">
+                <h3 class="text-2xl font-black mb-1">Student Setup</h3>
+                <p class="text-sm text-slate-400 mb-8">Register face for secure access.</p>
+                <div class="relative rounded-[2rem] overflow-hidden aspect-square bg-slate-900 mb-8 mx-auto shadow-inner border-4 border-slate-100">
+                    <video id="reg-video" autoplay muted playsinline class="w-full h-full object-cover video-feed"></video>
+                </div>
+                <div class="space-y-4 text-left">
+                    <input type="text" id="reg-name" placeholder="Full Name" class="w-full p-4 rounded-2xl border bg-slate-50 font-medium outline-none">
+                    <div class="flex gap-4">
+                        <select id="reg-sec" class="flex-1 p-4 rounded-2xl border bg-slate-50 font-bold">
+                            <option value="A">Sec A</option><option value="B">Sec B</option><option value="C">Sec C</option>
+                        </select>
+                        <input type="number" id="reg-id" placeholder="Roll No" class="flex-1 p-4 rounded-2xl border bg-slate-50 font-bold outline-none">
+                    </div>
+                    <button id="btn-register" onclick="registerProfile()" class="w-full bg-blue-600 text-white py-5 rounded-[1.5rem] font-bold shadow-xl active:scale-95 transition-all">Save Profile</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Live Dashboard -->
+            <div id="student-dash" class="hidden space-y-6">
+                <div class="bg-blue-600 p-8 rounded-[2.5rem] text-white shadow-xl relative overflow-hidden">
+                    <div class="relative z-10 flex justify-between items-start">
+                        <div>
+                            <h4 id="dash-name" class="text-2xl font-black truncate max-w-[180px]">...</h4>
+                            <div class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest bg-white/10 px-3 py-1 rounded-full w-fit mt-1">
+                                <span id="dash-meta-sec">Sec ?</span> • <span id="dash-meta-roll">Roll ?</span>
+                            </div>
+                            <div id="dash-subject-badge" class="mt-4 text-[10px] font-black bg-white text-blue-600 px-3 py-1 rounded-full w-fit hidden">LIVE: SUBJECT</div>
+                        </div>
+                        <div class="text-right">
+                            <div id="gps-badge" class="px-2 py-1 rounded bg-red-500/30 border border-white/20 text-[9px] font-bold uppercase">GPS: Checking</div>
+                            <div id="otp-timer" class="text-[20px] font-black mt-1">30s</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 rounded-2xl border shadow-sm">
+                    <input type="text" id="student-otp-input" placeholder="ENTER 4-DIGIT OTP" class="w-full bg-slate-50 p-4 rounded-xl text-center font-black text-2xl tracking-[0.5em] outline-none border focus:border-blue-500 transition-all uppercase">
+                </div>
+
+                <div id="stream-container" class="relative rounded-[3rem] overflow-hidden shadow-2xl bg-slate-900 aspect-square border-8 border-white group">
+                    <video id="live-video" autoplay muted playsinline class="w-full h-full object-cover video-feed"></video>
+                    
+                    <div id="closed-overlay" class="absolute inset-0 bg-slate-900/95 backdrop-blur-md flex flex-col items-center justify-center text-center p-10">
+                        <svg class="w-12 h-12 text-slate-700 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        <h5 class="text-white font-black">Classroom Closed</h5>
+                        <p class="text-slate-500 text-[10px] mt-2 font-bold uppercase tracking-widest leading-relaxed">No active session for your section</p>
+                    </div>
+
+                    <div class="absolute top-6 left-6 flex items-center gap-2 bg-black/40 backdrop-blur-xl px-4 py-2 rounded-full border border-white/20">
+                        <div id="stream-status-dot" class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                        <span class="text-[9px] text-white font-black uppercase tracking-widest">Live Secure Feed</span>
+                    </div>
+                    
+                    <div class="absolute bottom-6 left-1/2 -translate-x-1/2 bg-white/95 backdrop-blur-md px-6 py-2 rounded-2xl shadow-lg flex items-center gap-3 border">
+                        <div class="loader" id="ai-loading"></div>
+                        <span id="ai-status" class="text-[9px] font-black text-slate-800 uppercase">Wait...</span>
+                    </div>
+                </div>
+
+                <button onclick="logout()" class="w-full py-4 text-slate-400 text-[10px] font-black uppercase tracking-widest">Logout & Reset</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="fixed bottom-10 left-1/2 -translate-x-1/2 z-[100] hidden">
+        <div class="bg-slate-900 text-white px-8 py-4 rounded-2xl shadow-2xl text-xs font-bold flex items-center gap-4">
+            <span id="toast-msg">Updating...</span>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, collection, query, deleteDoc, getDocs, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = {
+apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+  measurementId: "G-9PZZM5LFKX"
+};
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'faceauth-secure-final';
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
+
+        let user = null;
+        let profile = null;
+        let activeStudents = {};
+        let broadcastTimer = null;
+        let isSessionActive = false;
+        let currentOTP = "0000";
+        let userLocation = null;
+        let currentView = 'faculty';
+
+        window.onload = async () => {
+            notify("Loading AI Models...");
+            try {
+                await Promise.all([
+                    faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+                ]);
+                notify("AI Online");
+            } catch(e) { notify("AI Init Error"); }
+            
+            onAuthStateChanged(auth, async u => {
+                user = u;
+                document.getElementById('connection-dot').className = u ? "w-2.5 h-2.5 rounded-full bg-emerald-500" : "w-2.5 h-2.5 rounded-full bg-red-500";
+                if(u) {
+                    const snap = await getDoc(doc(db, 'artifacts', appId, 'users', u.uid, 'profile', 'data'));
+                    if(snap.exists()) {
+                        profile = snap.data();
+                        if(currentView === 'student') updateStudentUI();
+                    } else if(currentView === 'student') showReg();
+                } else signInAnonymously(auth);
+            });
+
+            // OTP Loop (30s)
+            setInterval(() => {
+                const now = new Date();
+                const remaining = 30 - (now.getSeconds() % 30);
+                if (remaining === 30 || currentOTP === "0000") {
+                    currentOTP = Math.floor(1000 + Math.random() * 9000).toString();
+                    if(isSessionActive) updateSessionInDB();
+                }
+                const otpDisplay = document.getElementById('faculty-otp');
+                if(otpDisplay) otpDisplay.innerText = isSessionActive ? currentOTP : "----";
+                const studentTimer = document.getElementById('otp-timer');
+                if(studentTimer) studentTimer.innerText = `${remaining}s`;
+            }, 1000);
+
+            changeView('faculty');
+        };
+
+        window.changeView = (view) => {
+            currentView = view;
+            ['faculty', 'student', 'reports'].forEach(v => {
+                document.getElementById(`view-${v}`).classList.toggle('hidden', v !== view);
+                const btn = document.getElementById(`nav-${v}`);
+                if(btn) btn.className = v === view ? "px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-blue-600 shadow-sm" : "px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800";
+            });
+
+            stopCamera('reg-video'); 
+            stopCamera('live-video');
+            if(broadcastTimer) clearInterval(broadcastTimer);
+
+            if(view === 'faculty') initFacultyGrid();
+            if(view === 'student') { if(profile) updateStudentUI(); else showReg(); }
+            if(view === 'reports') fetchReports();
+        };
+
+        // --- FACULTY ---
+        window.initFacultyGrid = () => {
+            const select = document.getElementById('sel-section');
+            const count = parseInt(select.options[select.selectedIndex].getAttribute('data-count'));
+            const grid = document.getElementById('classroom-map');
+            grid.innerHTML = "";
+            for(let i=1; i<=count; i++) {
+                grid.innerHTML += `
+                    <div id="slot-${i}" class="student-slot is-absent bg-white border-2 border-slate-200 rounded-2xl p-4 flex flex-col items-center text-center shadow-sm">
+                        <div class="w-full aspect-square rounded-2xl bg-slate-50 flex items-center justify-center mb-2 overflow-hidden relative">
+                            <span class="text-slate-200 font-black text-2xl">${i}</span>
+                            <img id="img-${i}" class="absolute inset-0 w-full h-full object-cover hidden">
+                        </div>
+                        <p class="text-[9px] font-black text-slate-300 uppercase truncate w-full" id="name-${i}">Empty</p>
+                    </div>`;
+            }
+            listenToRoom();
+        };
+
+        window.toggleSession = async () => {
+            isSessionActive = !isSessionActive;
+            const btn = document.getElementById('btn-session');
+            btn.innerText = isSessionActive ? "Stop Session" : "Start Session";
+            btn.className = isSessionActive ? "bg-red-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg" : "bg-blue-600 text-white px-6 py-2.5 rounded-xl font-bold text-xs shadow-lg";
+            updateSessionInDB();
+        };
+
+        async function updateSessionInDB() {
+            const section = document.getElementById('sel-section').value;
+            const subject = document.getElementById('subject-code').value || 'NA';
+            const hour = document.getElementById('class-hour').value;
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'config', section), {
+                active: isSessionActive,
+                otp: currentOTP,
+                subject,
+                hour,
+                timestamp: serverTimestamp()
+            });
+        }
+
+        let roomUnsub = null;
+        function listenToRoom() {
+          
