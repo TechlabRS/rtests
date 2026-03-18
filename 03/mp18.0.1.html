@@ -2147,19 +2147,33 @@ window.handleStudentSearch = () => {
             // 1. If manual, ask for confirmation
             if (!isAutoTimeout && !confirm("Are you sure you want to end the session?")) return;
 
+            // Prevent duplicate clicks if a user (e.g., Ramesh or Kavya) clicks "End Session" rapidly
+            const endBtn = document.querySelector('button[onclick*="stopSession"]');
+            if (endBtn) {
+                endBtn.disabled = true;
+                endBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Ending...';
+            }
+
             try {
                 // 2. Update Firebase: Set session to inactive
-                const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', currentSessionId);
-                await updateDoc(sessionRef, { active: false, endedAt: serverTimestamp() });
+                // We use a check for currentSessionId to prevent errors if already stopped
+                if (currentSessionId) {
+                    const sessionRef = doc(db, 'artifacts', appId, 'public', 'data', 'sessions', currentSessionId);
+                    await updateDoc(sessionRef, { active: false, endedAt: serverTimestamp() });
+                }
 
                 // 3. CLEANUP LISTENERS: Stop the onSnapshot Firebase listeners
-                window.appState.activeListeners.forEach(detach => detach());
-                window.appState.activeListeners = [];
+                if (window.appState.activeListeners) {
+                    window.appState.activeListeners.forEach(detach => detach());
+                    window.appState.activeListeners = [];
+                }
 
                 // 4. CLEANUP INTERVALS: Stop the OTP timer
-                window.appState.activeIntervals.forEach(clearInterval);
-                window.appState.activeIntervals = [];
-                if (otpInterval) clearInterval(otpInterval);
+                if (window.appState.activeIntervals) {
+                    window.appState.activeIntervals.forEach(clearInterval);
+                    window.appState.activeIntervals = [];
+                }
+                if (typeof otpInterval !== 'undefined' && otpInterval) clearInterval(otpInterval);
 
                 // 5. CLEANUP IDLE TIMER: Remove activity listeners
                 if (window.appState.idleTimer) clearTimeout(window.appState.idleTimer);
@@ -2167,20 +2181,32 @@ window.handleStudentSearch = () => {
                     document.removeEventListener(event, window.resetIdleTimer);
                 });
 
-                // 6. UI RESET
-                document.getElementById('live-monitor').classList.add('hidden');
-                document.getElementById('create-session-panel').classList.remove('hidden');
-                document.getElementById('create-btn').innerText = "Start Class";
+                // 6. UI RESET (With Safety Checks to prevent "classList of null" errors)
+                const liveMonitor = document.getElementById('live-monitor');
+                const createPanel = document.getElementById('create-session-panel');
+                const createBtn = document.getElementById('create-btn');
+
+                if (liveMonitor) liveMonitor.classList.add('hidden');
+                if (createPanel) createPanel.classList.remove('hidden');
+                if (createBtn) {
+                    createBtn.disabled = false;
+                    createBtn.innerText = "Start Class";
+                }
 
                 if (isAutoTimeout) {
-                    showToast("Session ended due to 10 minutes of inactivity.", "info");
+                    showToast("Session ended due to inactivity.", "info");
                 } else {
                     showToast("Session ended successfully.", "success");
                 }
 
             } catch (e) {
                 console.error("End Session Error:", e);
-                showToast("Failed to end session properly.", "error");
+                showToast("Error ending session.", "error");
+                // Re-enable button on error so they can try again
+                if (endBtn) {
+                    endBtn.disabled = false;
+                    endBtn.innerText = "End Session";
+                }
             }
         };
 
