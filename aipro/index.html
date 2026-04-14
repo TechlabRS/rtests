@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VConnect | Intelligent Campus OS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #fefefe;
+            --nav-bg: #1e1b26;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-main);
+            min-height: 100vh;
+            color: #1e293b;
+            overflow-x: hidden;
+        }
+        .font-brand { font-family: 'Space Grotesk', sans-serif; }
+        
+        /* High-Fidelity OS Gradients */
+        .grad-pink { background: linear-gradient(180deg, #ffffff 0%, #fff1f2 40%, #fbcfe8 100%); }
+        .grad-blue { background: linear-gradient(180deg, #ffffff 0%, #eff6ff 40%, #bfdbfe 100%); }
+        .grad-green { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 40%, #bbf7d0 100%); }
+        .grad-orange { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 40%, #fed7aa 100%); }
+        .grad-purple { background: linear-gradient(180deg, #ffffff 0%, #faf5ff 40%, #e9d5ff 100%); }
+        .grad-wheat { background: linear-gradient(180deg, #ffffff 0%, #fffbeb 40%, #fef3c7 100%); }
+        .grad-red { background: linear-gradient(180deg, #ffffff 0%, #fef2f2 40%, #fecaca 100%); }
+
+        .os-card {
+            border-radius: 48px;
+            box-shadow: 0 10px 40px -15px rgba(0,0,0,0.06);
+            border: 1px solid rgba(0,0,0,0.04);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .bottom-nav {
+            background: var(--nav-bg);
+            border-radius: 40px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+
+        .nav-item { transition: all 0.3s ease; color: #64748b; }
+        .nav-item.active { background: white; color: #1e1b26; border-radius: 50%; }
+
+        .os-title {
+            font-weight: 800;
+            letter-spacing: -0.03em;
+            color: #0f172a;
+            line-height: 1.1;
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .animate-card { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+
+        /* Custom Table Style for Exams */
+        .exam-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+        .exam-table td {
+            background: rgba(255,255,255,0.4);
+            padding: 12px 20px;
+        }
+        .exam-table td:first-child { border-radius: 16px 0 0 16px; font-weight: 800; }
+        .exam-table td:last-child { border-radius: 0 16px 16px 0; text-align: right; font-weight: 600; color: #6366f1; }
+    </style>
+</head>
+<body class="pb-32">
+
+    <!-- Header Section -->
+    <header class="w-full pt-16 pb-12 px-8 text-center">
+        <h1 class="text-4xl font-black tracking-[0.5em] text-slate-900 font-brand">V C O N N E C T</h1>
+        <p class="text-[11px] uppercase tracking-[0.4em] font-extrabold text-slate-400 mt-3">Campus Operating System</p>
+    </header>
+
+    <!-- Auth View -->
+    <div id="authView" class="w-full max-w-md mx-auto px-6">
+        <div class="os-card grad-blue p-12 text-center">
+            <div class="w-20 h-20 bg-white rounded-[32px] shadow-xl mx-auto mb-8 flex items-center justify-center">
+                <i data-lucide="fingerprint" class="w-10 h-10 text-indigo-600"></i>
+            </div>
+            <h2 class="text-2xl font-black mb-10 text-slate-900">Secure Access</h2>
+            
+            <form id="loginForm" class="space-y-4">
+                <input type="tel" id="loginMobile" placeholder="Mobile Number" class="w-full p-5 rounded-3xl bg-white/80 border border-slate-100 outline-none focus:ring-4 ring-indigo-500/10 font-bold" required>
+                <input type="password" id="loginPass" placeholder="Access PIN" class="w-full p-5 rounded-3xl bg-white/80 border border-slate-100 outline-none focus:ring-4 ring-indigo-500/10 font-bold" required>
+                <button type="submit" class="w-full bg-slate-900 text-white p-6 rounded-3xl font-black hover:scale-[0.98] transition-all shadow-xl shadow-slate-200">Initialize Identity</button>
+            </form>
+            
+            <button onclick="toggleReg(true)" class="mt-10 text-xs font-black text-slate-400 hover:text-indigo-600 tracking-widest uppercase">Request New ID</button>
+        </div>
+
+        <!-- Registration Modal -->
+        <div id="regModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/95 backdrop-blur-2xl">
+            <div class="w-full max-w-lg">
+                <h3 class="text-3xl font-black mb-8 font-brand">IDENTITY GENESIS</h3>
+                <form id="registerForm" class="space-y-4">
+                    <input type="text" id="regName" placeholder="Full Legal Name" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-bold" required>
+                    <div class="grid grid-cols-2 gap-4">
+                        <input type="tel" id="regMobile" placeholder="Mobile" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
+                        <input type="date" id="regDob" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
+                    </div>
+                    <select id="regRole" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 appearance-none font-bold" required onchange="handleRoleChange()">
+                        <option value="Faculty">Faculty Member</option>
+                        <option value="Student">Student Learner</option>
+                        <option value="Staff">Academic Staff</option>
+                        <option value="Management">Global Management</option>
+                    </select>
+                    <input type="text" id="regRollNo" placeholder="Roll Identity" class="hidden w-full p-5 rounded-2xl bg-indigo-50 border border-indigo-100 font-bold">
+                    <input type="password" id="regPass" placeholder="Set Access PIN" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
+                    <div class="flex gap-4 pt-8">
+                        <button type="button" onclick="toggleReg(false)" class="flex-1 p-5 font-black text-slate-400 uppercase text-xs tracking-widest">Abort</button>
+                        <button type="submit" class="flex-1 bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-100">Establish ID</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main OS Interface -->
+    <div id="mainView" class="hidden w-full max-w-3xl mx-auto px-6">
+        
+        <!-- Dashboard: My Identity -->
+        <div id="dashboardTab" class="animate-card">
+            <div class="os-card bg-white p-10 text-center relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-indigo-600 to-emerald-400"></div>
+                <img id="dashPic" src="" class="w-40 h-40 rounded-[52px] mx-auto mb-8 shadow-2xl border-4 border-white object-cover">
+                <div id="dashRole" class="inline-block bg-indigo-600 text-white text-[10px] font-black px-5 py-2 rounded-full tracking-[0.2em] uppercase mb-6 shadow-lg shadow-indigo-100">ROLE</div>
+                <h2 id="dashName" class="text-4xl font-black text-slate-900 mb-2 font-brand">Name</h2>
+                <p id="dashDept" class="text-slate-400 font-bold text-sm tracking-wide mb-12">DEPT OF ARCHITECTURE</p>
+                
+                <div class="grid grid-cols-2 gap-y-10 text-left border-t border-slate-50 pt-10">
+                    <div>
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">SERIAL KEY</p>
+                        <p id="dashID" class="font-black text-slate-700 font-brand">VC-0000</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">COMMS</p>
+                        <p id="dashMobile" class="font-black text-slate-700">+91 000</p>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">GENESIS DATE</p>
+                        <p id="dashDob" class="font-black text-slate-700">--</p>
+                    </div>
+                    <div id="dashRollArea" class="hidden">
+                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">LEARNER ID</p>
+                        <p id="dashRoll" class="font-black text-slate-700">--</p>
+                    </div>
+                </div>
+
+                <div class="mt-16 pt-10 border-t border-slate-50 flex justify-between items-center">
+                    <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center p-3 opacity-20 grayscale">
+                        <i data-lucide="qr-code" class="w-full h-full"></i>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Verified OS Instance</p>
+                        <p class="text-sm font-black text-slate-900 font-brand">VCONNECT.ROOT</p>
+                    </div>
+                </div>
+            </div>
+            
+            <button onclick="logout()" class="w-full mt-8 p-6 rounded-[40px] border-2 border-slate-100 font-black text-slate-400 flex items-center justify-center gap-3 hover:bg-red-50 hover:text-red-500 transition-all uppercase text-xs tracking-widest">
+                <i data-lucide="log-out" class="w-4 h-4"></i> De-Initialize Session
+            </button>
+        </div>
+
+        <!-- Pulse: Intelligent Broadcast Feed -->
+        <div id="feedsTab" class="hidden space-y-10 pb-20">
+            <div id="postsFeed" class="space-y-10">
+                <!-- Posts dynamic -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Intelligence Input Trigger (Non-students) -->
+    <button id="createTrigger" onclick="openPostModal()" class="hidden fixed bottom-32 right-8 w-20 h-20 bg-slate-900 text-white rounded-[32px] shadow-2xl flex items-center justify-center z-40 hover:scale-110 transition-transform active:scale-95">
+        <i data-lucide="sparkles" class="w-8 h-8"></i>
+    </button>
+
+    <!-- AI Intelligence Post Modal -->
+    <div id="postModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-xl">
+        <div class="w-full max-w-xl bg-white rounded-[56px] p-12 animate-card shadow-2xl">
+            <div class="flex items-center gap-4 mb-8">
+                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
+                    <i data-lucide="zap" class="text-white w-6 h-6"></i>
+                </div>
+                <h3 class="text-3xl font-black text-slate-900 font-brand">Intelligent Broadcast</h3>
+            </div>
+            
+            <p class="text-slate-400 text-sm mb-6 font-medium">Type your update naturally. Gemini AI will handle the categories, visual style, and structured formatting (tables, venue chips, etc).</p>
+            
+            <div class="space-y-6">
+                <textarea id="pPrompt" placeholder="Example: Placement results are out! Congrats to Rahul for getting into Google..." class="w-full p-6 rounded-[32px] bg-slate-50 border-2 border-slate-100 h-48 resize-none outline-none focus:border-indigo-500 transition-all font-bold text-slate-700"></textarea>
+                
+                <div id="pAiLoading" class="hidden items-center justify-center gap-3 py-4 text-indigo-600 font-black text-xs uppercase tracking-widest">
+                    <div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+                    AI is designing your identity pulse...
+                </div>
+
+                <div class="flex gap-4">
+                    <button onclick="document.getElementById('postModal').classList.add('hidden')" class="flex-1 p-6 font-black text-slate-400 uppercase text-xs tracking-widest">Cancel</button>
+                    <button id="pSubmit" onclick="intelligentPost()" class="flex-[2] bg-slate-900 text-white p-6 rounded-[32px] font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-200">Broadcast Update</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Hub -->
+    <nav id="bottomNav" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-sm h-20 bottom-nav flex items-center justify-around px-6 z-50">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-14 h-14 flex items-center justify-center active">
+            <i data-lucide="user" class="w-6 h-6"></i>
+        </button>
+        <button onclick="switchTab('feeds')" id="nav-feeds" class="nav-item w-14 h-14 flex items-center justify-center">
+            <i data-lucide="layout" class="w-6 h-6"></i>
+        </button>
+        <div class="nav-item opacity-10"><i data-lucide="calendar" class="w-6 h-6"></i></div>
+        <div class="nav-item opacity-10"><i data-lucide="search" class="w-6 h-6"></i></div>
+    </nav>
+
+    <script>
+        const apiKey = "AIzaSyAWEu3Vp5IPnbL4VRJNxIvzH7t7rgWcToU";
+        let currentUser = null;
+
+        window.onload = () => {
+            lucide.createIcons();
+            const session = JSON.parse(localStorage.getItem('vc_current_session'));
+            if(session) loginSuccess(session);
+        };
+
+        function toggleReg(show) { document.getElementById('regModal').classList.toggle('hidden', !show); }
+        function handleRoleChange() { document.getElementById('regRollNo').classList.toggle('hidden', document.getElementById('regRole').value !== 'Student'); }
+
+        document.getElementById('registerForm').onsubmit = (e) => {
+            e.preventDefault();
+            const users = JSON.parse(localStorage.getItem('vc_users') || '[]');
+            const mobile = document.getElementById('regMobile').value;
+            if(users.some(u => u.mobile === mobile)) return alert("ID already allocated.");
+
+            const newUser = {
+                id: 'VC-' + Math.floor(1000 + Math.random() * 9000),
+                name: document.getElementById('regName').value,
+                mobile: mobile,
+                dob: document.getElementById('regDob').value,
+                role: document.getElementById('regRole').value,
+                pass: document.getElementById('regPass').value,
+                roll: document.getElementById('regRollNo').value || 'N/A',
+                pic: `https://api.dicebear.com/7.x/notionists/svg?seed=${mobile}&backgroundColor=f8fafc`
+            };
+            users.push(newUser);
+            localStorage.setItem('vc_users', JSON.stringify(users));
+            toggleReg(false);
+            alert("ID created. System ready for initialization.");
+        };
+
+        document.getElementById('loginForm').onsubmit = (e) => {
+            e.preventDefault();
+            const users = JSON.parse(localStorage.getItem('vc_users') || '[]');
+            const user = users.find(u => u.mobile === document.getElementById('loginMobile').value && u.pass === document.getElementById('loginPass').value);
+            if(user) loginSuccess(user); else alert("Identity mismatch.");
+        };
+
+        function loginSuccess(user) {
+            currentUser = user;
+            localStorage.setItem('vc_current_session', JSON.stringify(user));
+            document.getElementById('authView').classList.add('hidden');
+            document.getElementById('mainView').classList.remove('hidden');
+            document.getElementById('bottomNav').classList.remove('hidden');
+            if(user.role !== 'Student') document.getElementById('createTrigger').classList.remove('hidden');
+            updateDashboard();
+            renderFeed();
+            switchTab('dashboard');
+        }
+
+        function logout() { localStorage.removeItem('vc_current_session'); location.reload(); }
+
+        function updateDashboard() {
+            document.getElementById('dashName').innerText = currentUser.name;
+            document.getElementById('dashRole').innerText = currentUser.role;
+            document.getElementById('dashID').innerText = currentUser.id;
+            document.getElementById('dashMobile').innerText = currentUser.mobile;
+            document.getElementById('dashDob').innerText = new Date(currentUser.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric'});
+            document.getElementById('dashPic').src = currentUser.pic;
+            if(currentUser.role === 'Student') {
+                document.getElementById('dashRollArea').classList.remove('hidden');
+                document.getElementById('dashRoll').innerText = currentUser.roll;
+            }
+        }
+
+        function switchTab(tab) {
+            document.getElementById('dashboardTab').classList.toggle('hidden', tab !== 'dashboard');
+            document.getElementById('feedsTab').classList.toggle('hidden', tab !== 'feeds');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.getElementById('nav-' + tab).classList.add('active');
+            lucide.createIcons();
+        }
+
+        function openPostModal() { document.getElementById('postModal').classList.remove('hidden'); }
+
+        async function intelligentPost() {
+            const prompt = document.getElementById('pPrompt').value;
+            if(!prompt) return alert("System prompt required.");
+
+            const loading = document.getElementById('pAiLoading');
+            const submitBtn = document.getElementById('pSubmit');
+            loading.classList.remove('hidden');
+            submitBtn.disabled = true;
+
+            try {
+                // STEP 1: AI Content Analysis (Gemini 2.5)
+                const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: `You are a campus operating system assistant. Analyze this update: "${prompt}". Return a JSON object ONLY with: category (Exam, Placement, Alert, Greeting, Event), title (stunning title), summary (engaging description), structuredData (if Exam: array of objects {subject, date}, if Event: {date, venue, time}, if Placement: {name, company}, otherwise null), gradient (red, pink, blue, green, orange, purple, wheat).` }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    })
+                });
+                const analysisText = await analysisResponse.json();
+                const intent = JSON.parse(analysisText.candidates[0].content.parts[0].text);
+
+                // STEP 2: AI Visual Generation (Imagen 4.0)
+                const imgPrompt = `Stunning high-end academic 3D illustration for ${intent.category} broadcast titled "${intent.title}". Modern minimalist, professional university branding, glassmorphism elements, high resolution 4k.`;
+                const imgResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ instances: [{ prompt: imgPrompt }], parameters: { sampleCount: 1 } })
+                });
+                const imgData = await imgResponse.json();
+                const visual = `data:image/png;base64,${imgData.predictions[0].bytesBase64Encoded}`;
+
+                // STEP 3: Save to OS Feed
+                const posts = JSON.parse(localStorage.getItem('vc_posts') || '[]');
+                posts.unshift({
+                    id: Date.now(),
+                    ...intent,
+                    visual,
+                    author: currentUser.name,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem('vc_posts', JSON.stringify(posts));
+
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+                document.getElementById('postModal').classList.add('hidden');
+                document.getElementById('pPrompt').value = "";
+                renderFeed();
+                switchTab('feeds');
+
+            } catch (err) {
+                console.error(err);
+                alert("AI initialization failed. Check connectivity.");
+                loading.classList.add('hidden');
+                submitBtn.disabled = false;
+            }
+        }
+
+        function renderFeed() {
+            const posts = JSON.parse(localStorage.getItem('vc_posts') || '[]');
+            const container = document.getElementById('postsFeed');
+            
+            if(posts.length === 0) {
+                container.innerHTML = `<div class="p-20 text-center opacity-10"><i data-lucide="layers" class="mx-auto w-12 h-12 mb-4"></i><p class="font-bold">System pulse idle</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            container.innerHTML = posts.map(post => {
+                const isCentered = post.category === 'Greeting' || post.category === 'Placement';
+                const gradClass = `grad-${post.gradient}`;
+                const badgeColor = post.gradient === 'red' ? 'bg-red-600' : 'bg-indigo-600';
+
+                let structuredHtml = '';
+                if(post.category === 'Exam' && Array.isArray(post.structuredData)) {
+                    structuredHtml = `
+                        <table class="exam-table mt-8">
+                            ${post.structuredData.map(row => `<tr><td>${row.subject}</td><td>${row.date}</td></tr>`).join('')}
+                        </table>`;
+                } else if(post.category === 'Event' && post.structuredData) {
+                    structuredHtml = `
+                        <div class="flex flex-wrap gap-3 mt-8">
+                            <div class="bg-white/60 px-5 py-3 rounded-2xl flex items-center gap-2 border border-white"><i data-lucide="calendar" class="w-4 h-4"></i> <span class="text-xs font-bold">${post.structuredData.date}</span></div>
+                            <div class="bg-white/60 px-5 py-3 rounded-2xl flex items-center gap-2 border border-white"><i data-lucide="map-pin" class="w-4 h-4"></i> <span class="text-xs font-bold">${post.structuredData.venue}</span></div>
+                        </div>`;
+                } else if(post.category === 'Placement' && post.structuredData) {
+                    structuredHtml = `
+                        <div class="mt-8 py-6 px-8 bg-white/40 rounded-[32px] border border-white/60 text-center">
+                            <p class="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-2">Offer Secured At</p>
+                            <h4 class="text-2xl font-black text-slate-900">${post.structuredData.company}</h4>
+                        </div>`;
+                }
+
+                return `
+                <div class="os-card ${gradClass} p-10 animate-card">
+                    <div class="flex items-center justify-between mb-10">
+                        <span class="${badgeColor} text-white text-[10px] font-black uppercase px-6 py-2 rounded-full tracking-widest shadow-lg shadow-indigo-100">
+                            ${post.category}
+                        </span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
+                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">LIVE BROADCAST</span>
+                        </div>
+                    </div>
+
+                    <div class="${isCentered ? 'text-center' : 'text-left'}">
+                        ${isCentered ? `<div class="w-24 h-24 bg-white rounded-[32px] mx-auto mb-8 shadow-xl flex items-center justify-center text-5xl">🏆</div>` : ''}
+                        <h3 class="os-title text-5xl mb-6">${post.title}</h3>
+                        <p class="text-slate-500 font-bold leading-relaxed max-w-lg ${isCentered ? 'mx-auto' : ''}">
+                            ${post.summary}
+                        </p>
+                        
+                        ${structuredHtml}
+                    </div>
+
+                    <div class="mt-12 w-full aspect-video rounded-[40px] overflow-hidden shadow-2xl border-8 border-white group relative">
+                        <img src="${post.visual}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    </div>
+
+                    <div class="flex gap-4 mt-12 ${isCentered ? 'justify-center' : ''}">
+                        <button class="${badgeColor} text-white font-black text-[11px] uppercase px-10 py-5 rounded-2xl tracking-widest shadow-xl shadow-indigo-100 hover:scale-[0.98] transition-all">Acknowledge</button>
+                        <button class="bg-white/80 text-slate-900 border border-white font-black text-[11px] uppercase px-10 py-5 rounded-2xl tracking-widest backdrop-blur-sm hover:bg-white transition-all">Details</button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
