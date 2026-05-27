@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Structured File Version Tracker</title>
+    <style>
+        :root {
+            --bg-gradient: linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --text-main: #1f2937;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --badge-bg: #e0e7ff;
+            --badge-text: #4338ca;
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg-gradient);
+            background-attachment: fixed;
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            box-sizing: border-box;
+        }
+
+        *, *:before, *:after {
+            box-sizing: inherit;
+        }
+
+        .app-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .action-header {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        @media (min-width: 600px) {
+            .action-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        .action-header .title-area h1 {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin: 0;
+            color: #111827;
+            letter-spacing: -0.5px;
+        }
+
+        .action-header .title-area p {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin: 4px 0 0 0;
+        }
+
+        .workspace-layout {
+            width: 100%;
+        }
+
+        .list-heading {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 16px;
+            padding-left: 4px;
+        }
+
+        .records-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 768px) {
+            .records-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (min-width: 1100px) {
+            .records-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        .track-item {
+            background: var(--card-bg);
+            backdrop-filter: blur(8px);
+            padding: 22px;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.7);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .track-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05);
+        }
+        
+        .track-header {
+            margin-bottom: 12px;
+            padding-right: 85px;
+        }
+
+        .track-item h3 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #111827;
+            word-break: break-all;
+        }
+        
+        .version-badge {
+            position: absolute;
+            top: 22px;
+            right: 22px;
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .meta-line {
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+            margin: 6px 0;
+            font-size: 0.88rem;
+            color: #4b5563;
+        }
+
+        .meta-label {
+            color: var(--text-muted);
+            font-weight: 500;
+            min-width: 90px;
+            flex-shrink: 0;
+        }
+
+        .meta-val {
+            word-break: break-all;
+        }
+
+        .comment-box {
+            background: #f9fafb;
+            padding: 10px 14px;
+            border-radius: 8px;
+            margin-top: 12px;
+            font-size: 0.88rem;
+            color: #4b5563;
+            border-left: 3px solid #dbeafe;
+            flex-grow: 1;
+        }
+
+        .actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #f3f4f6;
+        }
+
+        .btn {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 12px rgba(79, 70, 229, 0.15);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1.5px solid var(--border-color);
+        }
+
+        .btn-secondary:hover {
+            background: #f9fafb;
+            color: var(--text-main);
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn-edit { 
+            background: #fffbeb; 
+            color: #b45309;
+            border: 1px solid #fef3c7;
+        }
+        .btn-edit:hover { background: #fef3c7; }
+        
+        .btn-delete { 
+            background: #fef2f2; 
+            color: var(--danger);
+            border: 1px solid #fee2e2;
+        }
+        .btn-delete:hover { background: #fee2e2; }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(15, 23, 42, 0.4);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+            padding: 16px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-card {
+            background: #ffffff;
+            width: 100%;
+            max-width: 460px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+            padding: 24px;
+            transform: scale(0.95);
+            transition: transform 0.25s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-card {
+            transform: scale(1);
+        }
+
+        .modal-title-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title-bar h2 {
+            margin: 0;
+            font-size: 1.3rem;
+            font-weight: 800;
+            color: #111827;
+        }
+
+        .close-modal-btn {
+            background: #f3f4f6;
+            border: none;
+            font-size: 1.25rem;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: var(--text-muted);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 6px;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: #374151;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        input, textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            color: var(--text-main);
+            background-color: #fefefe;
+        }
+
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+        }
+
+        input:disabled {
+            background-color: #f3f4f6;
+            color: var(--text-muted);
+            cursor: not-allowed;
+        }
+
+        .modal-form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 24px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            background: var(--card-bg);
+            border-radius: 16px;
+            border: 1px dashed var(--border-color);
+        }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header class="action-header">
+        <div class="title-area">
+            <h1>File Version Registry</h1>
+            <p>Adaptive Professional Enterprise Directory</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" onclick="openModal()">➕ Add Track Log</button>
+        </div>
+    </header>
+
+    <main class="workspace-layout">
+        <div class="list-heading">Monitored System Components</div>
+        <div id="trackerList" class="records-grid"></div>
+    </main>
+</div>
+
+<div id="formModal" class="modal-overlay" onclick="handleOverlayClick(event)">
+    <div class="modal-card">
+        <div class="modal-title-bar">
+            <h2 id="modalTitle">Track New Version</h2>
+            <button class="close-modal-btn" onclick="closeModal()">×</button>
+        </div>
+        
+        <form id="trackerForm">
+            <input type="hidden" id="editIndex" value="">
+            
+            <div class="form-group">
+                <label for="fileName">File Name</label>
+                <input type="text" id="fileName" required placeholder="e.g., config.production.json">
+            </div>
+
+            <div class="form-group">
+                <label for="location">File Path / Location</label>
+                <input type="text" id="location" required placeholder="e.g., /var/www/html/assets/">
+            </div>
+
+            <div class="form-group">
+                <label for="version">Version (Auto-Managed)</label>
+                <input type="text" id="version" value="v1.0.0" disabled>
+            </div>
+
+            <div class="form-group">
+                <label for="date">Date Logged</label>
+                <input type="date" id="date" required>
+            </div>
+
+            <div class="form-group">
+                <label for="comment">Purpose / Change Log</label>
+                <textarea id="comment" rows="3" placeholder="Describe tracking alterations details..."></textarea>
+            </div>
+
+            <div class="modal-form-actions">
+                <button type="button" class="btn btn-secondary" style="flex:1;" onclick="closeModal()">Dismiss</button>
+                <button type="submit" id="submitBtn" class="btn btn-primary" style="flex:2;">Save Track Log</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    // Local Storage Layer using uniform key schema
+    let trackingData = JSON.parse(localStorage.getItem('semverTrackingData')) || [];
+
+    const modal = document.getElementById('formModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const form = document.getElementById('trackerForm');
+    const fileNameInput = document.getElementById('fileName');
+    const versionInput = document.getElementById('version');
+    const locationInput = document.getElementById('location');
+    const dateInput = document.getElementById('date');
+    const commentInput = document.getElementById('comment');
+    const editIndexInput = document.getElementById('editIndex');
+    const submitBtn = document.getElementById('submitBtn');
+    const trackerList = document.getElementById('trackerList');
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setDefaultDate();
+        renderList();
+    });
+
+    function setDefaultDate() {
+        const today = new Date().toISOString().split('T')[0];
+        dateInput.value = today;
+    }
+
+    function openModal() {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    document.addEventListener('keydown', (e) => {
+        if(e.key === 'Escape' && modal.classList.contains('active')) closeModal();
+    });
+
+    function closeModal() {
+        modal.classList.remove('active');
+        document.body.style.overflow = '';
+        setTimeout(resetForm, 250);
+    }
+
+    function handleOverlayClick(e) {
+        if (e.target === modal) closeModal();
+    }
+
+    // Dynamic SemVer Calculation Module (v1.0.0 Structure)
+    function calculateDynamicVersion() {
+        if (editIndexInput.value !== "") return; 
+
+        const currentName = fileNameInput.value.trim().toLowerCase();
+        const currentPath = locationInput.value.trim().toLowerCase();
+
+        if (!currentName) {
+            versionInput.value = "v1.0.0";
+            return;
+        }
+
+        const historicalMatches = trackingData.filter(item => 
+            item.fileName.toLowerCase() === currentName && 
+            item.location.toLowerCase() === currentPath
+        );
+
+        if (historicalMatches.length > 0) {
+            // Target the leading integer segment from the vX.Y.Z profile string
+            const majorVersions = historicalMatches.map(item => {
+                const cleanStr = item.version.replace('v', ''); // Resulting string format: "1.0.0"
+                const parts = cleanStr.split('.');
+                return parseInt(parts[0], 10) || 1;
+            });
+            
+            const absoluteMaxMajor = Math.max(...majorVersions);
+            versionInput.value = `v${absoluteMaxMajor + 1}.0.0`;
+        } else {
+            versionInput.value = "v1.0.0";
+        }
+    }
+
+    fileNameInput.addEventListener('input', calculateDynamicVersion);
+    locationInput.addEventListener('input', calculateDynamicVersion);
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+
+        const dataPayload = {
+            fileName: fileNameInput.value.trim(),
+            version: versionInput.value,
+            location: locationInput.value.trim(),
+            date: dateInput.value,
+            comment: commentInput.value.trim()
+        };
+
+        const workingIndex = editIndexInput.value;
+
+        if (workingIndex !== "") {
+            trackingData[workingIndex] = dataPayload;
+        } else {
+            trackingData.push(dataPayload);
+        }
+
+        localStorage.setItem('semverTrackingData', JSON.stringify(trackingData));
+        closeModal();
+        renderList();
+    });
+
+    function renderList() {
+        trackerList.innerHTML = '';
+        
+        if (trackingData.length === 0) {
+            trackerList.innerHTML = '<div class="empty-state" style="grid-column: 1 / -1;">No records documented inside this system workspace yet.</div>';
+            return;
+        }
+
+        trackingData.slice().reverse().forEach((item, reverseIndex) => {
+            const trueIndex = trackingData.length - 1 - reverseIndex;
+            
+            const cardElement = document.createElement('div');
+            cardElement.className = 'track-item';
+            cardElement.innerHTML = `
+                <div>
+                    <span class="version-badge">${item.version}</span>
+                    <div class="track-header">
+                        <h3>${item.fileName}</h3>
+                    </div>
+                    <div class="meta-line">
+                        <span class="meta-label">Path Location:</span>
+                        <span class="meta-val">📁 ${item.location}</span>
+                    </div>
+                    <div class="meta-line">
+                        <span class="meta-label">Timestamp:</span>
+                        <span class="meta-val">📅 ${item.date}</span>
+                    </div>
+                    ${item.comment ? `<div class="comment-box"><strong>Log Details:</strong> ${item.comment}</div>` : ''}
+                </div>
+                <div class="actions">
+                    <button class="btn-sm btn-edit" onclick="editEntry(${trueIndex})">Modify</button>
+                    <button class="btn-sm btn-delete" onclick="deleteEntry(${trueIndex})">Remove</button>
+                </div>
+            `;
+            trackerList.appendChild(cardElement);
+        });
+    }
+
+    window.editEntry = function(index) {
+        const targetRecord = trackingData[index];
+        fileNameInput.value = targetRecord.fileName;
+        versionInput.value = targetRecord.version;
+        locationInput.value = targetRecord.location;
+        dateInput.value = targetRecord.date;
+        commentInput.value = targetRecord.comment;
+        
+        editIndexInput.value = index;
+        modalTitle.textContent = "Modify Activity Entry";
+        submitBtn.textContent = "Apply Changes";
+        openModal();
+    };
+
+    window.deleteEntry = function(index) {
+        if (confirm("Confirm permanent removal of this version log reference?")) {
+            trackingData.splice(index, 1);
+            localStorage.setItem('semverTrackingData', JSON.stringify(trackingData));
+            renderList();
+        }
+    };
+
+    function resetForm() {
+        form.reset();
+        editIndexInput.value = "";
+        modalTitle.textContent = "Track New Version";
+        submitBtn.textContent = "Save Track Log";
+        setDefaultDate();
+        versionInput.value = "v1.0.0";
+    }
+</script>
+
+</body>
+</html>
