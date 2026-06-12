@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Portal | Rplaaz</title>
+    <style>
+        :root { --glass: rgba(255, 255, 255, 0.1); --border: rgba(255, 255, 255, 0.2); }
+        body { margin: 0; min-height: 100vh; display: flex; justify-content: center; align-items: center; background: radial-gradient(circle at top right, #6e8efb, #a777e3); font-family: 'Segoe UI', sans-serif; color: white; }
+        .glass-card { background: var(--glass); backdrop-filter: blur(15px); border: 1px solid var(--border); padding: 2rem; border-radius: 20px; width: 90%; max-width: 400px; box-shadow: 0 8px 32px rgba(0,0,0,0.3); }
+        input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: none; background: rgba(255,255,255,0.2); color: white; box-sizing: border-box; text-transform: uppercase; }
+        button { width: 100%; padding: 12px; background: white; color: #a777e3; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: transform 0.2s; }
+        button:hover { transform: scale(1.02); }
+    </style>
+</head>
+<body>
+    <div class="glass-card">
+        <h2>Student Entry</h2>
+        <form id="marksForm">
+            <input type="text" id="rollNo" placeholder="Roll No (e.g., A101)" required>
+            <input type="number" id="grade" placeholder="Grade" required>
+            <button type="submit" id="submitBtn">SUBMIT DATA</button>
+        </form>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getFirestore, collection, addDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        const firebaseConfig = { apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U", authDomain: "stuattnd.firebaseapp.com", projectId: "stuattnd", storageBucket: "stuattnd.firebasestorage.app", messagingSenderId: "511533506488", appId: "1:511533506488:web:aca4de3d513915d012f94d", measurementId: "G-9PZZM5LFKX" };
+        const db = getFirestore(initializeApp(firebaseConfig));
+
+        document.getElementById("marksForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const rollNo = document.getElementById("rollNo").value.toUpperCase().trim();
+            const grade = document.getElementById("grade").value;
+            const btn = document.getElementById("submitBtn");
+
+            const q = query(collection(db, "dbmarks"), where("rollNo", "==", rollNo));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                alert("Error: Roll No " + rollNo + " already exists!");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "dbmarks"), { rollNo, grade, timestamp: new Date() });
+                btn.innerText = "SUCCESS!"; btn.style.background = "#4caf50";
+                setTimeout(() => { btn.innerText = "SUBMIT DATA"; btn.style.background = "white"; document.getElementById("marksForm").reset(); }, 2000);
+            } catch (e) { alert("Error: " + e.message); }
+        });
+    </script>
+</body>
+</html>
