@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Results Ledger & Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 p-4 md:p-8 min-h-screen">
+
+    <div class="max-w-7xl mx-auto">
+        
+        <header class="mb-8 border-b border-slate-800 pb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+                <h1 class="text-3xl font-extrabold bg-gradient-to-r from-cyan-400 to-indigo-500 bg-clip-text text-transparent">
+                    RGM Analytics Dashboard
+                </h1>
+                <p class="text-slate-400 text-sm mt-1">Live Automated Student Record Ledger & Pass Statistics</p>
+<p class="text-slate-400 text-sm mt-1">II B.Tech 2nd Sem Results</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-3">
+                <button onclick="exportToCSV(false)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-sm font-medium transition cursor-pointer">
+                    📥 Export Full CSV
+                </button>
+                <button onclick="exportToCSV(true)" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-sm font-medium transition cursor-pointer">
+                    📥 Export Filtered CSV
+                </button>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+            
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 shadow-lg">
+                <h3 class="text-xs uppercase font-bold tracking-wider text-slate-400">Search & Subject Filters</h3>
+                
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Search Profile</label>
+                    <input type="text" id="filterInput" placeholder="Search Roll No or Name..." 
+                           class="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-slate-200">
+                </div>
+
+                <div>
+                    <label class="text-xs text-slate-400 block mb-1">Target Performance Subject</label>
+                    <select id="subjectSelector" class="w-full px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500 text-slate-200 cursor-pointer">
+                        <option value="ALL">-- Show All Subjects --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between shadow-lg">
+                <div>
+                    <h3 class="text-xs uppercase font-bold tracking-wider text-slate-400">Subject Pass Statistics</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">Calculated tracking rules (Grade Point &lt; 4 equals Fail)</p>
+                </div>
+                <div class="my-3">
+                    <div class="text-4xl font-black text-cyan-400" id="passPercentMetric">--</div>
+                    <p class="text-xs text-slate-400 mt-1" id="passCountDetails">Select a subject to track pass/fail analytics ratio</p>
+                </div>
+                <div class="w-full bg-slate-950 rounded-full h-2">
+                    <div id="progressBar" class="bg-gradient-to-r from-cyan-500 to-blue-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col justify-between shadow-lg">
+                <div>
+                    <h3 class="text-xs uppercase font-bold tracking-wider text-slate-400">Batch Cohort Overview</h3>
+                    <p class="text-xs text-slate-500 mt-0.5">General summary metrics processed from data package</p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 my-2">
+                    <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/40">
+                        <span class="text-xs text-slate-400 block">Total Students</span>
+                        <span class="text-2xl font-bold text-slate-100" id="totalStudentsMetric">0</span>
+                    </div>
+                    <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/40">
+                        <span class="text-xs text-slate-400 block">Average CGPA</span>
+                        <span class="text-2xl font-bold text-emerald-400" id="avgCgpametric">0.00</span>
+                    </div>
+                </div>
+                <div class="text-[11px] text-slate-500 font-mono text-right">Data Source: scraped_results.json</div>
+            </div>
+        </div>
+        
+        <div class="overflow-x-auto bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl">
+            <table class="w-full text-left text-sm border-collapse" id="mainDisplayTable">
+                <thead>
+                    <tr class="bg-slate-950 border-b border-slate-800 text-slate-400 uppercase text-xs font-bold tracking-wider" id="tableHeader">
+                        <th class="p-4">Roll No</th>
+                        <th class="p-4">Student Name</th>
+                        <th class="p-4">Mother's Name</th>
+                        <th class="p-4 text-right">Calculated CGPA</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-slate-800/50">
+                    <tr>
+                        <td class="p-12 text-center text-slate-500" colspan="100">
+                            Reading data source pipeline...
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        let fullDataset = [];
+        let activelyFilteredDataset = [];
+        let globalSubjectList = [];
+
+        // Fetch local JSON file generated by your Python scraper
+        async function fetchWorkspaceData() {
+            try {
+                const response = await fetch('scraped_results_all.json');
+                fullDataset = await response.json();
+                activelyFilteredDataset = [...fullDataset];
+                
+                extractUniqueSubjects();
+                populateSubjectDropdown();
+                calculateCohortOverview();
+                applyFiltersAndRender();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('tableBody').innerHTML = `
+                    <tr>
+                        <td colspan="100" class="text-center py-12 text-rose-400 font-semibold">
+                            Could not load 'scraped_results.json'. Ensure the file is in this folder and your local server is running.
+                        </td>
+                    </tr>`;
+            }
+        }
+
+        // Get a clear list of all subjects across all records
+        function extractUniqueSubjects() {
+            let subjectsSet = new Set();
+            fullDataset.forEach(student => {
+                Object.keys(student.subjects).forEach(sub => subjectsSet.add(sub));
+            });
+            globalSubjectList = Array.from(subjectsSet).sort();
+        }
+
+        // Build selection mapping dropdown box parameters
+        function populateSubjectDropdown() {
+            const dropdown = document.getElementById('subjectSelector');
+            globalSubjectList.forEach(sub => {
+                const option = document.createElement('option');
+                option.value = sub;
+                option.textContent = sub;
+                dropdown.appendChild(option);
+            });
+        }
+
+        // Calculate General Overview card figures
+        function calculateCohortOverview() {
+            document.getElementById('totalStudentsMetric').textContent = fullDataset.length;
+            let totalCgpaSum = 0;
+            let validCgpaCount = 0;
+
+            fullDataset.forEach(s => {
+                let parsed = parseFloat(s.cgpa);
+                if (!isNaN(parsed) && parsed > 0) {
+                    totalCgpaSum += parsed;
+                    validCgpaCount++;
+                }
+            });
+            let avg = validCgpaCount > 0 ? (totalCgpaSum / validCgpaCount).toFixed(2) : "0.00";
+            document.getElementById('avgCgpametric').textContent = avg;
+        }
+
+        // Compute Pass Percentages dynamically (Fails if Grade Point < 4)
+        function calculatePassMetrics(dataset, selectedSubject) {
+            const metricTitle = document.getElementById('passPercentMetric');
+            const detailsLabel = document.getElementById('passCountDetails');
+            const bar = document.getElementById('progressBar');
+
+            if (selectedSubject === "ALL" || !selectedSubject) {
+                metricTitle.textContent = "--";
+                detailsLabel.textContent = "Select a specific subject to view pass/fail analytics ratio";
+                bar.style.width = "0%";
+                return;
+            }
+
+            let totalRegisteredForSub = 0;
+            let totalPassedSub = 0;
+
+            dataset.forEach(student => {
+                if (student.subjects[selectedSubject] !== undefined) {
+                    totalRegisteredForSub++;
+                    let gradePoint = parseInt(student.subjects[selectedSubject]);
+                    
+                    // Tracking rule validation matrix: less than 4 means fail
+                    if (!isNaN(gradePoint) && gradePoint >= 4) {
+                        totalPassedSub++;
+                    }
+                }
+            });
+
+            if (totalRegisteredForSub === 0) {
+                metricTitle.textContent = "0.0%";
+                detailsLabel.textContent = "No student records found taking this subject layout";
+                bar.style.width = "0%";
+                return;
+            }
+
+            let percentage = ((totalPassedSub / totalRegisteredForSub) * 100).toFixed(1);
+            metricTitle.textContent = `${percentage}%`;
+            detailsLabel.textContent = `${totalPassedSub} out of ${totalRegisteredForSub} students passed (${totalRegisteredForSub - totalPassedSub} failed)`;
+            bar.style.width = `${percentage}%`;
+        }
+
+        // Process search criteria and selected subjects dynamically
+        function applyFiltersAndRender() {
+            const searchQuery = document.getElementById('filterInput').value.toLowerCase();
+            const selectedSubject = document.getElementById('subjectSelector').value;
+
+            activelyFilteredDataset = fullDataset.filter(student => {
+                const matchesSearch = student.roll_no.toLowerCase().includes(searchQuery) || 
+                                      student.name.toLowerCase().includes(searchQuery);
+                
+                const matchesSubject = (selectedSubject === "ALL") || 
+                                       (student.subjects[selectedSubject] !== undefined);
+                
+                return matchesSearch && matchesSubject;
+            });
+
+            calculatePassMetrics(activelyFilteredDataset, selectedSubject);
+            renderTableGrid(selectedSubject);
+        }
+
+        // Render the processed data array onto screen
+        function renderTableGrid(highlightedSubject) {
+            const tbody = document.getElementById('tableBody');
+            const thead = document.getElementById('tableHeader');
+            
+            // Build columns dynamically
+            // If viewing a single subject filter, isolate just that column for clean inspection
+            let activeSubjectsColumnList = highlightedSubject === "ALL" ? globalSubjectList : [highlightedSubject];
+
+            // Render Header Matrix Column Cells
+            let headerTemplate = `
+                <th class="p-4 min-w-[140px]">Roll No</th>
+                <th class="p-4 min-w-[220px]">Student Name</th>
+                <th class="p-4 min-w-[180px]">Mother's Name</th>
+            `;
+            activeSubjectsColumnList.forEach(sub => {
+                headerTemplate += `<th class="p-4 min-w-[180px] text-xs font-semibold text-slate-400">${sub} (GP)</th>`;
+            });
+            headerTemplate += `<th class="p-4 text-right min-w-[140px]">Calculated CGPA</th>`;
+            thead.innerHTML = headerTemplate;
+
+            // Render Body Columns Data Cells
+            if (activelyFilteredDataset.length === 0) {
+                tbody.innerHTML = `<tr><td class="p-8 text-center text-slate-500" colspan="100">No active student criteria records match selected configuration layout.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            activelyFilteredDataset.forEach(row => {
+                let rowTemplate = `
+                    <tr class="hover:bg-slate-800/40 transition-colors">
+                        <td class="p-4 font-mono font-medium text-cyan-400">${row.roll_no}</td>
+                        <td class="p-4 font-semibold text-slate-100">${row.name}</td>
+                        <td class="p-4 text-slate-400 text-xs">${row.mother_name}</td>
+                `;
+                
+                activeSubjectsColumnList.forEach(sub => {
+                    let pointValue = row.subjects[sub];
+                    let cellMarkup = "-";
+                    
+                    if (pointValue !== undefined) {
+                        let valInt = parseInt(pointValue);
+                        // Visually tag failed entries with a red badge layout wrapper
+                        let colorClass = valInt < 4 ? "text-rose-400 border-rose-950/50 bg-rose-950/20" : "text-indigo-300 border-slate-800 bg-slate-950";
+                        cellMarkup = `<span class="border px-3 py-1 rounded-md text-xs font-bold font-mono ${colorClass}">${pointValue}</span>`;
+                    }
+                    
+                    rowTemplate += `<td class="p-4">${cellMarkup}</td>`;
+                });
+                
+                rowTemplate += `
+                        <td class="p-4 text-right font-black text-emerald-400 text-base">${row.cgpa}</td>
+                    </tr>
+                `;
+                tbody.innerHTML += rowTemplate;
+            });
+        }
+
+        // CSV String generation engine processing framework
+        function exportToCSV(useFilteredList = false) {
+            const datasetToExport = useFilteredList ? activelyFilteredDataset : fullDataset;
+            
+            if(datasetToExport.length === 0) {
+                alert("No structural record rows exist to map out export contents data.");
+                return;
+            }
+
+            // Define rows array configuration header
+            let csvRows = [];
+            let headers = ['Roll No', 'Student Name', "Mother's Name"];
+            
+            // Append subject titles across structural matrix tracking rows
+            globalSubjectList.forEach(sub => headers.push(sub));
+            headers.push('Calculated CGPA');
+            csvRows.push(headers.map(h => `"${h.replace(/"/g, '""')}"`).join(','));
+
+            // Append row values mapping loop transformations
+            datasetToExport.forEach(item => {
+                let rowValues = [item.roll_no, item.name, item.mother_name];
+                
+                globalSubjectList.forEach(sub => {
+                    let point = item.subjects[sub] !== undefined ? item.subjects[sub] : 'NA';
+                    rowValues.push(point);
+                });
+                
+                rowValues.push(item.cgpa);
+                csvRows.push(rowValues.map(v => `"${String(v).replace(/"/g, '""')}"`).join(','));
+            });
+
+            // Trigger physical browser data attachment stream payload download
+            const csvBlob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+            const urlElement = URL.createObjectURL(csvBlob);
+            const downloadLink = document.createElement('a');
+            
+            downloadLink.href = urlElement;
+            downloadLink.setAttribute('download', useFilteredList ? 'Filtered_Academic_Report.csv' : 'Full_Academic_Report.csv');
+            document.body.appendChild(downloadLink);
+            downloadLink.click();
+            document.body.removeChild(downloadLink);
+        }
+
+        // Setup DOM state listeners
+        document.getElementById('filterInput').addEventListener('input', applyFiltersAndRender);
+        document.getElementById('subjectSelector').addEventListener('change', applyFiltersAndRender);
+
+        window.onload = fetchWorkspaceData;
+    </script>
+</body>
+</html>
