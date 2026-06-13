@@ -1,0 +1,4507 @@
+[
+    {
+        "roll_no": "23091A3335",
+        "name": "MOGALIPALLI RAM CHARAN TEJA",
+        "mother_name": "MOGALIPALLI SUDHARANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "5",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "4.78"
+    },
+    {
+        "roll_no": "24091A3301",
+        "name": "MOGHAL AAHIL BAIG",
+        "mother_name": "JAGIRDAR RUKSANA KHATUN",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.78"
+    },
+    {
+        "roll_no": "24091A3303",
+        "name": "MUCHUMARI ADITYA",
+        "mother_name": "MUCHUMARI SUGUNA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A3307",
+        "name": "GOPAVARAM AKHILA",
+        "mother_name": "GOPAVARAM JAYAPRADA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A3308",
+        "name": "THOTA AKSHAYA",
+        "mother_name": "THOTA JANAKI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A3318",
+        "name": "RUPANAGUDI BABA BEE",
+        "mother_name": "RUPANAGUDI SIDDAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A3327",
+        "name": "CHINTHA CHANDRIKA",
+        "mother_name": "CHINTHA MADHAVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A3330",
+        "name": "KUNCHAMA CHINNA",
+        "mother_name": "K SAVITHRAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "24091A3331",
+        "name": "MARKA DARSHINI",
+        "mother_name": "MARKA VIJAYA NIRMALA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3334",
+        "name": "KAKANURU DEVAKI",
+        "mother_name": "KAKANURU JANAKI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "24091A3339",
+        "name": "MALLU GANESH KUMAR REDDY",
+        "mother_name": "M SULOCHANA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "6.22"
+    },
+    {
+        "roll_no": "24091A3340",
+        "name": "GOPISETTY GEETHA",
+        "mother_name": "GOPISETTY PADMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A3343",
+        "name": "SONTAM GOWTHAMI",
+        "mother_name": "SONTAM SUNEETHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3345",
+        "name": "DUGGINENI GURAPPADU",
+        "mother_name": "DUGGINENI MUNEMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.78"
+    },
+    {
+        "roll_no": "24091A3352",
+        "name": "SANKULA HARSHAVARDHAN",
+        "mother_name": "K C MAMATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.44"
+    },
+    {
+        "roll_no": "24091A3353",
+        "name": "YARRAGUNTLA HARSHITHA KUMARI",
+        "mother_name": "YARRAGUNTLA LATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A3354",
+        "name": "KONDLA PALLI HEMALATHA",
+        "mother_name": "ATTI NAGAMANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A3355",
+        "name": "YARRAM HEMANTH KUMAR REDDY",
+        "mother_name": "YARRAM LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3356",
+        "name": "SIDDAVATAM HIMA SREE",
+        "mother_name": "SIDDAVATAM VASUNDHARA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3357",
+        "name": "PANYAM DUDEKULA HUSSAIN MOULI",
+        "mother_name": "PANYAM DUDEKULA KAMALAKSHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.89"
+    },
+    {
+        "roll_no": "24091A3365",
+        "name": "BOGABATHINA JAYA SREE",
+        "mother_name": "BOGABATHINA RAJESWARI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3374",
+        "name": "SHAIK KHALIL BASHA",
+        "mother_name": "SHAIK SALIMA BI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3379",
+        "name": "ATHIKARI LAKSHMI DEEPAK",
+        "mother_name": "ATHIKARI RAMA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3383",
+        "name": "MALLENI LIKITH",
+        "mother_name": "MALLENI LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A3387",
+        "name": "KAMMARI LOKESH",
+        "mother_name": "KAMMARI BHARATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A3389",
+        "name": "MARENNAGARI MADHUSUDHAN",
+        "mother_name": "TALARI RAMALAKSHMAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A3394",
+        "name": "THAPPETA MALLESH KUMAR",
+        "mother_name": "THAPPETA RAMALAKSHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A3399",
+        "name": "ASKANURU MANJUNATH",
+        "mother_name": "ASKANURU GAYATHRI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A33A3",
+        "name": "THAMMANENI MITHIN KUMAR REDDY",
+        "mother_name": "THAMMANENI KOTESWARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A33A5",
+        "name": "SHAIK MOHAMMAD KAIF",
+        "mother_name": "SHAIK FARIDA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A33B2",
+        "name": "KAMPILI MUKESH",
+        "mother_name": "KAMPILI PADMAJA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "4.22"
+    },
+    {
+        "roll_no": "24091A33D2",
+        "name": "DOMBARI PEDDA VENKATESWARLU",
+        "mother_name": "D VENKATA SUBBAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33D3",
+        "name": "KONKA PRADEEP KUMAR",
+        "mother_name": "K KAVITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A33D5",
+        "name": "GOSA PRASHANTH KUMAR",
+        "mother_name": "GOSA PRABHAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "5",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "5.33"
+    },
+    {
+        "roll_no": "24091A33D8",
+        "name": "RACHARLA PRATHAP",
+        "mother_name": "RACHARLA LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A33E3",
+        "name": "REPALLI RAJESH",
+        "mother_name": "REPALLI LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A33E4",
+        "name": "MAILA RAM CHARAN",
+        "mother_name": "MAILA RAMADEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "10"
+        },
+        "cgpa": "4.56"
+    },
+    {
+        "roll_no": "24091A33E6",
+        "name": "ITIKELA RAVI CHANDRIKA",
+        "mother_name": "ITIKELA PADMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A33E7",
+        "name": "UPPARA RAVI KUMAR",
+        "mother_name": "UPPARA MAHALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "24091A33E8",
+        "name": "AVULA REVANTH",
+        "mother_name": "AVULA NAGA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.33"
+    },
+    {
+        "roll_no": "24091A33F0",
+        "name": "CHOWDAM RITHEESH",
+        "mother_name": "CHOWDAM LAVANYA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33F1",
+        "name": "BUDEDU ROSHAN SREERAM",
+        "mother_name": "ANKE ANNAPURNA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33F6",
+        "name": "KONDURU SAI BHARATH KUMAR RAJU",
+        "mother_name": "KONDURU LALITHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A33F8",
+        "name": "SOMA SAI CHARAN",
+        "mother_name": "SOMA LAXMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A33F9",
+        "name": "NERAVATI SAI GNANESH",
+        "mother_name": "NERAVATI SREEDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33G1",
+        "name": "MUKKAMALLA SAI KARTHIK REDDY",
+        "mother_name": "MUKKAMALLA NAGA LAKSHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33G2",
+        "name": "KENCHERLA SAI KUMAR",
+        "mother_name": "KENCHERLA LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33G3",
+        "name": "TEPPA SAI PAVITHRA",
+        "mother_name": "TEPPA RAMA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33G4",
+        "name": "BANDA SAIKIRAN",
+        "mother_name": "BANDA YERRAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "24091A33G6",
+        "name": "SHAIK SAMI",
+        "mother_name": "SHAIK SHAHANAZ",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "24091A33G8",
+        "name": "YEDDULA SANDEEP REDDY",
+        "mother_name": "YEDDULA MAHALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.33"
+    },
+    {
+        "roll_no": "24091A33H1",
+        "name": "SHAIK SANIYA",
+        "mother_name": "SHAIK SHEKOON",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33H4",
+        "name": "CHALLA SANTHOSH",
+        "mother_name": "CHALLA LATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A33H5",
+        "name": "TAPPETA SANTHOSH",
+        "mother_name": "TAPPETA SUNITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "5",
+            "SDC-I": "10"
+        },
+        "cgpa": "4.67"
+    },
+    {
+        "roll_no": "24091A33H6",
+        "name": "TADIMARRI SATISH REDDY",
+        "mother_name": "TADIMARRI ADINARAYANAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33H7",
+        "name": "BAIRAPURAM SHANKAR",
+        "mother_name": "BAIRAPURAM PUNYAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33J0",
+        "name": "SUNKU SHARMITH",
+        "mother_name": "SUNKU AMRUTHA VANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.11"
+    },
+    {
+        "roll_no": "24091A33J7",
+        "name": "SHAIK CHENNURU SOHAIL",
+        "mother_name": "SHAIK CHENNURU JAHARA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "9"
+        },
+        "cgpa": "4.56"
+    },
+    {
+        "roll_no": "24091A33M6",
+        "name": "ARIKE SURYA KUMAR",
+        "mother_name": "A LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A33P7",
+        "name": "PASUPULETI VENKATA KOUSHIK",
+        "mother_name": "VASAGIRI SARADAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33R1",
+        "name": "KAMIREDDY VISHNUVARDHAN REDDY",
+        "mother_name": "KAMIREDDY LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33R2",
+        "name": "SOMALA VIVEK",
+        "mother_name": "SOMALA OBULAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "25095A3301",
+        "name": "SYED ABID BASHA",
+        "mother_name": "SYEDA JAIBUNNISA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "25095A3307",
+        "name": "KOVURRI GURU TEJA",
+        "mother_name": "KOVURRI NAGAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "25095A3313",
+        "name": "CHINTAKUNTLA MALLIKARJUNA REDDY",
+        "mother_name": "CHINTAKUNTLA VIJAYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "25095A3315",
+        "name": "SHAIK MASULDAR ALTHAF",
+        "mother_name": "SHAIK MASULDAR RAJIYA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "25095A3322",
+        "name": "PASUVULA RISHI",
+        "mother_name": "P VANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "25095A3325",
+        "name": "CHOWDAM SASIDHAR",
+        "mother_name": "CHOWDAM REDDEMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "25095A3330",
+        "name": "SYED VASEEM",
+        "mother_name": "SYED FARIDA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "25095A3332",
+        "name": "GAVIREDDY YASWANTH REDDY",
+        "mother_name": "GAVIREDDY VARALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24095A3407",
+        "name": "SHAIK SANAULLA",
+        "mother_name": "SHAIK SHALI MUNNI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING FOR FINANCE": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24095A3401",
+        "name": "PITTA GURU VISHNU",
+        "mother_name": "PITTA SUBHASHINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING FOR FINANCE": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "5.11"
+    },
+    {
+        "roll_no": "24091A3311",
+        "name": "PAGIDYALA ANANDA JYOTHI",
+        "mother_name": "PAGIDYALA VARJINAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3313",
+        "name": "KURUBA ANIL",
+        "mother_name": "K ANUMAKKA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.44"
+    },
+    {
+        "roll_no": "24091A3319",
+        "name": "ALVAKONDA BABU",
+        "mother_name": "ALVAKONDA HALLELUYAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "5",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.78"
+    },
+    {
+        "roll_no": "24091A3320",
+        "name": "TALARI BALAVARDHAN",
+        "mother_name": "TALARI LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.33"
+    },
+    {
+        "roll_no": "24091A3322",
+        "name": "MANTHAKANTI BHAVANA PRIYA",
+        "mother_name": "M KRISHNAVENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A3326",
+        "name": "BANDI CHANDRA SUMANTH REDDY",
+        "mother_name": "BANDI GANGA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "24091A3328",
+        "name": "UTUKURU CHANDU",
+        "mother_name": "UTUKURU SUBBALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A3329",
+        "name": "MIDDE CHARAN TEJA",
+        "mother_name": "MIDDE SIVA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A3335",
+        "name": "RAMAYANAPU DEVENDRA PRASAD",
+        "mother_name": "RAMAYANAPU LALITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3337",
+        "name": "AKULA DILEEP KUMAR",
+        "mother_name": "A ESWARAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "24091A3338",
+        "name": "MULLA FEDHA HUSSEN",
+        "mother_name": "MULLA HABIDDIN BIBI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "5",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.00"
+    },
+    {
+        "roll_no": "24091A3341",
+        "name": "SOMULA GIREESH KUMAR REDDY",
+        "mother_name": "Y VANAJA RANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "3.00"
+    },
+    {
+        "roll_no": "24091A3342",
+        "name": "EDIGA GIRI",
+        "mother_name": "EDIGA AMARAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.00"
+    },
+    {
+        "roll_no": "24091A3346",
+        "name": "GALI GURU CHARAN",
+        "mother_name": "G SUSEELA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A3347",
+        "name": "THUPAKULA GURU MADAN",
+        "mother_name": "THUPAKULA LAKSHMI KUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "4.78"
+    },
+    {
+        "roll_no": "24091A3348",
+        "name": "CHELLUBOINA HARI SUDARSHAN",
+        "mother_name": "CHELLUBOINA PUSHPAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A3349",
+        "name": "NAGURU HARINATH REDDY",
+        "mother_name": "NAGURU SUJATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A3351",
+        "name": "L HARSHAVARDHAN",
+        "mother_name": "L VANAJA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "9"
+        },
+        "cgpa": "2.67"
+    },
+    {
+        "roll_no": "24091A3358",
+        "name": "SHAIK ILIYAS",
+        "mother_name": "SHAIK MAHABOOB BEE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A3362",
+        "name": "PAMULURU JAHNAVI REDDY",
+        "mother_name": "PAMULURU GEETHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A3363",
+        "name": "YERUVA JAYASANKAR REDDY",
+        "mother_name": "YERUVA RAMA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A3364",
+        "name": "GOPI JAYASIMHA",
+        "mother_name": "GOPI SITHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "24091A3366",
+        "name": "T JOHN PAUL",
+        "mother_name": "R A THRIVENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.67"
+    },
+    {
+        "roll_no": "24091A3367",
+        "name": "SHAIK KARISHMA",
+        "mother_name": "SHAIK MODIN BI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A3369",
+        "name": "ROKKAM KARTHIK REDDY",
+        "mother_name": "ROKKAM KRISHNAVENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "24091A3370",
+        "name": "MAMILLA KAVYA SREE",
+        "mother_name": "MAMILLA KRISHNA VENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A3371",
+        "name": "CHEPURI KEERTHANA",
+        "mother_name": "CHEPURI HYMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3373",
+        "name": "KUNDAVARAM KEERTHI",
+        "mother_name": "KUNDAVARAM ELISHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A3375",
+        "name": "ERAPOGU KHOWSHIK MATTHEW",
+        "mother_name": "T ROSY",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "24091A3376",
+        "name": "YERASI KRISHNA PRIYA",
+        "mother_name": "MUKKAMALLA GAYATHRI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A3380",
+        "name": "MALLISETTY LAKSHMI",
+        "mother_name": "MALLISETTY BHYRAVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3381",
+        "name": "JAMMULA LAKSHMI PRASANNA",
+        "mother_name": "JAMMULA LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A3384",
+        "name": "ALLU LIKITHA",
+        "mother_name": "ALLU SUDHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A3391",
+        "name": "ESARI MAHESH BABU",
+        "mother_name": "ESARI SUJATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "5.67"
+    },
+    {
+        "roll_no": "24091A3395",
+        "name": "CHIMALA MALLI KARJUNA",
+        "mother_name": "CHIMALA PEDDAKKA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A3396",
+        "name": "BAINIGERI MANASA",
+        "mother_name": "B LAKSHMI PRASANNA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33A0",
+        "name": "PUTTA MANJUNATH NAIDU",
+        "mother_name": "PUTTA PARVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "5.44"
+    },
+    {
+        "roll_no": "24091A33A2",
+        "name": "CHAKALI MEGHANA",
+        "mother_name": "CHAKALI NAGENDRAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.67"
+    },
+    {
+        "roll_no": "24091A33A8",
+        "name": "DEREDDY MOUNIKA",
+        "mother_name": "DEREDDY SUJATHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "10",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A33B0",
+        "name": "GANGA MOUNIKA JOICE",
+        "mother_name": "GANGA ARCHANA JOSEPHINE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "24091A33B1",
+        "name": "PALAGIRI MOUNIKA",
+        "mother_name": "PALAGIRI KALAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "10",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.44"
+    },
+    {
+        "roll_no": "24091A33B3",
+        "name": "MOMIN MUSFIRA JAHAN",
+        "mother_name": "SHAIK ABBAS BEE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33B4",
+        "name": "MD MUSKAAN KHANAM",
+        "mother_name": "MD MALIKA KHANAM",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.44"
+    },
+    {
+        "roll_no": "24091A33B9",
+        "name": "SOMULA NAGASREE CHAITRA",
+        "mother_name": "SOMULA LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33C2",
+        "name": "PENETI NANDINI",
+        "mother_name": "PENETI SULOCHANA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33C4",
+        "name": "JANA NEERAJ",
+        "mother_name": "JANA SAVITHRI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A33C7",
+        "name": "SINGA PADMAVATHI",
+        "mother_name": "SINGA KRISHNAKUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33C8",
+        "name": "NAGURU PALLAVI",
+        "mother_name": "NAGURU SREELATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "24091A33D0",
+        "name": "BANDAPALLI PAVANI",
+        "mother_name": "BANDAPALLI BHAGYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "5",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "9"
+        },
+        "cgpa": "6.11"
+    },
+    {
+        "roll_no": "24091A33D4",
+        "name": "SINGAMPALLI PRANATHEE",
+        "mother_name": "SINGAMPALLI LAKSHMEE SUKANYA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33J2",
+        "name": "MARAM SHIVA KISHORE",
+        "mother_name": "MARAM RAJAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "5",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "24091A33K1",
+        "name": "PASAM SRAVYA",
+        "mother_name": "PASAM SARVESWARAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A33K6",
+        "name": "PINJARI STREET MABUSUBANI",
+        "mother_name": "N KHASIMBEE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "6"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33M1",
+        "name": "PEBBETI SUJITHA",
+        "mother_name": "PEBBETI SANDHYA RANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33M7",
+        "name": "BAILLA SUSHEEL KUMAR",
+        "mother_name": "BAILLA LAVANYA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.11"
+    },
+    {
+        "roll_no": "24091A33N1",
+        "name": "PICHHIGUNTLA TARAKA RAMUDU",
+        "mother_name": "PICHHIGUNTLA LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33N5",
+        "name": "GUDIPATI UDAY SANTHOSH",
+        "mother_name": "GUDIPATI MAHESWARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33Q6",
+        "name": "KAVALI VENUGOPAL",
+        "mother_name": "KAVALI NAGAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "25095A3303",
+        "name": "SHAIK ASIYAH",
+        "mother_name": "SHAIK SHABIRAABI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "25095A3304",
+        "name": "DUDEKULA AYESHA BEGUM",
+        "mother_name": "DUDEKULA NOORJAHAN",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "25095A3305",
+        "name": "KATTUBADI FARHEEN",
+        "mother_name": "KATTUBADI ABIDA BI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "25095A3308",
+        "name": "VALLEPU HARIPRIYA",
+        "mother_name": "VALLEPU SHYAMALA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "25095A3309",
+        "name": "MADAKA HARSHA VARDHAN",
+        "mother_name": "PALLA SUBHASHINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.44"
+    },
+    {
+        "roll_no": "25095A3314",
+        "name": "PALAKU MANOJ",
+        "mother_name": "PALAKU KANTAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "25095A3316",
+        "name": "BOMMANA MUKUNDA REDDY",
+        "mother_name": "BOMMANA NAGA JYOTHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "25095A3318",
+        "name": "GORANTLA PRASANNA LAKSHMI",
+        "mother_name": "GORANTLA SHAKUNTALA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "25095A3321",
+        "name": "THAVALAM REDDY ROHITH",
+        "mother_name": "THAVALAM SARASWATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "25095A3324",
+        "name": "GUNDA SAI KRISHNA",
+        "mother_name": "GUNDA VARALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "9"
+        },
+        "cgpa": "1.00"
+    },
+    {
+        "roll_no": "25095A3329",
+        "name": "KAMPAMALLA SUNANDA",
+        "mother_name": "KAMPAMALLA VIJAYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "25095A3331",
+        "name": "BOYA VEERANJINEYULU",
+        "mother_name": "BOYA KISTAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A3302",
+        "name": "MADHAVARAM ABHITHA AKSHAYANI",
+        "mother_name": "MADHAVARAM JAYA SREE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "5",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.78"
+    },
+    {
+        "roll_no": "24091A3304",
+        "name": "SHAIK AEJAZ AHAMMAD",
+        "mother_name": "SHAIK SHARIFOON",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A3305",
+        "name": "SHAIK AFIFA",
+        "mother_name": "SHAIK MAIMUN",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.33"
+    },
+    {
+        "roll_no": "24091A3315",
+        "name": "SHAIK ASHRAFUDDINSHA",
+        "mother_name": "SHAIK MALINBEE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A3317",
+        "name": "SHAIK AYESHA",
+        "mother_name": "SHAIK AKTHURUN",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A3321",
+        "name": "PALLE BHANU PRIYA",
+        "mother_name": "PALLE LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.22"
+    },
+    {
+        "roll_no": "24091A3323",
+        "name": "CHAMA VENKATA BHAVITHA REDDY",
+        "mother_name": "CHAMA VIJAYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "6.89"
+    },
+    {
+        "roll_no": "24091A3324",
+        "name": "ENJAMURI BHAVYA",
+        "mother_name": "ENJAMURI SREEVANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3332",
+        "name": "UMMINENI DEEPIKA",
+        "mother_name": "UMMINENI RAMA LAKSHUMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3336",
+        "name": "KODURU DHARANI",
+        "mother_name": "KODURU HEMALATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A3350",
+        "name": "POSA HARINI",
+        "mother_name": "POSA JYOTHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A3361",
+        "name": "ANGADI JAHNAVI",
+        "mother_name": "ANGADI BHUDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "5",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A3378",
+        "name": "VALLURU KRISHNA VENI",
+        "mother_name": "VALLURU VENKATA SUBBAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A3385",
+        "name": "PABBATHI LOHITHA",
+        "mother_name": "PABBATHI SREEDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "5.78"
+    },
+    {
+        "roll_no": "24091A3388",
+        "name": "CHENCHUGARI MADHURIMA",
+        "mother_name": "CHENCHUGARI BHAGYALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A3393",
+        "name": "BOGGARAPU MAHITHA",
+        "mother_name": "BOGGARAPU RADHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A3398",
+        "name": "CHITTEPU MANISHA",
+        "mother_name": "CHITTEPU LALITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A33A9",
+        "name": "DUDEKULA MOUNIKA",
+        "mother_name": "DUDEKULA SIDDAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.22"
+    },
+    {
+        "roll_no": "24091A33B7",
+        "name": "ALUVALA NAGA PUJITHA",
+        "mother_name": "ALUVALA PADMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "24091A33D1",
+        "name": "SUDHAPRATHI PAVANKUMAR",
+        "mother_name": "SUDHAPRATHI RAJITHA KUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33D6",
+        "name": "AVULASETTI PRASHANTHI",
+        "mother_name": "AVULASETTI LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33D7",
+        "name": "RAMAVATH PRATHAP NAIK",
+        "mother_name": "RAMAVATH TULASAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33D9",
+        "name": "KURUVA PRAVEEN KUMAR",
+        "mother_name": "KURUVA SUJATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A33E1",
+        "name": "VADLAMUDI PRIYANKA",
+        "mother_name": "VADLAMUDI KRISHNA VENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.11"
+    },
+    {
+        "roll_no": "24091A33E2",
+        "name": "VADDE RAGHU",
+        "mother_name": "VADDE RAJESWARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "24091A33E5",
+        "name": "BANDI RAMA SUPRIYA",
+        "mother_name": "BANDI PADMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33F7",
+        "name": "BODAPATI SAI BINDU",
+        "mother_name": "BODAPATI SUNANDA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A33G5",
+        "name": "GAVIREDDY SAISUSMITHA",
+        "mother_name": "GAVIREDDY UMADEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "10",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33G7",
+        "name": "SHAIK SANA KOUSAR",
+        "mother_name": "SHAIK SHAMIM",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33H2",
+        "name": "SHAIK SANIYA",
+        "mother_name": "SHAIK JEREENA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A33H8",
+        "name": "BANALA SHANMUKHA SRI PRIYA",
+        "mother_name": "BANALA NAGAKRISHNA DEEPTHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33H9",
+        "name": "ARAVETI SHARANYA",
+        "mother_name": "ARAVETI SUMALATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33J1",
+        "name": "MEDAM SHILPA",
+        "mother_name": "MEDAM HARINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "6",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "24091A33J3",
+        "name": "VEMPALLE SIVA MADHURIMA",
+        "mother_name": "MOPURU HEMALATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33J4",
+        "name": "RASAPUTHRA SIVA NANDINI",
+        "mother_name": "RASAPUTHRA VIMALA BAI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33J6",
+        "name": "PEBBATI SNEHA",
+        "mother_name": "PEBBATI SARASWATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33J8",
+        "name": "SINGIRIGARI SPURTHI",
+        "mother_name": "SINGIRIGARI GANGA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33K0",
+        "name": "BHAVANASI SRAVANTHI",
+        "mother_name": "BHAVANASI VENKATALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.00"
+    },
+    {
+        "roll_no": "24091A33K5",
+        "name": "YELAGGARI SRIVANI",
+        "mother_name": "AKUMALLA CHINNA ESWARAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33K8",
+        "name": "UPPARI SUBHARATHI",
+        "mother_name": "UPPARI SUDHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33K9",
+        "name": "MANTI SUCHARITHA",
+        "mother_name": "MANTI SUGUNA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33M9",
+        "name": "PALLU SUSMITHA",
+        "mother_name": "PALLU PADMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "7"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A33N8",
+        "name": "POOJARI VANDANA",
+        "mother_name": "POLA SUJATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33P2",
+        "name": "MANDLA VASANTHI",
+        "mother_name": "MANDLA SAVITHRI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "24091A33P5",
+        "name": "KULLU VENKATA DINESH KUMAR",
+        "mother_name": "KULLU RAMA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "7"
+        },
+        "cgpa": "3.89"
+    },
+    {
+        "roll_no": "24091A33R5",
+        "name": "THARIGONDA YASWITHA",
+        "mother_name": "THARIGONDA VANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33R7",
+        "name": "ANGADI YESHWINI",
+        "mother_name": "ANGADI HYMAVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "25095A3302",
+        "name": "ANCHA AMULYA VISHNU SAI",
+        "mother_name": "ANCHA MAHESWARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "25095A3306",
+        "name": "PENDEM GANESWARI",
+        "mother_name": "PENDEM VARALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "25095A3310",
+        "name": "THUNGA LIKHITHA",
+        "mother_name": "THUNGA LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "25095A3320",
+        "name": "GOLLA RAMYA",
+        "mother_name": "GOLLA LALITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "25095A3323",
+        "name": "PERUGU ROHINI",
+        "mother_name": "PERUGU VENKATA LAKSHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "25095A3326",
+        "name": "VADDI SOWMYASRI",
+        "mother_name": "VADDI BHAGYALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "22091A3337",
+        "name": "BOYA PAVAN KUMAR",
+        "mother_name": "BOYA MAHA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "3.78"
+    },
+    {
+        "roll_no": "24091A3310",
+        "name": "SIRIGI REDDY AMRUTHA",
+        "mother_name": "SIRIGI REDDY LAKSHMI KANTHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "7"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A3312",
+        "name": "KOTHAMASI ANANDA MANI",
+        "mother_name": "KOTHAMASI VARA KUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "7"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A3314",
+        "name": "DARA ARUNA",
+        "mother_name": "DARA SUNITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "6"
+        },
+        "cgpa": "6.89"
+    },
+    {
+        "roll_no": "24091A3325",
+        "name": "KAMITKAR BHAVYA",
+        "mother_name": "K SANGEETHA BAI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A3360",
+        "name": "BOORAGALA JAHIRA BEE",
+        "mother_name": "B KASIM BEE",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "7"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A3368",
+        "name": "RAGE KARTHIK GOWD",
+        "mother_name": "RAGE VIJAYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.11"
+    },
+    {
+        "roll_no": "24091A3372",
+        "name": "MARAPPAGARI KEERTHANA",
+        "mother_name": "MARAPPAGARI KRISHNAVENI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A3377",
+        "name": "K C KRISHNA SAI",
+        "mother_name": "K C DEEPA KUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A3382",
+        "name": "NALLABOTHULA LAVANYA",
+        "mother_name": "NALLABOTHULA SUNKULU",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A3386",
+        "name": "BANDI LOKESH",
+        "mother_name": "BANDI RAMA TULASI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "24091A3390",
+        "name": "POTHIREDDY MAHA LAKSHMI",
+        "mother_name": "P SUBHASINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A3397",
+        "name": "VATTIVALLA MANASA",
+        "mother_name": "VATTIVALLA VIJAYALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33A1",
+        "name": "GADDAM MANOJ KUMAR",
+        "mother_name": "MUPPASANI SUNITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "24091A33A6",
+        "name": "DAFADAR MOHAMMAD MUZAMMIL",
+        "mother_name": "DAFADAR HUSSAIN BANU",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33B6",
+        "name": "BETHAMSETTY NAGA DEEKSHITHA",
+        "mother_name": "DANDE SUMALATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.33"
+    },
+    {
+        "roll_no": "24091A33B8",
+        "name": "KOPPULA NAGA SANDEEP",
+        "mother_name": "AKULA LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33C3",
+        "name": "GUNTHA NAVEEN TEJA",
+        "mother_name": "GUNTHA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A33C5",
+        "name": "NUKALA NIHITH",
+        "mother_name": "N SARITHA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A33C6",
+        "name": "CHINTHALAPALLI NIRANJAN REDDY",
+        "mother_name": "C SUBHASHINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "24091A33C9",
+        "name": "BACHHILI PARTHASARADHI REDDY",
+        "mother_name": "BACHHILI SUSILAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33E0",
+        "name": "TALARI PRIYANKA",
+        "mother_name": "TALARI PARVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33E9",
+        "name": "CHINTHAMANU REVATHI",
+        "mother_name": "CHINTHAMANU LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33F2",
+        "name": "GATE RUSHDA TABASSUM",
+        "mother_name": "G PARVEEN",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "24091A33F3",
+        "name": "KETHAPALLI RUTHIKA",
+        "mother_name": "KETHAPALLI REVATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33F4",
+        "name": "SHAIK SABERIN",
+        "mother_name": "SHAIK HASEENA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33F5",
+        "name": "DODLA SAHITHI",
+        "mother_name": "DODLA HIMA BINDU",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "24091A33G9",
+        "name": "VADLA SANGEETHA",
+        "mother_name": "VADLA SUNITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33H0",
+        "name": "YERUVA SANGEETHA",
+        "mother_name": "Y KALYANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A33H3",
+        "name": "PAGIDI SANJEEVA SAI SREEJA",
+        "mother_name": "PAGIDI RAMA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33K2",
+        "name": "NAKKA SREELEKHA",
+        "mother_name": "NAKKA LAKSHMIDEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33K3",
+        "name": "DASARI SREEVALLI",
+        "mother_name": "DASARI ANITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.00"
+    },
+    {
+        "roll_no": "24091A33K4",
+        "name": "VADDAMANU SRINIVAS",
+        "mother_name": "VADDAMANU KAMAKSHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "10"
+        },
+        "cgpa": "1.11"
+    },
+    {
+        "roll_no": "24091A33K7",
+        "name": "KAKARLA SUBHAN BASHA",
+        "mother_name": "KAKARLA HUSSENAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33M2",
+        "name": "SALKAPURAM SUMANTH TEJA",
+        "mother_name": "SALKAPURAM SUMALATHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "0",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.78"
+    },
+    {
+        "roll_no": "24091A33M3",
+        "name": "SHAIK SUMAYA",
+        "mother_name": "SHAIK SHAMIMUNNISHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33M4",
+        "name": "VIDUDALA SUNIL",
+        "mother_name": "VIDUDALA KUMARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "0",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "6",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "3.89"
+    },
+    {
+        "roll_no": "24091A33M5",
+        "name": "SHAIK SURAYYA KOUSAR",
+        "mother_name": "SHAIK ASIYA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "10",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33M8",
+        "name": "RAYAVARAM SUSHMA SREE",
+        "mother_name": "RAYAVARAM VIJAYALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A33N0",
+        "name": "SHAIK TABASSUM",
+        "mother_name": "SHAIK ROSHINI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.11"
+    },
+    {
+        "roll_no": "24091A33N2",
+        "name": "MASEEDU TEJA",
+        "mother_name": "MASEEDU RUPA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "5",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.22"
+    },
+    {
+        "roll_no": "24091A33N3",
+        "name": "PODILI THANSI PRIYA",
+        "mother_name": "JAGGILI SUNITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "24091A33N4",
+        "name": "DASARI THULASIKRISHNA",
+        "mother_name": "DASARI LOKAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "24091A33N6",
+        "name": "SEELAM UDAYA SREE",
+        "mother_name": "S MAHALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.22"
+    },
+    {
+        "roll_no": "24091A33N7",
+        "name": "KALINGIRI VAMSI KRISHNA",
+        "mother_name": "KALINGIRI NAGESWARI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "8"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "24091A33N9",
+        "name": "SANNAPUREDDY VARA LAKSHMI",
+        "mother_name": "SANNAPUREDDY SANKARAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.00"
+    },
+    {
+        "roll_no": "24091A33P0",
+        "name": "T VARSHINI",
+        "mother_name": "T ANITHA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A33P1",
+        "name": "KURUVA VASANTHA",
+        "mother_name": "KURUVA SARASWATHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A33P3",
+        "name": "KAUKUNTLA VEDA PRIYA",
+        "mother_name": "KAUKUNTLA JYOTHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "8",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.78"
+    },
+    {
+        "roll_no": "24091A33P4",
+        "name": "BANNURU VENKAT MADHU KOUSHIK",
+        "mother_name": "BANNURU VIJAYA LAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "5.78"
+    },
+    {
+        "roll_no": "24091A33P6",
+        "name": "PAIDIMARRI VENKATA HARSHITHA",
+        "mother_name": "C H VISHALAKSHI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "10",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "9.33"
+    },
+    {
+        "roll_no": "24091A33P8",
+        "name": "JYOTHULA VENKATA MAHENDRA",
+        "mother_name": "JYOTHULA LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.44"
+    },
+    {
+        "roll_no": "24091A33P9",
+        "name": "ONTEDDU VENKATA MUNI SRIJANA",
+        "mother_name": "ONTEDDU LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "9",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.67"
+    },
+    {
+        "roll_no": "24091A33Q0",
+        "name": "POTHURAJU VENKATA NAGA PRAVALLIKA",
+        "mother_name": "POTHURAJU RAMA LAKSHMAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.89"
+    },
+    {
+        "roll_no": "24091A33Q1",
+        "name": "MULINTI VENKATA POOJITHA",
+        "mother_name": "MULINTI MADHAVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "24091A33Q2",
+        "name": "DEVARAPALLI VENKATA SUNANDINI",
+        "mother_name": "DEVARAPALLI SREELAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "24091A33Q3",
+        "name": "SABBELLA VENKATA SURENDRA REDDY",
+        "mother_name": "SABBELLA SRI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "0",
+            "PROBABILITY AND STATISTICS": "0",
+            "MACHINE LEARNING": "0",
+            "DATABASE MANAGEMENT SYSTEMS": "0",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "0",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "6",
+            "SDC-I": "10"
+        },
+        "cgpa": "3.67"
+    },
+    {
+        "roll_no": "24091A33Q4",
+        "name": "SIDDAVATAM VENKATESWARLU",
+        "mother_name": "SIDDAVATAM DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "9",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "24091A33Q5",
+        "name": "KURUVA VENU KUMAR",
+        "mother_name": "KURUVA BHARATHAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "5",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.56"
+    },
+    {
+        "roll_no": "24091A33Q7",
+        "name": "CHAMALA VIJAY LINGESWARA REDDY",
+        "mother_name": "CHAMALA RAMADURGA DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "6",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "0",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "6.00"
+    },
+    {
+        "roll_no": "24091A33R0",
+        "name": "RAMIREDDY VINEETHA",
+        "mother_name": "RAMIREDDY BALA GANGADEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "5",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.33"
+    },
+    {
+        "roll_no": "24091A33R3",
+        "name": "REDDY YASASWINI",
+        "mother_name": "REDDY PRAVEENA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "7",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.56"
+    },
+    {
+        "roll_no": "24091A33R6",
+        "name": "YELUKURU SUMEDHA",
+        "mother_name": "YELUKURU SUDHA RANI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "8",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.22"
+    },
+    {
+        "roll_no": "24091A33R8",
+        "name": "PINJARI ZULEKHA",
+        "mother_name": "K JAYAMMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "9",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "8",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.56"
+    },
+    {
+        "roll_no": "25095A3311",
+        "name": "JALAL MAHAMMAD SOHAIL",
+        "mother_name": "JALAL NASEEMUNNISA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "6",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.67"
+    },
+    {
+        "roll_no": "25095A3312",
+        "name": "BUDURU MAHESH",
+        "mother_name": "BUDURU PADMA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "6",
+            "MACHINE LEARNING": "5",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "7",
+            "DESIGN THINKING AND INNOVATION": "7",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.11"
+    },
+    {
+        "roll_no": "25095A3317",
+        "name": "GANGARAPU PRANESH REDDY",
+        "mother_name": "GANGARAPU LAKSHMI DEVI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "8",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "8",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "9",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "10"
+        },
+        "cgpa": "8.11"
+    },
+    {
+        "roll_no": "25095A3319",
+        "name": "MUHAMMAD QUAYYUM SALEEM",
+        "mother_name": "NASEEMUNNISA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "7",
+            "PROBABILITY AND STATISTICS": "5",
+            "MACHINE LEARNING": "6",
+            "DATABASE MANAGEMENT SYSTEMS": "8",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "6",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "9",
+            "SDC-I": "10"
+        },
+        "cgpa": "7.89"
+    },
+    {
+        "roll_no": "25095A3327",
+        "name": "JAMPANA SUBBA NARASIMHA REDDY",
+        "mother_name": "JAMPANA SHARADA",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "8",
+            "DATABASE MANAGEMENT SYSTEMS": "7",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "7",
+            "MACHINE LEARNING LAB": "10",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "10",
+            "SDC-I": "8"
+        },
+        "cgpa": "8.44"
+    },
+    {
+        "roll_no": "25095A3328",
+        "name": "C SUDARSH",
+        "mother_name": "C JAYALAKSHMI",
+        "subjects": {
+            "OPTIMIZATION TECHNIQUES": "9",
+            "PROBABILITY AND STATISTICS": "7",
+            "MACHINE LEARNING": "7",
+            "DATABASE MANAGEMENT SYSTEMS": "9",
+            "DIGITAL LOGIC & COMPUTER ORGANIZATION": "5",
+            "MACHINE LEARNING LAB": "9",
+            "DATABASE MANAGEMENT SYSTEMS LAB": "10",
+            "DESIGN THINKING AND INNOVATION": "8",
+            "SDC-I": "9"
+        },
+        "cgpa": "8.11"
+    }
+]
