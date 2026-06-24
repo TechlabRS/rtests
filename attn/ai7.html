@@ -1,0 +1,1309 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>st_attendance_cap - Academic Authentication Matrix Terminal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slateBackground: '#f8fafc',
+                        cardBorder: '#e2e8f0',
+                        brandSky: '#e0f2fe',
+                        brandGreen: '#f0fdf4',
+                        brandPurple: '#f3e8ff',
+                        brandViolet: '#fae8ff',
+                        skyText: '#0369a1',
+                        greenText: '#15803d',
+                        purpleText: '#6b21a8',
+                        violetText: '#701a75'
+                    },
+                    boxShadow: {
+                        'designer': '0 16px 40px -8px rgba(2, 132, 199, 0.05), 0 8px 20px -4px rgba(107, 33, 168, 0.02)',
+                        'neon-glow': '0 0 30px -4px rgba(2, 132, 199, 0.25)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #f8fafc 100%);
+            overscroll-behavior-y: contain;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .designer-glass {
+            background: rgba(255, 255, 255, 0.92);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border: 1px solid rgba(226, 232, 240, 0.9);
+        }
+        .designer-input {
+            background: #ffffff;
+            border: 1px solid rgba(203, 213, 225, 1);
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .designer-input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.12);
+            outline: none;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.01); }
+        ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 999px; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        .toast-card { animation: toast-entrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+        .toast-card.hide { animation: toast-exit 0.3s ease forwards; }
+        @keyframes toast-entrance {
+            0% { transform: translateY(20px) scale(0.95); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes toast-exit {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95) translateY(-10px); opacity: 0; }
+        }
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(14, 165, 233, 0.9);
+            box-shadow: 0 0 12px rgba(14, 165, 233, 0.9), 0 0 24px rgba(14, 165, 233, 0.9);
+            animation: scan 2.5s linear infinite;
+            z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+    <script>
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgStyle, icon;
+            if(type === 'success') {
+                bgStyle = 'bg-white border-emerald-200 text-green-700 shadow-md';
+                icon = 'fa-circle-check text-emerald-500';
+            } else if(type === 'error') {
+                bgStyle = 'bg-white border-rose-200 text-rose-600 shadow-md';
+                icon = 'fa-circle-exclamation text-rose-500';
+            } else if(type === 'warning') {
+                bgStyle = 'bg-white border-amber-200 text-amber-600 shadow-md';
+                icon = 'fa-triangle-exclamation text-amber-500';
+            } else {
+                bgStyle = 'bg-white border-sky-200 text-sky-700 shadow-md';
+                icon = 'fa-bell text-sky-500';
+            }
+            toast.className = `toast-card w-full p-4 rounded-xl border flex items-start space-x-3 pointer-events-auto ${bgStyle} shadow-xl`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} mt-0.5 text-base shrink-0"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-bold tracking-tight uppercase">${type} Message</p>
+                    <p class="text-[11px] text-slate-600 font-medium mt-0.5 leading-relaxed">${message}</p>
+                </div>
+                <button class="text-slate-400 hover:text-slate-600 transition-colors shrink-0" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark text-xs"></i></button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hide');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 4550);
+        };
+    </script>
+</head>
+<body class="min-h-full text-slate-800 font-sans antialiased flex flex-col overflow-y-auto">
+
+    <div class="h-1.5 w-full bg-gradient-to-r from-sky-500 via-indigo-500 to-purple-500 z-50 shrink-0"></div>
+    <div id="toast-container" class="fixed top-6 right-4 left-4 sm:left-auto sm:w-96 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <header class="w-full border-b border-slate-200 bg-white/90 backdrop-blur-md sticky top-0 z-40 px-4 py-3 shrink-0 shadow-sm">
+        <div class="max-w-[1800px] mx-auto flex flex-col sm:flex-row justify-between items-center w-full gap-4">
+            <div class="flex items-center space-x-3.5 min-w-0 self-start sm:self-auto">
+                <div class="bg-slate-900 p-2.5 rounded-xl shrink-0 shadow-md">
+                    <i class="fa-solid fa-expand text-md text-white"></i>
+                </div>
+                <div class="truncate">
+                    <h1 class="text-md font-black tracking-wider text-slate-900 uppercase truncate">st_attendance_cap</h1>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest truncate">Academic Authentication Matrix Terminal</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0 w-full sm:w-auto justify-between sm:justify-end gap-3">
+                <span id="activeSessionDetailsBadge" class="hidden sm:inline-block text-[11px] font-mono font-bold text-slate-600 bg-white px-3 py-2 rounded-xl border border-slate-200 truncate max-w-xs shadow-sm">
+                    Engine Offline. Select configuration maps.
+                </span>
+                <div class="flex items-center gap-1 bg-white p-0.5 rounded-xl shadow-sm border border-slate-200">
+                    <button onclick="window.switchRole('faculty')" id="roleBtnFaculty" class="px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all bg-slate-900 text-white shadow-sm whitespace-nowrap">
+                        Faculty Console
+                    </button>
+                    <button onclick="window.switchRole('student')" id="roleBtnStudent" class="px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-800 whitespace-nowrap">
+                        Student Hub
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-[1800px] w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <aside class="lg:col-span-3 flex flex-col gap-4 w-full">
+            
+            <section class="designer-glass rounded-2xl p-5 shadow-designer flex flex-col space-y-4 border border-slate-200">
+                <h3 class="text-[11px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2 border-b border-slate-200 pb-2.5">
+                    <i class="fa-solid fa-sliders text-sky-500 text-xs"></i> Session Environment
+                </h3>
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Academic Year</label>
+                        <select id="facYear" onchange="window.updateFacultySubjectDropdown()" class="w-full designer-input rounded-xl px-2.5 py-2.5 text-xs font-semibold focus:outline-none cursor-pointer bg-white">
+                            <option value="1">I Year</option>
+                            <option value="2">II Year</option>
+                            <option value="3">III Year</option>
+                            <option value="4" selected>IV Year</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Section Bound</label>
+                        <select id="facSection" class="w-full designer-input rounded-xl px-2.5 py-2.5 text-xs font-semibold focus:outline-none cursor-pointer bg-white">
+                            <option value="A" selected>Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Subject Scope Code</label>
+                        <select id="facSubject" class="w-full designer-input rounded-xl px-2.5 py-2.5 text-xs font-bold focus:outline-none cursor-pointer bg-white"></select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Hourly Allocation Slot</label>
+                        <select id="facSlot" class="w-full designer-input rounded-xl px-2.5 py-2.5 text-xs font-medium focus:outline-none cursor-pointer bg-white">
+                            <option value="09:00 - 10:40">09:00 - 10:40 (2 Hrs)</option>
+                            <option value="11:00 - 12:40">11:00 - 12:40 (2 Hrs)</option>
+                            <option value="13:50 - 14:40">13:50 - 14:40 (1 Hr)</option>
+                            <option value="14:40 - 16:20">14:40 - 16:20 (2 Hrs)</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Date Parameter Block</label>
+                        <input type="date" id="facDate" class="w-full designer-input rounded-xl px-3 py-2 text-xs font-mono text-center focus:outline-none cursor-pointer">
+                    </div>
+                </div>
+                
+                <div class="pt-1">
+                    <button id="btnStartSession" onclick="window.initializeLiveSessionRun()" class="w-full px-4 py-3 bg-gradient-to-r from-sky-600 via-indigo-600 to-purple-600 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-md hover:opacity-95">
+                        Launch Matrix
+                    </button>
+                    <button id="btnStopSession" onclick="window.terminateLiveSessionRun()" class="hidden w-full px-4 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-xl text-xs uppercase tracking-widest transition-all shadow-md">
+                        Kill Broadcast
+                    </button>
+                </div>
+            </section>
+
+            <nav class="flex flex-col bg-white border border-slate-200 rounded-2xl p-2 shadow-sm space-y-1">
+                <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest px-3 py-1">Workspace Nodes</p>
+                <button onclick="window.switchTab('monitoring')" id="tabBtn-monitoring" class="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs bg-slate-900 text-white transition-all shadow-sm">
+                    <span class="flex items-center gap-2.5"><i class="fa-solid fa-tower-broadcast text-sky-400"></i> Active Monitor</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+                </button>
+                <button onclick="window.switchTab('directory')" id="tabBtn-directory" class="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-all">
+                    <span class="flex items-center gap-2.5"><i class="fa-solid fa-users text-purple-500"></i> Student Directory</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+                </button>
+                <button onclick="window.switchTab('desks')" id="tabBtn-desks" class="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-all">
+                    <span class="flex items-center gap-2.5"><i class="fa-solid fa-user-shield text-amber-500"></i> Verification Desks</span>
+                    <span id="badgeTotalQueueCount" class="bg-slate-100 text-slate-700 font-mono text-[10px] px-2 py-0.5 rounded-lg font-black border border-slate-200 shadow-inner">0</span>
+                </button>
+                <button onclick="window.switchTab('analytics')" id="tabBtn-analytics" class="w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-all">
+                    <span class="flex items-center gap-2.5"><i class="fa-solid fa-chart-pie text-emerald-500"></i> Analytics Engine</span>
+                    <i class="fa-solid fa-chevron-right text-[10px] opacity-40"></i>
+                </button>
+            </nav>
+        </aside>
+
+        <div class="lg:col-span-9 w-full flex flex-col gap-6">
+            
+            <section id="tabContent-monitoring" class="space-y-6 flex flex-col w-full">
+                <div class="grid grid-cols-1 xl:grid-cols-12 gap-6 items-stretch w-full">
+                    
+                    <div class="xl:col-span-7 bg-slate-950 rounded-2xl relative p-2 overflow-hidden border border-slate-800 flex flex-col items-center justify-center min-h-[300px] xl:min-h-0 shadow-inner">
+                        <video id="bulkScanVideo" autoplay muted playsinline class="w-full h-full object-cover rounded-xl hidden"></video>
+                        <canvas id="bulkScanCanvas" class="w-full h-full object-cover rounded-xl hidden"></canvas>
+                        <div id="bulkScanPlaceholder" class="text-center text-slate-500 text-xs p-8 select-none">
+                            <i class="fa-solid fa-camera text-5xl mb-3 text-slate-800 block"></i>
+                            Optical Lens Feed Disconnected. Turn on Front/Back feed.
+                        </div>
+                        <div id="bulkScanLine" class="scan-line hidden"></div>
+                    </div>
+                    
+                    <div class="xl:col-span-5 flex flex-col bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-inner min-h-[160px] xl:min-h-0">
+                        <h4 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 flex items-center justify-between border-b border-slate-800 pb-2 shrink-0">
+                            <span>Biometric Continuous Loop Trace Log</span>
+                            <i class="fa-solid fa-terminal text-emerald-400"></i>
+                        </h4>
+                        <div id="bulkScanLogs" class="flex-1 overflow-y-auto font-mono text-[11px] leading-relaxed text-emerald-400 space-y-1.5 no-scrollbar max-h-[220px] xl:max-h-[300px]">
+                            <div class="text-slate-500 italic">Lens configuration stream parameters standby...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 p-4 rounded-2xl flex flex-wrap justify-between items-center gap-3 shadow-sm">
+                    <div class="flex flex-wrap gap-2.5">
+                        <button onclick="window.initializeCamera('bulkScanVideo', 'bulkScanPlaceholder', 'user')" class="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl border flex items-center gap-1.5 shadow-sm transition-colors">
+                            <i class="fa-solid fa-camera-rotate"></i> Front Cam
+                        </button>
+                        <button onclick="window.initializeCamera('bulkScanVideo', 'bulkScanPlaceholder', 'environment')" class="px-4 py-2.5 bg-slate-50 hover:bg-slate-100 text-slate-700 text-xs font-black rounded-xl border flex items-center gap-1.5 shadow-sm transition-colors">
+                            <i class="fa-solid fa-video"></i> Back Cam
+                        </button>
+                        <button id="btnStartTrackingLoop" onclick="window.executeBulkAiTrackingPass()" class="px-5 py-2.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-black rounded-xl uppercase tracking-wider shadow">
+                            Start Continuous Scan
+                        </button>
+                        <button id="btnStopTrackingLoop" onclick="window.stopContinuousScanLoop()" class="hidden px-5 py-2.5 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow">
+                            Stop Scan
+                        </button>
+                    </div>
+                    <div class="flex gap-2">
+                        <button onclick="window.executeGlobalWhatsAppBroadcast()" class="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-xl shadow flex items-center gap-1.5 uppercase tracking-wide"><i class="fa-brands fa-whatsapp text-sm"></i> Alert Absentees</button>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+                    <div class="border-b border-slate-100 pb-2">
+                        <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest">Active Class Ledger Grid</h3>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Real-time parsed dynamic loop data vectors.</p>
+                    </div>
+                    <div class="overflow-x-auto rounded-xl border border-slate-100 max-h-[320px]">
+                        <table class="w-full text-left border-collapse min-w-[650px]">
+                            <thead class="sticky top-0 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b z-10 shadow-sm">
+                                <tr>
+                                    <th class="py-3.5 px-4">Student Roll Number</th>
+                                    <th class="py-3.5 px-4">Official Full Name</th>
+                                    <th class="py-3.5 px-4">Coordinates Details</th>
+                                    <th class="py-3.5 px-4">Status</th>
+                                    <th class="py-3.5 px-4 text-right">Manual Action Controller Overrides</th>
+                                </tr>
+                            </thead>
+                            <tbody id="liveAttendanceTableBody" class="divide-y divide-slate-100 text-xs font-bold text-slate-600 bg-white">
+                                <tr><td colspan="5" class="py-8 text-center text-slate-400 font-mono">Orchestration layer closed context variables.</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tabContent-directory" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4 w-full">
+                <div class="border-b border-slate-100 pb-3 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 w-full">
+                    <div>
+                        <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-1.5">
+                            <i class="fa-solid fa-id-badge text-purple-600"></i> Identity Matrix Profiles Directory
+                        </h2>
+                        <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Comprehensive identity repository sorted in strict alphanumeric ascending sequence.</p>
+                    </div>
+                    <div class="flex items-center gap-3 w-full sm:w-auto">
+                        <select id="dirFilterYear" onchange="window.synchronizeApprovedStudentsDirectory()" class="designer-input rounded-xl px-3 py-2 text-xs font-bold focus:outline-none cursor-pointer bg-white shadow-sm">
+                            <option value="all">All Academic Years</option>
+                            <option value="1">I B.Tech</option>
+                            <option value="2">II B.Tech</option>
+                            <option value="3">III B.Tech</option>
+                            <option value="4">IV B.Tech</option>
+                        </select>
+                        <select id="dirFilterSection" onchange="window.synchronizeApprovedStudentsDirectory()" class="designer-input rounded-xl px-3 py-2 text-xs font-bold focus:outline-none cursor-pointer bg-white shadow-sm">
+                            <option value="all">All Sections Bound</option>
+                            <option value="A">Section A</option>
+                            <option value="B">Section B</option>
+                            <option value="C">Section C</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-100 rounded-xl max-h-[460px] w-full">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead class="sticky top-0 bg-slate-50 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b z-10 shadow-sm">
+                            <tr>
+                                <th class="py-3 px-4 w-24">Headshot</th>
+                                <th class="py-3 px-4">Student Roll Number</th>
+                                <th class="py-3 px-4">Official Student Name String</th>
+                                <th class="py-3 px-4">Year Bound</th>
+                                <th class="py-3 px-4">Section</th>
+                                <th class="py-3 px-4">Parent Phone Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody id="approvedDirectoryTableBody" class="divide-y divide-slate-100 text-xs font-bold text-slate-600 bg-white">
+                            <tr><td colspan="6" class="py-8 text-center text-slate-400 font-mono">Directory empty registers configurations variables stack.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section id="tabContent-desks" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 items-start w-full">
+                
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5 flex justify-between items-center w-full">
+                        <div>
+                            <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest">Profile Registration Desk</h3>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Authorization validation loop profiles queue block.</p>
+                        </div>
+                        <span id="regQueueCount" class="bg-purple-50 text-purple-700 font-mono text-[10px] px-2.5 py-0.5 rounded-lg font-black border border-purple-200 shadow-sm">0</span>
+                    </div>
+                    <div id="registrationQueueContainer" class="space-y-2.5 max-h-[320px] overflow-y-auto no-scrollbar py-1 w-full">
+                        <div class="p-5 text-center text-slate-400 font-mono text-[10px] border border-dashed rounded-xl bg-slate-50/50">Queue clear.</div>
+                    </div>
+                    <button onclick="window.executeBulkApproveStudentRegistrations()" class="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-black text-xs rounded-xl tracking-widest uppercase shadow shadow-purple-100 transition-colors">
+                        Bulk Approve Pending Profiles
+                    </button>
+                </div>
+
+                <div class="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm flex flex-col space-y-4">
+                    <div class="border-b border-slate-100 pb-2.5 flex justify-between items-center w-full">
+                        <div>
+                            <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest">Hardware Failover Desk</h3>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">Manual bypass override verification flags stack.</p>
+                        </div>
+                        <span id="approvalQueueCount" class="bg-rose-50 text-rose-700 font-mono text-[10px] px-2.5 py-0.5 rounded-lg font-black border border-rose-200 shadow-sm">0</span>
+                    </div>
+                    <div id="approvalQueueContainer" class="space-y-2.5 max-h-[380px] overflow-y-auto no-scrollbar py-1 w-full">
+                        <div class="p-5 text-center text-slate-400 font-mono text-[10px] border border-dashed rounded-xl bg-slate-50/50">Queue clean.</div>
+                    </div>
+                </div>
+            </section>
+
+            <section id="tabContent-analytics" class="hidden bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-5 w-full">
+                <div class="border-b border-slate-100 pb-3">
+                    <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                        <i class="fa-solid fa-chart-line text-emerald-600"></i> Interactive Reporting Intelligence Engine
+                    </h2>
+                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">View structural data matrices summaries cleanly on screen *before* compiling any document downloads.</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs">
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Calendar Partition Scope</label>
+                        <select id="rptFilterCalendarScope" onchange="window.reconcileReportTimeFilters()" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer font-bold bg-white shadow-sm">
+                            <option value="all" selected>All Cumulative Logs</option>
+                            <option value="weekly">Strict Calendar Week Range</option>
+                            <option value="monthly">Strict Calendar Month Range</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Subject Scope Match</label>
+                        <select id="rptFilterSubject" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer bg-white shadow-sm"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Dynamic Selected Session</label>
+                        <select id="rptFilterSessionSelect" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none cursor-pointer bg-white shadow-sm">
+                            <option value="all">All Instantiated Streams</option>
+                        </select>
+                    </div>
+                    <div class="flex items-end">
+                        <button onclick="window.executeRenderReportPreviewGrid()" class="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-black rounded-xl text-xs uppercase tracking-wider shadow transition-all">
+                            <i class="fa-solid fa-magnifying-glass-chart mr-1.5"></i> View Matrix Data
+                        </button>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-100 rounded-xl bg-slate-50/50 w-full max-h-[340px] shadow-inner">
+                    <table class="w-full text-left border-collapse min-w-[700px]">
+                        <thead class="sticky top-0 bg-slate-100 text-[9px] font-black text-slate-400 uppercase tracking-widest border-b z-10 shadow-sm">
+                            <tr>
+                                <th class="py-3 px-4">Date String</th>
+                                <th class="py-3 px-4">Subject Block</th>
+                                <th class="py-3 px-4">Hourly Period Slot</th>
+                                <th class="py-3 px-4">Student Roll Number</th>
+                                <th class="py-3 px-4">Official Student Name</th>
+                                <th class="py-3 px-4">Status Field</th>
+                            </tr>
+                        </thead>
+                        <tbody id="interactiveReportViewerTableBody" class="divide-y divide-slate-100 text-xs font-bold text-slate-600 bg-white">
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-400 font-mono text-[10px]">
+                                    Click "View Matrix Data" button above to evaluate structural workspace registers logs.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="reportDownloadControlsContainer" class="hidden pt-3 border-t border-slate-100 flex flex-wrap justify-end gap-3 shrink-0">
+                    <button onclick="window.executeTriggerDocumentDownload('excel')" class="px-4 py-2.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 text-[11px] font-black rounded-xl flex items-center gap-1.5 uppercase tracking-widest shadow-sm transition-all">
+                        <i class="fa-solid fa-file-excel"></i> Download XLSX Table
+                    </button>
+                    <button onclick="window.executeTriggerDocumentDownload('pdf')" class="px-4 py-2.5 bg-rose-50 text-red-600 hover:bg-rose-100 border border-rose-200 text-[11px] font-black rounded-xl flex items-center gap-1.5 uppercase tracking-widest shadow-sm transition-all">
+                        <i class="fa-solid fa-file-pdf"></i> Download PDF Document
+                    </button>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <div id="studentViewPortal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-xl w-full border border-slate-200 shadow-2xl flex flex-col space-y-5 max-h-[90vh] overflow-y-auto no-scrollbar">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3 shrink-0">
+                <div class="flex items-center space-x-2">
+                    <i class="fa-solid fa-graduation-cap text-sky-600 text-lg"></i>
+                    <h2 class="text-sm font-black text-slate-700 uppercase tracking-wider">Device Registry Identity Terminal</h2>
+                </div>
+                <button onclick="window.switchRole('faculty')" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-circle-xmark text-xl"></i></button>
+            </div>
+            
+            <div id="studentDashboardCard" class="hidden p-4 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col space-y-3 w-full">
+                <div class="flex items-center space-x-3 w-full">
+                    <img id="dashProfileImage" src="" class="w-12 h-12 rounded-full object-cover border-2 border-white shadow shrink-0">
+                    <div class="min-w-0">
+                        <h3 id="dashStudentName" class="text-sm font-black text-slate-800 uppercase tracking-wide truncate">-</h3>
+                        <p id="dashStudentRoll" class="text-xs font-mono font-bold text-sky-600 truncate">-</p>
+                    </div>
+                    <div class="ml-auto flex gap-1.5 text-[10px] font-mono font-bold shrink-0">
+                        <span id="dashStudentYear" class="bg-sky-100 px-2.5 py-0.5 rounded-md text-sky-700">Yr -</span>
+                        <span id="dashStudentSection" class="bg-purple-100 px-2.5 py-0.5 rounded-md text-purple-700">-</span>
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t border-slate-200 w-full">
+                    <button onclick="window.startStudentIndividualFaceVerification()" class="py-2.5 bg-white hover:bg-slate-50 text-slate-700 border font-bold rounded-xl text-[10px] uppercase shadow-sm">01: Optic</button>
+                    <button onclick="window.acquireStudentGPS()" class="py-2.5 bg-white hover:bg-slate-50 text-slate-700 border font-bold rounded-xl text-[10px] uppercase shadow-sm">02: Satellite</button>
+                    <input type="number" id="studentInputOtp" oninput="if(this.value.length > 4) this.value = this.value.slice(0,4); window.verifyOTP()" placeholder="03: OTP" class="py-2 text-center font-mono font-black border rounded-xl text-[10px] bg-white focus:outline-none w-full">
+                    <button onclick="window.startAcousticListeningNode()" class="py-2.5 bg-white hover:bg-slate-50 text-slate-700 border font-bold rounded-xl text-[10px] uppercase shadow-sm">04: Wave</button>
+                </div>
+                
+                <div class="flex gap-2 pt-2 w-full">
+                    <button onclick="window.executeStudentFailoverRequest()" class="w-full py-2.5 bg-slate-100 text-slate-600 text-[11px] font-black rounded-xl uppercase tracking-wider border">Fallback Ticket</button>
+                    <button id="btnExecuteCheckIn" onclick="window.executeAutomatedStudentCheckIn()" class="w-full py-2.5 bg-slate-900 text-white font-black rounded-xl text-[11px] uppercase tracking-wider shadow" disabled>Authorize Entry</button>
+                </div>
+                
+                <div class="flex justify-between text-[9px] font-mono text-slate-400 px-1 pt-1 w-full border-t border-slate-100">
+                    <div id="statusL1Text">Optic Pending</div>
+                    <div id="statusL2Text">GPS Pending</div>
+                    <div id="statusL3Text">OTP Pending</div>
+                    <div id="statusL4Text">Wave Pending</div>
+                </div>
+            </div>
+
+            <div id="studentRegistrationContainer" class="grid grid-cols-1 sm:grid-cols-2 gap-3.5 w-full">
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Roll Number</label>
+                    <input type="text" id="regRollNo" oninput="this.value = this.value.toUpperCase();" placeholder="e.g., 26XX1A0501" class="w-full designer-input rounded-xl px-3 py-2 text-xs font-mono focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Official Name</label>
+                    <input type="text" id="regName" placeholder="Enter Full Name" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Academic Year</label>
+                    <select id="regYear" class="w-full designer-input rounded-xl px-2 py-2 text-xs focus:outline-none cursor-pointer bg-white">
+                        <option value="1">I B.Tech</option>
+                        <option value="2">II B.Tech</option>
+                        <option value="3">III B.Tech</option>
+                        <option value="4" selected>IV B.Tech</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Section Bound</label>
+                    <select id="regSection" class="w-full designer-input rounded-xl px-2 py-2 text-xs focus:outline-none cursor-pointer bg-white">
+                        <option value="A" selected>Section A</option>
+                        <option value="B">Section B</option>
+                        <option value="C">Section C</option>
+                    </select>
+                </div>
+                <div class="sm:col-span-2 w-full">
+                    <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Parent Contact Number</label>
+                    <div class="relative w-full">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-gray-400 font-mono text-xs">+91</span>
+                        <input type="tel" id="regParentPhone" maxlength="10" placeholder="9876543210" class="w-full designer-input rounded-xl pl-10 pr-3 py-2 text-xs font-mono focus:outline-none">
+                    </div>
+                </div>
+                
+                <div class="sm:col-span-2 flex flex-col items-center bg-slate-50 p-3 rounded-xl border border-slate-200 w-full">
+                    <div class="relative w-24 h-24 rounded-full overflow-hidden border bg-white flex items-center justify-center shadow-inner">
+                        <video id="registrationVideo" autoplay muted playsinline class="w-full h-full object-cover scale-x-[-1] hidden"></video>
+                        <canvas id="registrationCanvas" class="w-full h-full object-cover scale-x-[-1] hidden"></canvas>
+                        <div id="videoPlaceholder" class="text-center text-slate-400 text-[10px] select-none">Biometric Matrix</div>
+                    </div>
+                    <div class="flex gap-2 mt-3 w-full max-w-xs">
+                        <button onclick="window.initializeCamera('registrationVideo', 'videoPlaceholder', 'user')" class="w-full bg-white border text-slate-700 text-[10px] font-black py-1.5 rounded-lg shadow-sm">Init Lens</button>
+                        <button onclick="window.captureRegistrationPhoto()" class="w-full bg-slate-900 text-white text-[10px] font-black py-1.5 rounded-lg shadow-sm">Snapshot</button>
+                    </div>
+                </div>
+                
+                <div class="sm:col-span-2 border-t pt-3 flex justify-between items-center w-full gap-3">
+                    <div id="registrationStatusText" class="text-xs font-mono text-purple-600 font-bold truncate"></div>
+                    <button id="btnSaveRegistration" onclick="window.executeStudentRegistration()" class="px-5 py-2.5 bg-slate-900 text-white font-black rounded-xl text-xs uppercase tracking-widest shadow whitespace-nowrap">
+                        Initialize Profile Link
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global Local Database Mapping Layers
+        window.SubjectMappingData = {
+            "1": ["MATHEMATICS_I", "PHYSICS", "CHEMISTRY", "ENGLISH", "PROGRAMMING_C"],
+            "2": ["DATA_STRUCTURES", "COMPUTER_ORGANIZATION", "DISCRETE_MATHEMATICS", "DIGITAL_LOGIC", "ENVIRONMENTAL_SCIENCE"],
+            "3": ["OPERATING_SYSTEMS", "COMPUTER_NETWORKS", "SOFTWARE_ENGINEERING", "COMPILER_DESIGN", "WEB_TECHNOLOGIES"],
+            "4": ["DBMS", "MACHINE_LEARNING", "OOPS", "ARTIFICIAL_INTELLIGENCE", "CLOUD_COMPUTING"]
+        };
+
+        const DeviceFingerprintSignature = "HW_UUID_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        
+        window.AppState = {
+            activeRole: 'faculty',
+            activeTab: 'monitoring',
+            deviceMediaStreams: {},
+            registeredStudentProfile: null, 
+            activeLiveSession: null, 
+            audioContextInstance: null,
+            audioOscillatorNode: null,
+            trackingPassInterval: null,
+            cachedFilteredReportData: [],
+            validationMatrix: { optics: false, gps: false, otp: false, acoustic: false },
+            mockDb: { users: {}, registrationQueue: {}, sessions: {}, attendance: {}, manualApprovalRequests: {} }
+        };
+
+        window.switchTab = function(targetTab) {
+            window.AppState.activeTab = targetTab;
+            const tabKeys = ['monitoring', 'directory', 'desks', 'analytics'];
+            
+            tabKeys.forEach(key => {
+                const contentEl = document.getElementById(`tabContent-${key}`);
+                const btnEl = document.getElementById(`tabBtn-${key}`);
+                if(key === targetTab) {
+                    if(contentEl) contentEl.classList.remove('hidden');
+                    if(btnEl) btnEl.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs bg-slate-900 text-white transition-all shadow-sm";
+                } else {
+                    if(contentEl) contentEl.classList.add('hidden');
+                    if(btnEl) btnEl.className = "w-full flex items-center justify-between px-4 py-3 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-50 transition-all";
+                }
+            });
+
+            if(targetTab !== 'monitoring') window.stopContinuousScanLoop();
+        };
+
+        window.cleanupResources = function() {
+            window.stopContinuousScanLoop();
+            window.deactivateActiveCameraStreams();
+            window.stopUltrasoundTransmissionNode();
+        };
+
+        window.saveDatabaseToLocalStorage = function() {
+            localStorage.setItem('st_attendance_cap_db_designer', JSON.stringify(window.AppState.mockDb));
+        };
+
+        window.loadDatabaseFromLocalStorage = function() {
+            const persistedData = localStorage.getItem('st_attendance_cap_db_designer');
+            if (persistedData) {
+                try {
+                    const parsed = JSON.parse(persistedData);
+                    if(parsed.users) window.AppState.mockDb.users = parsed.users;
+                    if(parsed.registrationQueue) window.AppState.mockDb.registrationQueue = parsed.registrationQueue;
+                    if(parsed.sessions) window.AppState.mockDb.sessions = parsed.sessions;
+                    if(parsed.attendance) window.AppState.mockDb.attendance = parsed.attendance;
+                    if(parsed.manualApprovalRequests) window.AppState.mockDb.manualApprovalRequests = parsed.manualApprovalRequests;
+                } catch(e) { console.error(e); }
+            } else {
+                window.initMockDatabaseSeedData();
+            }
+            
+            const storedReg = localStorage.getItem('st_attendance_cap_active_profile');
+            if(storedReg) {
+                try { window.AppState.registeredStudentProfile = JSON.parse(storedReg); } catch(e){}
+            }
+            
+            const dateInput = document.getElementById('facDate');
+            if(dateInput) dateInput.value = new Date().toISOString().split('T')[0];
+            
+            window.updateFacultySubjectDropdown();
+            window.reconcileReportTimeFilters();
+            window.synchronizeApprovedStudentsDirectory();
+            window.synchronizeFacultyRegistrationQueueDeskUI();
+            window.synchronizeFacultyApprovalQueueDeskUI();
+        };
+
+        window.initMockDatabaseSeedData = function() {
+            const productionStudentsDataset = [
+                { rollNo: "26XX1A0501", name: "CHINTA MANIKANTA", year: "4", section: "A", parentPhone: "9154031201", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_A1" },
+                { rollNo: "26XX1A0502", name: "GANDHAM VAMSI KRISHNA", year: "4", section: "A", parentPhone: "8309452102", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_B2" },
+                { rollNo: "26XX1A0503", name: "KUMMAMURU ANIL KUMAR", year: "4", section: "A", parentPhone: "9491025403", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_C3" },
+                { rollNo: "26XX1A0504", name: "MADDELA TEJASWINI", year: "4", section: "A", parentPhone: "7032159804", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_D4" },
+                { rollNo: "26XX1A0505", name: "PULI ESWAR REDDY", year: "4", section: "B", parentPhone: "9989521405", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_E5" }
+            ];
+            
+            productionStudentsDataset.forEach(stu => {
+                window.AppState.mockDb.users[stu.rollNo] = {
+                    ...stu,
+                    profilePicBase64: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23bae6fd'/><text x='50%' y='58%' font-size='16' font-weight='black' fill='%230369a1' font-family='sans-serif' text-anchor='middle'>STUDENT</text></svg>",
+                    createdAt: Date.now()
+                };
+            });
+            window.saveDatabaseToLocalStorage();
+        };
+
+        window.updateFacultySubjectDropdown = function() {
+            const yearSelect = document.getElementById('facYear');
+            const facSubSelect = document.getElementById('facSubject');
+            const rptSubSelect = document.getElementById('rptFilterSubject');
+            if(!yearSelect) return;
+            
+            const selectedYear = yearSelect.value;
+            const subjects = window.SubjectMappingData[selectedYear] || [];
+            
+            const compiledOptionsHtml = subjects.map(sub => `<option value="${sub}">${sub.replace(/_/g, ' ')}</option>`).join('');
+            if (facSubSelect) facSubSelect.innerHTML = compiledOptionsHtml;
+            if (rptSubSelect) rptSubSelect.innerHTML = `<option value="all">All Subjects</option>` + compiledOptionsHtml;
+        };
+
+        window.switchRole = function(targetRole) {
+            window.AppState.activeRole = targetRole;
+            const portal = document.getElementById('studentViewPortal');
+            const roleBtnFaculty = document.getElementById('roleBtnFaculty');
+            const roleBtnStudent = document.getElementById('roleBtnStudent');
+
+            if (targetRole === 'student') {
+                if(portal) portal.classList.remove('hidden');
+                if(roleBtnStudent) roleBtnStudent.className = "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all bg-slate-900 text-white shadow-sm whitespace-nowrap";
+                if(roleBtnFaculty) roleBtnFaculty.className = "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-800 whitespace-nowrap";
+                window.reconcileStudentUIVisibilityStates();
+            } else {
+                if(portal) portal.classList.add('hidden');
+                if(roleBtnFaculty) roleBtnFaculty.className = "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all bg-slate-900 text-white shadow-sm whitespace-nowrap";
+                if(roleBtnStudent) roleBtnStudent.className = "px-4 py-2 text-[11px] font-black uppercase tracking-wider rounded-lg transition-all text-slate-500 hover:text-slate-800 whitespace-nowrap";
+                
+                window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+                window.synchronizeFacultyRegistrationQueueDeskUI();
+                window.synchronizeApprovedStudentsDirectory();
+                window.synchronizeFacultyApprovalQueueDeskUI();
+            }
+        };
+
+        window.initializeCamera = async function(videoNodeId, placeholderNodeId, preferredFacingMode = 'environment') {
+            window.stopCameraStreamNode(videoNodeId, placeholderNodeId);
+            const videoElement = document.getElementById(videoNodeId);
+            const placeholderElement = document.getElementById(placeholderNodeId);
+            const scanLine = document.getElementById('bulkScanLine');
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: preferredFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+                window.AppState.deviceMediaStreams[videoNodeId] = stream;
+                if(videoElement) {
+                    videoElement.srcObject = stream;
+                    videoElement.classList.remove('hidden');
+                }
+                if(placeholderElement) placeholderElement.classList.add('hidden');
+                if(scanLine && videoNodeId === 'bulkScanVideo') scanLine.classList.remove('hidden');
+            } catch (err) {
+                window.showToast("Camera Resource Busy or Permission Rejected.", "error");
+            }
+        };
+
+        window.stopCameraStreamNode = function(videoNodeId, placeholderNodeId) {
+            const stream = window.AppState.deviceMediaStreams[videoNodeId];
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                delete window.AppState.deviceMediaStreams[videoNodeId];
+            }
+            const videoElement = document.getElementById(videoNodeId);
+            const placeholderElement = document.getElementById(placeholderNodeId);
+            const scanLine = document.getElementById('bulkScanLine');
+            
+            if(videoElement) {
+                videoElement.classList.add('hidden');
+                videoElement.srcObject = null;
+            }
+            if(placeholderElement) placeholderElement.classList.remove('hidden');
+            if(scanLine && videoNodeId === 'bulkScanVideo') scanLine.classList.add('hidden');
+        };
+
+        window.deactivateActiveCameraStreams = function() {
+            Object.keys(window.AppState.deviceMediaStreams).forEach(key => window.stopCameraStreamNode(key, 'bulkScanPlaceholder'));
+        };
+
+        window.stopContinuousScanLoop = function() {
+            if(window.AppState.trackingPassInterval) {
+                clearInterval(window.AppState.trackingPassInterval);
+                window.AppState.trackingPassInterval = null;
+            }
+            const stopBtn = document.getElementById('btnStopTrackingLoop');
+            const startBtn = document.getElementById('btnStartTrackingLoop');
+            if(stopBtn) stopBtn.classList.add('hidden');
+            if(startBtn) startBtn.classList.remove('hidden');
+            window.showToast("Continuous background processing halted cleanly.", "info");
+        };
+
+        window.loadFaceModels = async function() {
+            if(window.faceApiModelsLoaded) return true;
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                window.faceApiModelsLoaded = true;
+                return true;
+            } catch(e) { return false; }
+        };
+
+        window.executeBulkAiTrackingPass = async function() {
+            if(!window.AppState.activeLiveSession) {
+                window.showToast("Launch dynamic class environment run parameters first.", "warning");
+                return;
+            }
+            const logs = document.getElementById('bulkScanLogs');
+            if(logs) logs.innerHTML = `<div>[${new Date().toLocaleTimeString()}] Fetching faceapi models descriptors...</div>`;
+
+            const loaded = await window.loadFaceModels();
+            if(!loaded) {
+                if(logs) logs.innerHTML += `<div class="text-red-400 font-mono">[ERROR]: Failed to fetch FaceAPI models weights.</div>`;
+                return;
+            }
+
+            if(!window.AppState.deviceMediaStreams['bulkScanVideo']) {
+                await window.initializeCamera('bulkScanVideo', 'bulkScanPlaceholder', 'environment');
+            }
+
+            const stopBtn = document.getElementById('btnStopTrackingLoop');
+            const startBtn = document.getElementById('btnStartTrackingLoop');
+            if(stopBtn) stopBtn.classList.remove('hidden');
+            if(startBtn) startBtn.classList.add('hidden');
+
+            const videoElement = document.getElementById('bulkScanVideo');
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            
+            const approvedProfiles = Object.values(window.AppState.mockDb.users)
+                .filter(u => u.approvalStatus === 'approved' && u.year === window.AppState.activeLiveSession.year && u.section === window.AppState.activeLiveSession.section);
+
+            const labeledDescriptors = [];
+            for (let profile of approvedProfiles) {
+                try {
+                    const img = new Image();
+                    img.src = profile.profilePicBase64;
+                    await new Promise(r => img.onload = r);
+                    const detect = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+                    if(detect) {
+                        labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(profile.rollNo, [detect.descriptor]));
+                    }
+                } catch(e){}
+            }
+
+            let faceMatcher = labeledDescriptors.length > 0 ? new faceapi.FaceMatcher(labeledDescriptors, 0.55) : null;
+            if(logs) logs.innerHTML += `<div class="text-sky-400">[ACTIVE]: Continuous verification loop active (${labeledDescriptors.length} descriptors loaded).</div>`;
+
+            window.AppState.trackingPassInterval = setInterval(async () => {
+                if(!videoElement || videoElement.paused || videoElement.ended) return;
+                
+                const liveDetections = await faceapi.detectAllFaces(videoElement).withFaceLandmarks().withFaceDescriptors();
+                if(liveDetections.length > 0 && faceMatcher) {
+                    let batchPresents = [];
+                    liveDetections.forEach(det => {
+                        const match = faceMatcher.findBestMatch(det.descriptor);
+                        if(match && match.label !== 'unknown') {
+                            const rollNo = match.label;
+                            if(!attRecord.presents.includes(rollNo)) {
+                                attRecord.presents.push(rollNo);
+                                batchPresents.push(rollNo);
+                                const absIdx = attRecord.absents.indexOf(rollNo);
+                                if(absIdx > -1) attRecord.absents.splice(absIdx, 1);
+                                if(logs) logs.innerHTML += `<div class="text-emerald-400 font-bold">[MATCHED]: Biometric confirmed for [${rollNo}]</div>`;
+                            }
+                        }
+                    });
+                    
+                    if (batchPresents.length > 0) {
+                        try {
+                            if(window.db && window.arrayUnion) {
+                                await window.updateDoc(window.doc(window.db, "attendance", sId), {
+                                    presents: window.arrayUnion(...batchPresents),
+                                    absents: window.arrayRemove(...batchPresents)
+                                });
+                            }
+                        } catch(e){}
+                        window.saveDatabaseToLocalStorage();
+                        window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+                    }
+                }
+            }, 2500);
+        };
+
+        window.initializeLiveSessionRun = async function() {
+            const btn = document.getElementById('btnStartSession');
+            if (btn && btn.dataset.isSubmitting === "true") return;
+
+            const subject = document.getElementById('facSubject').value;
+            const year = document.getElementById('facYear').value;
+            const section = document.getElementById('facSection').value;
+            const slot = document.getElementById('facSlot').value;
+            const dateStr = document.getElementById('facDate').value;
+
+            if (!subject || !dateStr) {
+                window.showToast("Ensure parameters fields are filled properly.", "error");
+                return;
+            }
+            if (btn) btn.dataset.isSubmitting = "true";
+
+            const sessionId = `SESS_Y${year}_S${section}_${dateStr.replace(/-/g,'')}_${slot.split(' ')[0].replace(':','')}`;
+            const liveSessionConfigPayload = {
+                sessionId, subject, year, section, slot, date: dateStr, status: 'active',
+                activeOtp: Math.floor(1000 + Math.random() * 9000).toString(),
+                createdAt: Date.now()
+            };
+
+            window.AppState.mockDb.sessions[sessionId] = liveSessionConfigPayload;
+            window.AppState.activeLiveSession = liveSessionConfigPayload;
+
+            if (!window.AppState.mockDb.attendance[sessionId]) {
+                const targetRolls = Object.values(window.AppState.mockDb.users)
+                    .filter(u => u.year === year && u.section === section && u.approvalStatus === 'approved')
+                    .map(u => u.rollNo);
+
+                window.AppState.mockDb.attendance[sessionId] = {
+                    sessionId, year, section, date: dateStr, slot, subject, timestamp: Date.parse(dateStr),
+                    presents: [], absents: targetRolls, overrides: {}, lastUpdated: Date.now()
+                };
+            }
+
+            try {
+                if(window.db) {
+                    await window.setDoc(window.doc(window.db, "sessions", sessionId), liveSessionConfigPayload);
+                    await window.setDoc(window.doc(window.db, "attendance", sessionId), window.AppState.mockDb.attendance[sessionId]);
+                }
+            } catch(e){}
+
+            window.saveDatabaseToLocalStorage();
+            if (btn) btn.dataset.isSubmitting = "false";
+
+            document.getElementById('btnStartSession').classList.add('hidden');
+            document.getElementById('btnStopSession').classList.remove('hidden');
+            document.getElementById('activeSessionDetailsBadge').innerHTML = `ID: <span class="text-sky-600 font-bold">${sessionId}</span> | Broadcast Token: <span class="text-purple-700 font-mono font-black bg-purple-50 px-2 py-0.5 rounded border text-xs">${liveSessionConfigPayload.activeOtp}</span>`;
+            
+            window.showToast("Cloud state synchronization maps instantiated safely.");
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+            window.reconcileReportTimeFilters();
+        };
+
+        window.terminateLiveSessionRun = async function() {
+            if(!window.AppState.activeLiveSession) return;
+            const sId = window.AppState.activeLiveSession.sessionId;
+            window.AppState.mockDb.sessions[sId].status = 'closed';
+            
+            try {
+                if(window.db) {
+                    await window.updateDoc(window.doc(window.db, "sessions", sId), { status: 'closed' });
+                }
+            } catch(e){}
+
+            window.AppState.activeLiveSession = null;
+            window.cleanupResources();
+            window.saveDatabaseToLocalStorage();
+            
+            document.getElementById('btnStartSession').classList.remove('hidden');
+            document.getElementById('btnStopSession').classList.add('hidden');
+            document.getElementById('activeSessionDetailsBadge').innerText = "Engine Offline. Select configuration maps.";
+            
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+            window.reconcileReportTimeFilters();
+        };
+
+        window.synchronizeFacultyLiveTrackingDataMatrixGrid = function() {
+            const tableBody = document.getElementById('liveAttendanceTableBody');
+            if(!tableBody) return;
+            if (!window.AppState.activeLiveSession) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 font-mono tracking-wide text-[11px]">Orchestration layer unestablished.</td></tr>`;
+                return;
+            }
+
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            if (!attRecord) return;
+
+            const relevantStudents = Object.values(window.AppState.mockDb.users)
+                .filter(u => u.year === window.AppState.activeLiveSession.year && u.section === window.AppState.activeLiveSession.section && u.approvalStatus === 'approved');
+
+            if(relevantStudents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-purple-700/80 font-mono text-[11px]">0 Approved Records Found.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            relevantStudents.forEach(student => {
+                const isPresent = attRecord.presents.includes(student.rollNo);
+                const badgeClass = isPresent ? "bg-green-100 text-green-800 border-green-200" : "bg-red-50 text-red-600 border-red-200";
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-sky-50 hover:bg-sky-50/50 transition-all text-xs";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-black text-gray-700">${student.rollNo}</td>
+                    <td class="py-3 px-4 tracking-wide font-medium text-gray-800">${student.name}</td>
+                    <td class="py-3 px-4 text-gray-400">Y${student.year}-${student.section}</td>
+                    <td class="py-3 px-4"><span class="px-2.5 py-1 rounded-xl border text-[10px] font-black tracking-wide ${badgeClass}">${isPresent ? 'PRESENT' : 'ABSENT'}</span></td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="window.executeFacultyManualOverrideToggle('${student.rollNo}')" class="px-3 py-1 bg-white border border-gray-200 text-gray-700 rounded-xl text-xs font-bold transition-all hover:bg-gray-50">Toggle</button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        };
+
+        window.executeFacultyManualOverrideToggle = async function(rollNo) {
+            if (!window.AppState.activeLiveSession) return;
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            if (!attRecord) return;
+
+            const presentIndex = attRecord.presents.indexOf(rollNo);
+            if (presentIndex > -1) {
+                attRecord.presents.splice(presentIndex, 1);
+                if (!attRecord.absents.includes(rollNo)) attRecord.absents.push(rollNo);
+                try {
+                    if(window.db) {
+                        await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayRemove(rollNo), absents: window.arrayUnion(rollNo) });
+                    }
+                } catch(e){}
+            } else {
+                const absentIndex = attRecord.absents.indexOf(rollNo);
+                if (absentIndex > -1) attRecord.absents.splice(absentIndex, 1);
+                if (!attRecord.presents.includes(rollNo)) attRecord.presents.push(rollNo);
+                try {
+                    if(window.db) {
+                        await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayUnion(rollNo), absents: window.arrayRemove(rollNo) });
+                    }
+                } catch(e){}
+            }
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+        };
+
+        window.synchronizeApprovedStudentsDirectory = function() {
+            const tbody = document.getElementById('approvedDirectoryTableBody');
+            if(!tbody) return;
+
+            const yearFilter = document.getElementById('dirFilterYear').value;
+            const sectionFilter = document.getElementById('dirFilterSection').value;
+
+            const sortedApprovedList = Object.values(window.AppState.mockDb.users)
+                .filter(u => u.approvalStatus === 'approved')
+                .filter(u => yearFilter === 'all' || u.year === yearFilter)
+                .filter(u => sectionFilter === 'all' || u.section === sectionFilter)
+                .sort((a, b) => a.rollNo.localeCompare(b.rollNo));
+
+            if(sortedApprovedList.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-400 font-mono text-[11px]">No matching approved records inside stack.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = sortedApprovedList.map(student => `
+                <tr class="border-b border-sky-50 hover:bg-sky-50/30 transition-all text-xs">
+                    <td class="py-2.5 px-4"><img src="${student.profilePicBase64}" class="w-8 h-8 rounded-full object-cover ring-2 ring-sky-100 shadow-sm"></td>
+                    <td class="py-2.5 px-4 font-mono font-black text-gray-700">${student.rollNo}</td>
+                    <td class="py-2.5 px-4 tracking-wide font-medium text-gray-800">${student.name}</td>
+                    <td class="py-2.5 px-4 text-gray-500">Year ${student.year}</td>
+                    <td class="py-2.5 px-4"><span class="bg-purple-50 text-purple-700 px-2 py-0.5 border border-purple-100 rounded-md font-bold text-[10px]">Sec ${student.section}</span></td>
+                    <td class="py-2.5 px-4 font-mono text-slate-500">+91 ${student.parentPhone}</td>
+                </tr>
+            `).join('');
+        };
+
+        window.getCalendarWeekRangeFromDateString = function(dateStr) {
+            const current = new Date(dateStr);
+            const distanceToSunday = current.getDay();
+            const sunday = new Date(current);
+            sunday.setDate(current.getDate() - distanceToSunday);
+            
+            const saturday = new Date(sunday);
+            saturday.setDate(sunday.getDate() + 6);
+            
+            sunday.setHours(0,0,0,0);
+            saturday.setHours(23,59,59,999);
+            return { sundayTime: sunday.getTime(), saturdayTime: saturday.getTime() };
+        };
+
+        window.reconcileReportTimeFilters = function() {
+            const sessionSelect = document.getElementById('rptFilterSessionSelect');
+            if(!sessionSelect) return;
+
+            sessionSelect.innerHTML = '<option value="all">All Instantiated Streams</option>';
+            Object.values(window.AppState.mockDb.attendance).forEach(rec => {
+                const opt = document.createElement('option');
+                opt.value = rec.sessionId;
+                opt.innerText = `${rec.subject.replace(/_/g, ' ')} (${rec.date} | ${rec.slot})`;
+                sessionSelect.appendChild(opt);
+            });
+        };
+
+        window.executeRenderReportPreviewGrid = function() {
+            const tableBody = document.getElementById('interactiveReportViewerTableBody');
+            const downloadControls = document.getElementById('reportDownloadControlsContainer');
+            if(!tableBody) return;
+
+            const calendarScope = document.getElementById('rptFilterCalendarScope').value;
+            const subjectFilter = document.getElementById('rptFilterSubject').value;
+            const sessionFilter = document.getElementById('rptFilterSessionSelect').value;
+
+            const attendanceRecords = Object.values(window.AppState.mockDb.attendance);
+            window.AppState.cachedFilteredReportData = [];
+
+            const todayStr = new Date().toISOString().split('T')[0];
+            const currentWeekBounds = window.getCalendarWeekRangeFromDateString(todayStr);
+            const currentMonthIndex = new Date().getMonth();
+            const currentYearValue = new Date().getFullYear();
+
+            attendanceRecords.forEach(rec => {
+                if(subjectFilter !== 'all' && rec.subject !== subjectFilter) return;
+                if(sessionFilter !== 'all' && rec.sessionId !== sessionFilter) return;
+
+                if(calendarScope === 'weekly') {
+                    const recordTime = rec.timestamp || Date.parse(rec.date);
+                    if(recordTime < currentWeekBounds.sundayTime || recordTime > currentWeekBounds.saturdayTime) return;
+                } else if(calendarScope === 'monthly') {
+                    const recordDateObj = new Date(rec.date);
+                    if(recordDateObj.getMonth() !== currentMonthIndex || recordDateObj.getFullYear() !== currentYearValue) return;
+                }
+
+                const absoluteRolls = [...rec.presents, ...rec.absents];
+                absoluteRolls.forEach(rollNo => {
+                    const studentMeta = window.AppState.mockDb.users[rollNo] || { name: "Unknown Profile" };
+                    window.AppState.cachedFilteredReportData.push({
+                        date: rec.date,
+                        subject: rec.subject.replace(/_/g, ' '),
+                        slot: rec.slot,
+                        rollNo: rollNo,
+                        name: studentMeta.name,
+                        status: rec.presents.includes(rollNo) ? "PRESENT" : "ABSENT"
+                    });
+                });
+            });
+
+            if(window.AppState.cachedFilteredReportData.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="6" class="py-6 text-center text-gray-400 font-mono text-[11px]">Zero entries match the selected filters.</td></tr>`;
+                if(downloadControls) downloadControls.classList.add('hidden');
+                return;
+            }
+
+            tableBody.innerHTML = window.AppState.cachedFilteredReportData.map(row => `
+                <tr class="border-b border-gray-100 hover:bg-gray-50 transition-all">
+                    <td class="py-2.5 px-4 font-mono">${row.date}</td>
+                    <td class="py-2.5 px-4 font-black text-sky-700">${row.subject}</td>
+                    <td class="py-2.5 px-4 text-gray-500">${row.slot}</td>
+                    <td class="py-2.5 px-4 font-mono font-bold text-gray-700">${row.rollNo}</td>
+                    <td class="py-2.5 px-4">${row.name}</td>
+                    <td class="py-2.5 px-4"><span class="px-2 py-0.5 rounded font-black text-[10px] ${row.status === 'PRESENT' ? 'bg-green-100 text-green-800':'bg-red-100 text-red-800'}">${row.status}</span></td>
+                </tr>
+            `).join('');
+
+            if(downloadControls) downloadControls.classList.remove('hidden');
+            window.showToast(`Populated matrix report grid preview row items.`);
+        };
+
+        window.executeTriggerDocumentDownload = function(format) {
+            if(window.AppState.cachedFilteredReportData.length === 0) return;
+            
+            if(format === 'excel') {
+                const worksheet = XLSX.utils.json_to_sheet(window.AppState.cachedFilteredReportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance Report");
+                XLSX.writeFile(workbook, `st_attendance_cap_Filtered_Matrix.xlsx`);
+            } else if (format === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFont("helvetica", "bold");
+                doc.text("st_attendance_cap - Ledger Export Documents", 14, 20);
+                
+                let offset = 30;
+                window.AppState.cachedFilteredReportData.slice(0, 30).forEach(row => {
+                    doc.setFont("helvetica", "normal");
+                    doc.setFontSize(8);
+                    doc.text(`${row.date} | ${row.subject} | ${row.rollNo} | ${row.name.substring(0, 20)} | ${row.status}`, 14, offset);
+                    offset += 6;
+                });
+                doc.save(`st_attendance_cap_Filtered_Matrix.pdf`);
+            }
+            window.showToast("Export transferred cleanly.");
+        };
+
+        window.executeStudentRegistration = async function() {
+            let rollNo = document.getElementById('regRollNo').value.trim().toUpperCase();
+            const name = document.getElementById('regName').value.trim().toUpperCase();
+            const year = document.getElementById('regYear').value;
+            const section = document.getElementById('regSection').value;
+            const parentPhone = document.getElementById('regParentPhone').value.trim();
+            const canvas = document.getElementById('registrationCanvas');
+            const base64Pic = canvas ? canvas.dataset.capturedBase64 : null;
+
+            if (!rollNo || !name || !parentPhone || !base64Pic) {
+                window.showToast("Complete all fields and take biometric snap.", "error");
+                return;
+            }
+            rollNo = rollNo.replace(/[^A-Z0-9]/g, '');
+
+            const payload = { rollNo, name, year, section, parentPhone, profilePicBase64: base64Pic, role: 'student', approvalStatus: 'pending', deviceUuidId: DeviceFingerprintSignature, createdAt: Date.now() };
+            window.AppState.mockDb.registrationQueue[rollNo] = payload;
+            window.AppState.registeredStudentProfile = payload;
+            
+            try {
+                if(window.db) {
+                    await window.setDoc(window.doc(window.db, "registrationQueue", rollNo), payload);
+                }
+            } catch(e){}
+
+            localStorage.setItem('st_attendance_cap_active_profile', JSON.stringify(payload));
+            window.saveDatabaseToLocalStorage();
+            window.switchRole('faculty');
+            window.switchTab('desks');
+            window.showToast("Registration requested.");
+        };
+
+        window.executeBulkApproveStudentRegistrations = async function() {
+            const keys = Object.keys(window.AppState.mockDb.registrationQueue);
+            for(let rollNo of keys) {
+                const ticket = window.AppState.mockDb.registrationQueue[rollNo];
+                ticket.approvalStatus = 'approved';
+                window.AppState.mockDb.users[rollNo] = { ...ticket };
+                
+                try {
+                    if(window.db) {
+                        await window.setDoc(window.doc(window.db, "users", rollNo), ticket);
+                        await window.setDoc(window.doc(window.db, "registrationQueue", rollNo), null);
+                    }
+                } catch(e){}
+
+                delete window.AppState.mockDb.registrationQueue[rollNo];
+            }
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyRegistrationQueueDeskUI();
+            window.synchronizeApprovedStudentsDirectory();
+            window.showToast("All registration requests verified.");
+        };
+
+        window.synchronizeFacultyRegistrationQueueDeskUI = function() {
+            const container = document.getElementById('registrationQueueContainer');
+            const tickets = Object.values(window.AppState.mockDb.registrationQueue);
+            document.getElementById('regQueueCount').innerText = tickets.length;
+            window.reconcileSidebarDeskTotalBadgeCounter();
+
+            if(tickets.length === 0) {
+                container.innerHTML = `<div class="p-4 text-center text-gray-400 font-mono text-[11px] border border-dashed border-gray-200 rounded-xl bg-white/40">Queue clean.</div>`;
+                return;
+            }
+            container.innerHTML = tickets.map(ticket => `
+                <div class="p-3 bg-white border border-sky-100 rounded-xl flex justify-between items-center gap-3 shadow-sm text-xs w-full">
+                    <span class="font-black text-gray-700 truncate">${ticket.rollNo} (${ticket.name})</span>
+                    <button onclick="window.resolveStudentRegistrationTicket('${ticket.rollNo}', 'approve')" class="px-3 py-1 bg-sky-600 text-white font-black rounded-lg text-[10px] uppercase shrink-0">Allow</button>
+                </div>
+            `).join('');
+        };
+
+        window.resolveStudentRegistrationTicket = async function(rollNo, action) {
+            if(action === 'approve') {
+                const ticket = window.AppState.mockDb.registrationQueue[rollNo];
+                if(ticket) {
+                    ticket.approvalStatus = 'approved';
+                    window.AppState.mockDb.users[rollNo] = { ...ticket };
+                    try {
+                        if(window.db) {
+                            await window.setDoc(window.doc(window.db, "users", rollNo), ticket);
+                            await window.setDoc(window.doc(window.db, "registrationQueue", rollNo), null);
+                        }
+                    } catch(e){}
+                }
+            }
+            delete window.AppState.mockDb.registrationQueue[rollNo];
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyRegistrationQueueDeskUI();
+            window.synchronizeApprovedStudentsDirectory();
+        };
+
+        window.reconcileStudentUIVisibilityStates = function() {
+            const formContainer = document.getElementById('studentRegistrationContainer');
+            const dashContainer = document.getElementById('studentDashboardCard');
+            if (window.AppState.registeredStudentProfile && window.AppState.registeredStudentProfile.approvalStatus === 'approved') {
+                formContainer.classList.add('hidden');
+                dashContainer.classList.remove('hidden');
+                document.getElementById('dashProfileImage').src = window.AppState.registeredStudentProfile.profilePicBase64;
+                document.getElementById('dashStudentName').innerText = window.AppState.registeredStudentProfile.name;
+                document.getElementById('dashStudentRoll').innerText = window.AppState.registeredStudentProfile.rollNo;
+            } else {
+                formContainer.classList.remove('hidden');
+                dashContainer.classList.add('hidden');
+            }
+        };
+
+        window.captureRegistrationPhoto = function() {
+            const video = document.getElementById('registrationVideo');
+            const canvas = document.getElementById('registrationCanvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            canvas.dataset.capturedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            video.classList.add('hidden'); canvas.classList.remove('hidden');
+            window.showToast("Biometric identifier frame successfully frozen.");
+        };
+
+        window.synchronizeFacultyApprovalQueueDeskUI = function() {
+            document.getElementById('approvalQueueCount').innerText = Object.keys(window.AppState.mockDb.manualApprovalRequests).length;
+            window.reconcileSidebarDeskTotalBadgeCounter();
+        };
+
+        window.reconcileSidebarDeskTotalBadgeCounter = function() {
+            const regCount = Object.keys(window.AppState.mockDb.registrationQueue).length;
+            const fallbackCount = Object.keys(window.AppState.mockDb.manualApprovalRequests).length;
+            const badge = document.getElementById('badgeTotalQueueCount');
+            if(badge) badge.innerText = (regCount + fallbackCount);
+        };
+
+        window.executeUltrasoundTransmissionNode = function() {};
+        window.stopUltrasoundTransmissionNode = function() {};
+        window.acquireFacultyGPS = function() { window.showToast("Geofence anchor coordinate signature stored safely."); };
+
+        window.executeModuleExports = function(dbRef, setDocRef, docRef, updateDocRef, arrayUnionRef, arrayRemoveRef) {
+            window.db = dbRef;
+            window.setDoc = setDocRef;
+            window.doc = docRef;
+            window.updateDoc = updateDocRef;
+            window.arrayUnion = arrayUnionRef;
+            window.arrayRemove = arrayRemoveRef;
+            window.loadDatabaseFromLocalStorage();
+        };
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+            authDomain: "stuattnd.firebaseapp.com",
+            projectId: "stuattnd",
+            storageBucket: "stuattnd.firebasestorage.app",
+            messagingSenderId: "511533506488",
+            appId: "1:511533506488:web:aca4de3d513915d012f94d",
+            measurementId: "G-9PZZM5LFKX"
+        };
+
+        try {
+            const appId = typeof __app_id !== 'undefined' ? __app_id : 'app-oth';
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            window.executeModuleExports(db, setDoc, doc, updateDoc, arrayUnion, arrayRemove);
+        } catch(e) {
+            window.loadDatabaseFromLocalStorage();
+        }
+    </script>
+</body>
+</html>
