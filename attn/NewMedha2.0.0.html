@@ -1,0 +1,1944 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, shrink-to-fit=no">
+    <title>st_attendance_cap - Academic Authentication Matrix</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandSky: '#e0f2fe',
+                        brandGreen: '#f0fdf4',
+                        brandPurple: '#f3e8ff',
+                        brandViolet: '#fae8ff',
+                        skyText: '#0369a1',
+                        greenText: '#15803d',
+                        purpleText: '#6b21a8',
+                        violetText: '#701a75'
+                    },
+                    boxShadow: {
+                        'designer': '0 10px 30px -5px rgba(3, 105, 161, 0.08), 0 4px 12px -2px rgba(107, 33, 168, 0.04)',
+                        'neon-glow': '0 0 20px -3px rgba(3, 105, 161, 0.2)',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #f0f9ff 0%, #f5f3ff 50%, #f0fdf4 100%);
+            overscroll-behavior-y: contain;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .designer-glass {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        .designer-input {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(3, 105, 161, 0.15);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .designer-input:focus {
+            border-color: #0369a1;
+            box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.1);
+            background: #ffffff;
+        }
+        
+        /* Custom Modern Date Input Styling */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            background-color: transparent;
+            padding: 5px;
+            cursor: pointer;
+            border-radius: 6px;
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator:hover {
+            background-color: rgba(3, 105, 161, 0.1);
+        }
+        
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0, 0, 0, 0.02); }
+        ::-webkit-scrollbar-thumb { background: rgba(3, 105, 161, 0.15); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(3, 105, 161, 0.3); }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        
+        #toast-container { perspective: 1000px; }
+        .toast-card {
+            animation: toast-entrance 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            transition: all 0.3s ease;
+        }
+        .toast-card.hide { animation: toast-exit 0.3s ease forwards; }
+        @keyframes toast-entrance {
+            0% { transform: translateY(20px) scale(0.9); opacity: 0; }
+            100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        @keyframes toast-exit {
+            0% { transform: scale(1); opacity: 1; }
+            100% { transform: scale(0.95) translateY(-10px); opacity: 0; }
+        }
+        
+        .scan-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            overflow: hidden;
+            background: #000;
+        }
+        .scan-line {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: rgba(16, 185, 129, 0.8);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.8), 0 0 20px rgba(16, 185, 129, 0.8);
+            animation: scan 2s linear infinite;
+            z-index: 10;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+        
+        .status-valid { color: #15803d; font-weight: 900; }
+        .status-invalid { color: #b91c1c; font-weight: 900; }
+        
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        input[type=number] { -moz-appearance: textfield; }
+    </style>
+    
+    <script>
+        window.showToast = function(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            if(!container) return;
+            const toast = document.createElement('div');
+            let bgStyle, icon;
+            if(type === 'success') {
+                bgStyle = 'bg-white/95 border-emerald-200 text-greenText shadow-neon-emerald';
+                icon = 'fa-circle-check text-emerald-500';
+            } else if(type === 'error') {
+                bgStyle = 'bg-white/95 border-rose-200 text-rose-600';
+                icon = 'fa-circle-exclamation text-rose-500';
+            } else if (type === 'info') {
+                bgStyle = 'bg-white/95 border-sky-200 text-skyText shadow-neon-glow';
+                icon = 'fa-bell text-sky-500';
+            } else if (type === 'warning') {
+                bgStyle = 'bg-white/95 border-amber-200 text-amber-600 shadow-sm';
+                icon = 'fa-triangle-exclamation text-amber-500';
+            }
+            toast.className = `toast-card w-full p-4 rounded-xl border flex items-start space-x-3 pointer-events-auto ${bgStyle} backdrop-blur-md shadow-2xl`;
+            toast.innerHTML = `
+                <i class="fa-solid ${icon} mt-0.5 text-base shrink-0"></i>
+                <div class="flex-1">
+                    <p class="text-xs font-black font-mono tracking-tight uppercase">${type} message</p>
+                    <p class="text-[11px] text-slate-600 font-medium mt-0.5 leading-relaxed opacity-90">${message}</p>
+                </div>
+                <button class="text-slate-400 hover:text-slate-600 transition-colors shrink-0" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark text-xs"></i></button>
+            `;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('hide');
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 4550);
+        };
+    </script>
+</head>
+<body class="h-full text-slate-800 font-sans antialiased flex flex-col overflow-hidden">
+
+    <div class="h-1.5 w-full bg-gradient-to-r from-sky-400 via-purple-400 to-emerald-400 z-50 shrink-0"></div>
+
+    <div id="toast-container" class="fixed top-6 right-4 left-4 sm:left-auto sm:w-96 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <header class="w-full border-b border-sky-100 bg-white/75 backdrop-blur-md sticky top-0 z-40 px-4 py-3 shrink-0">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-gradient-to-tr from-sky-400 to-purple-500 p-2 rounded-xl shadow-neon-glow">
+                    <i class="fa-solid fa-signature text-lg text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-md font-black tracking-wider bg-gradient-to-r from-sky-600 via-purple-600 to-emerald-600 bg-clip-text text-transparent uppercase">st_attendance_cap</h1>
+                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest">Academic Identity Matrix Terminal</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="px-3 py-1 rounded-full text-[10px] uppercase font-black bg-sky-50 text-sky-700 border border-sky-200/60 shadow-sm flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse"></span> Cloud Permanent Tier
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-4 md:p-6 flex flex-col md:flex-row gap-4 md:gap-6 overflow-hidden">
+        
+        <aside class="hidden md:flex flex-col w-64 shrink-0 designer-glass p-4 rounded-3xl justify-between shadow-designer">
+            <div class="space-y-2">
+                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest px-3 mb-3">Workspace Node</p>
+                <button onclick="window.switchRole('student')" id="sideBtnStudent" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm bg-white text-sky-600 border border-sky-100 shadow-sm">
+                    <i class="fa-solid fa-user-graduate text-base"></i>
+                    <span>Student Terminal</span>
+                </button>
+                <button onclick="window.switchRole('faculty')" id="sideBtnFaculty" class="w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm text-slate-500 hover:bg-white/60 hover:text-slate-800 border border-transparent">
+                    <i class="fa-solid fa-fingerprint text-base"></i>
+                    <span>Faculty Console</span>
+                </button>
+            </div>
+            
+            <div class="p-3 bg-white/80 rounded-2xl border border-sky-100 text-[10px] font-mono text-slate-400 space-y-1">
+                <div class="font-bold text-slate-500">ID: st_attendance_cap</div>
+                <div>STORE: Google Firestore</div>
+                <div id="deviceLockBadge" class="text-purple-600 font-bold flex items-center gap-1 mt-1"><i class="fa-solid fa-mobile-button animate-pulse"></i> Handshake Engaged</div>
+            </div>
+        </aside>
+
+        <main class="flex-1 h-full flex flex-col overflow-y-auto no-scrollbar pb-20 md:pb-0">
+            
+            <section id="studentView" class="space-y-4 md:space-y-6 flex flex-col shrink-0">
+                
+                <div id="studentRegistrationContainer" class="designer-glass rounded-3xl p-5 shadow-designer">
+                    <div class="border-b border-sky-100 pb-3 mb-5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                        <div class="flex items-center space-x-2">
+                            <i class="fa-solid fa-address-card text-sky-500 text-lg"></i>
+                            <h2 class="text-sm font-black text-slate-700 uppercase tracking-wider">Device Initialization Registry</h2>
+                        </div>
+                        <span class="text-[9px] font-black text-purple-600 bg-brandPurple px-2.5 py-1 rounded-lg uppercase tracking-wide flex items-center gap-1">
+                            <i class="fa-solid fa-bolt"></i> Strict 1-Device Link Binding
+                        </span>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                        <div class="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Roll Number</label>
+                                <input type="text" id="regRollNo" oninput="this.value = this.value.toUpperCase();" placeholder="e.g., 26XX1A0501" class="w-full designer-input rounded-xl px-3.5 py-2 text-sm font-mono focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Official Name</label>
+                                <input type="text" id="regName" placeholder="Enter Full Name" class="w-full designer-input rounded-xl px-3.5 py-2 text-sm focus:outline-none">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Academic Year</label>
+                                <select id="regYear" class="w-full designer-input rounded-xl px-3 py-2 text-sm focus:outline-none">
+                                    <option value="1">I B.Tech</option>
+                                    <option value="2">II B.Tech</option>
+                                    <option value="3">III B.Tech</option>
+                                    <option value="4" selected>IV B.Tech</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Section Bound</label>
+                                <select id="regSection" class="w-full designer-input rounded-xl px-3 py-2 text-sm focus:outline-none">
+                                    <option value="A" selected>Section A</option>
+                                    <option value="B">Section B</option>
+                                    <option value="C">Section C</option>
+                                </select>
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Parent Emergency Contact</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 font-mono text-xs">+91</span>
+                                    <input type="tel" id="regParentPhone" maxlength="10" placeholder="9876543210" class="w-full designer-input rounded-xl pl-12 pr-4 py-2 text-sm font-mono focus:outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="lg:col-span-5 flex flex-col items-center justify-center bg-sky-50/50 p-4 rounded-2xl border border-sky-100/60">
+                            <div class="relative w-full max-w-[200px] aspect-square rounded-full overflow-hidden border-4 border-white bg-white shadow-designer flex items-center justify-center group">
+                                <video id="registrationVideo" autoplay muted playsinline class="w-full h-full object-cover scale-x-[-1] hidden"></video>
+                                <canvas id="registrationCanvas" class="w-full h-full object-cover scale-x-[-1] hidden"></canvas>
+                                <div id="videoPlaceholder" class="text-center p-4 text-slate-400">
+                                    <i class="fa-solid fa-circle-user text-5xl mb-2 text-sky-200 block"></i>
+                                    <span class="text-[11px] font-bold block">Biometric Capture</span>
+                                </div>
+                            </div>
+                            <div class="mt-4 w-full max-w-[240px] flex gap-2">
+                                <button onclick="window.initializeCamera('registrationVideo', 'videoPlaceholder')" class="flex-1 bg-white hover:bg-sky-50 text-[11px] font-black py-2 rounded-xl border border-sky-200 text-sky-700 transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                                    <i class="fa-solid fa-video"></i> Init Lens
+                                </button>
+                                <button onclick="window.captureRegistrationPhoto()" class="flex-1 bg-gradient-to-r from-sky-500 to-purple-600 text-white text-[11px] font-black py-2 rounded-xl transition-all flex items-center justify-center gap-1.5 shadow-md">
+                                    <i class="fa-solid fa-aperture"></i> Snapshot
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="border-t border-sky-100 mt-5 pt-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+                        <div id="registrationStatusText" class="text-[11px] font-mono text-purple-600 font-bold"></div>
+                        <button id="btnSaveRegistration" onclick="window.executeStudentRegistration()" class="w-full sm:w-auto bg-slate-900 hover:bg-slate-800 text-white font-black px-6 py-2.5 rounded-2xl shadow-designer transition-all text-xs uppercase tracking-widest flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-fingerprint"></i> Initialize Profile & Device Bind
+                        </button>
+                    </div>
+                </div>
+
+                <div id="studentDashboardCard" class="hidden grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    <div class="lg:col-span-4 designer-glass rounded-3xl p-6 shadow-designer flex flex-col items-center justify-center text-center space-y-4 relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-brandSky rounded-full -mr-10 -mt-10 opacity-40 blur-xl pointer-events-none"></div>
+                        <div class="absolute bottom-0 left-0 w-32 h-32 bg-brandViolet rounded-full -ml-10 -mb-10 opacity-40 blur-xl pointer-events-none"></div>
+                        
+                        <div class="relative">
+                            <img id="dashProfileImage" src="" alt="Verified Identity Snapshot" class="w-28 h-28 rounded-full object-cover border-4 border-white shadow-designer ring-4 ring-purple-100">
+                            <span class="absolute bottom-1 right-1 w-6 h-6 rounded-full bg-emerald-500 border-4 border-white flex items-center justify-center text-[10px] text-white shadow"><i class="fa-solid fa-check"></i></span>
+                        </div>
+                        
+                        <div>
+                            <h3 id="dashStudentName" class="text-md font-black text-slate-800 uppercase tracking-wide">-</h3>
+                            <p id="dashStudentRoll" class="text-xs font-mono font-bold text-sky-600 mt-0.5">-</p>
+                        </div>
+                        
+                        <div class="w-full grid grid-cols-2 gap-2 pt-2 border-t border-slate-100 font-mono text-[11px]">
+                            <div class="bg-brandSky/60 px-3 py-2 rounded-xl text-skyText font-bold">
+                                <span class="block text-[9px] text-slate-400 font-sans uppercase">Academic Year</span>
+                                <span id="dashStudentYear">-</span>
+                            </div>
+                            <div class="bg-brandPurple/60 px-3 py-2 rounded-xl text-purpleText font-bold">
+                                <span class="block text-[9px] text-slate-400 font-sans uppercase">Section Bound</span>
+                                <span id="dashStudentSection">-</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-8 designer-glass rounded-3xl p-5 shadow-designer flex flex-col justify-between space-y-4">
+                        <div class="flex justify-between items-center border-b border-sky-100 pb-3">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-shield-halved text-purple-500"></i>
+                                <h3 class="text-xs font-black text-slate-700 uppercase tracking-widest">Multi-Layer Validation Matrix Portal</h3>
+                            </div>
+                            <span id="activeSessionIndicator" class="text-[9px] font-black bg-rose-50/80 border border-rose-200 text-rose-600 px-2.5 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1">
+                                <span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Matrix Stream Offline
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                            <div class="bg-white/80 p-3 rounded-2xl border border-sky-100 flex flex-col justify-between space-y-2 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">01: Face Scan</span>
+                                    <span id="statusL1Icon" class="text-slate-300"><i class="fa-solid fa-circle-xmark"></i></span>
+                                </div>
+                                <div class="relative w-full aspect-square max-w-[120px] mx-auto rounded-full overflow-hidden border-2 border-sky-200 bg-slate-950 flex items-center justify-center">
+                                    <video id="checkInVideo" autoplay muted playsinline class="w-full h-full object-cover scale-x-[-1] hidden"></video>
+                                    <canvas id="checkInCanvas" class="w-full h-full object-cover scale-x-[-1] hidden"></canvas>
+                                    <div id="checkInPlaceholder" class="text-slate-300 text-center text-[10px]"><i class="fa-solid fa-eye-dropper text-md block mb-0.5 opacity-60"></i> Lens Off</div>
+                                    <div id="scanLine" class="scan-line hidden"></div>
+                                </div>
+                                <button id="btnStartScan" onclick="window.startAIOpticsScan()" class="w-full bg-brandSky hover:bg-sky-200/80 text-skyText text-[9px] font-black py-1.5 rounded-lg transition-all uppercase tracking-wider mt-2">Start Scan</button>
+                                <div id="statusL1Text" class="text-[8px] font-mono text-center text-slate-400 mt-1">Pending Validation</div>
+                            </div>
+
+                            <div class="bg-white/80 p-3 rounded-2xl border border-sky-100 flex flex-col justify-between space-y-2 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">02: Satellites</span>
+                                    <span id="statusL2Icon" class="text-slate-300"><i class="fa-solid fa-circle-xmark"></i></span>
+                                </div>
+                                <div id="gpsCoordinatesDisplay" class="text-[10px] font-mono text-slate-400 bg-slate-50 border border-sky-50 rounded-xl p-2 h-full min-h-[56px] flex flex-col justify-center items-center text-center">
+                                    <i class="fa-solid fa-location-crosshairs text-slate-300 block mb-0.5"></i> Location Off
+                                </div>
+                                <button onclick="window.acquireStudentGPS()" class="w-full bg-brandSky hover:bg-sky-200/80 text-skyText text-[9px] font-black py-1.5 rounded-lg transition-all uppercase tracking-wider mt-2">Ping GPS</button>
+                                <div id="statusL2Text" class="text-[8px] font-mono text-center text-slate-400 mt-1">Pending Tracking</div>
+                            </div>
+
+                            <div class="bg-white/80 p-3 rounded-2xl border border-sky-100 flex flex-col justify-between space-y-2 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">03: Live OTP</span>
+                                    <span id="statusL3Icon" class="text-slate-300"><i class="fa-solid fa-circle-xmark"></i></span>
+                                </div>
+                                <div class="flex flex-col items-center justify-center h-full">
+                                    <input type="number" id="studentInputOtp" oninput="if(this.value.length > 4) this.value = this.value.slice(0,4); window.verifyOTP()" placeholder="••••" class="w-full tracking-[0.3em] text-center font-mono font-black text-lg bg-slate-50 border border-sky-100 rounded-xl py-2 text-purpleText placeholder-slate-300 focus:outline-none focus:bg-white focus:border-purple-400 transition-all">
+                                </div>
+                                <div id="statusL3Text" class="text-[8px] font-mono text-center text-slate-400 mt-1">Pending Input</div>
+                            </div>
+
+                            <div class="bg-white/80 p-3 rounded-2xl border border-sky-100 flex flex-col justify-between space-y-2 shadow-sm">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-wider">04: Acoustic</span>
+                                    <span id="statusL4Icon" class="text-slate-300"><i class="fa-solid fa-circle-xmark"></i></span>
+                                </div>
+                                <div id="acousticWaveStatusDisplay" class="text-[10px] font-mono text-slate-400 bg-slate-50 border border-sky-50 rounded-xl p-2 h-full min-h-[56px] flex flex-col justify-center items-center text-center">
+                                    <i class="fa-solid fa-microphone-slash text-slate-300 block mb-0.5"></i> Mic Asleep
+                                </div>
+                                <button onclick="window.startAcousticListeningNode()" class="w-full bg-brandSky hover:bg-sky-200/80 text-skyText text-[9px] font-black py-1.5 rounded-lg transition-all uppercase tracking-wider mt-2">Sync Wave</button>
+                                <div id="statusL4Text" class="text-[8px] font-mono text-center text-slate-400 mt-1">Pending Pulse</div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-3 justify-between items-center bg-slate-50/80 p-3 rounded-2xl border border-sky-100/60">
+                            <div class="text-center sm:text-left">
+                                <p class="text-[11px] font-black text-slate-700 uppercase tracking-wide">Validation Gateway Node Readiness Panel</p>
+                                <p class="text-[10px] text-slate-400 font-medium">Verify hardware elements and execute matrix tracking sequence parameters fields.</p>
+                            </div>
+                            <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                                <button onclick="window.executeStudentFailoverRequest()" class="flex-1 sm:flex-none px-4 py-2 bg-white border border-sky-200 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shadow-sm">Fallback Ticket</button>
+                                <button id="btnExecuteCheckIn" onclick="window.executeAutomatedStudentCheckIn()" class="flex-1 sm:flex-none px-6 py-2 bg-gradient-to-r from-sky-500 to-purple-600 text-white font-black rounded-xl text-[10px] uppercase tracking-widest transition-all shadow-neon-glow" disabled>Authorize Entry</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+
+            <section id="facultyView" class="hidden space-y-4 md:space-y-6 flex flex-col shrink-0">
+                
+                <div class="border border-sky-100 bg-white/80 p-1 rounded-2xl flex overflow-x-auto no-scrollbar gap-1 shrink-0 shadow-sm">
+                    <button onclick="window.switchFacultyTab('session')" id="facTabBtn-session" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap bg-gradient-to-r from-sky-500 to-purple-600 text-white shadow-sm">
+                        <i class="fa-solid fa-tower-broadcast mr-1.5 text-xs"></i> Session Configuration
+                    </button>
+                    <button onclick="window.switchFacultyTab('approval')" id="facTabBtn-approval" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-user-clock mr-1.5 text-xs"></i> Registration Desk <span id="regQueueCount" class="ml-1 bg-purple-600 text-white font-mono text-[9px] px-1.5 py-0.5 rounded-full font-black">0</span>
+                    </button>
+                    <button onclick="window.switchFacultyTab('override')" id="facTabBtn-override" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-ticket mr-1.5 text-xs"></i> Failover Tickets <span id="approvalQueueCount" class="ml-1 bg-rose-600 text-white font-mono text-[9px] px-1.5 py-0.5 rounded-full font-black">0</span>
+                    </button>
+                    <button onclick="window.switchFacultyTab('bulk')" id="facTabBtn-bulk" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-camera-expand text-xs mr-1.5"></i> AI Bulk Scan
+                    </button>
+                    <button onclick="window.switchFacultyTab('reports')" id="facTabBtn-reports" class="px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap text-slate-500 hover:text-slate-800">
+                        <i class="fa-solid fa-file-invoice mr-1.5 text-xs"></i> Reports Engine
+                    </button>
+                </div>
+
+                <div id="facultyTab-session" class="space-y-4 md:space-y-6 flex flex-col">
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer">
+                        <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-sky-500"></i> Configure Live Session Parameters
+                        </h2>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Target Academic Year</label>
+                                <select id="facYear" onchange="window.updateFacultySubjectDropdown()" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="1">I Year</option>
+                                    <option value="2">II Year</option>
+                                    <option value="3">III Year</option>
+                                    <option value="4" selected>IV Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Subject Scope Code</label>
+                                <select id="facSubject" class="w-full designer-input rounded-xl px-3 py-2 text-xs font-bold tracking-wide focus:outline-none">
+                                    </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Target Section Bound</label>
+                                <select id="facSection" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="A" selected>Section A</option>
+                                    <option value="B">Section B</option>
+                                    <option value="C">Section C</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Session Hourly Allocation Slot</label>
+                                <select id="facSlot" class="w-full designer-input rounded-xl px-3 py-2 text-xs focus:outline-none">
+                                    <option value="09:00 - 10:40">09:00 - 10:40 (2 Hrs)</option>
+                                    <option value="11:00 - 12:40">11:00 - 12:40 (2 Hrs)</option>
+                                    <option value="13:50 - 14:40">13:50 - 14:40 (1 Hr)</option>
+                                    <option value="14:40 - 16:20">14:40 - 16:20 (2 Hrs)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-wider mb-1">Date Parameter Block</label>
+                                <input type="date" id="facDate" class="w-full designer-input rounded-xl px-3.5 py-2 text-xs font-mono text-center focus:outline-none cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div class="mt-4 p-3.5 bg-white/60 rounded-2xl border border-sky-100 grid grid-cols-1 sm:grid-cols-2 gap-4 shadow-sm">
+                            <div class="space-y-1">
+                                <p class="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-wave-square text-purple-500 animate-pulse"></i> Near-Ultrasound Proximity Transmitter Node
+                                </p>
+                                <p class="text-[9px] text-slate-400 leading-relaxed">Emits high-frequency microtoken waves at $19.5\text{ kHz}$ to limit student authorization strictly inside local physical room ranges.</p>
+                            </div>
+                            <div class="space-y-1.5 flex flex-col justify-center items-start sm:items-end">
+                                <p class="text-[10px] font-black text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-location-crosshairs text-sky-500"></i> Anchor Spatial Geofence Target Lock
+                                </p>
+                                <button onclick="window.acquireFacultyGPS()" class="px-3 py-1.5 bg-brandSky hover:bg-sky-200 text-[10px] font-black text-sky-700 rounded-xl border border-sky-200 transition-all flex items-center gap-1 shadow-sm">
+                                    <i class="fa-solid fa-crosshairs"></i> Lock Anchor Coordinates
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 pt-4 border-t border-sky-100 flex flex-col sm:flex-row gap-3 justify-between items-center">
+                            <div id="activeSessionDetailsBadge" class="text-[11px] font-mono text-slate-500 text-center sm:text-left bg-white/90 px-4 py-2 rounded-xl border border-sky-100 shadow-sm w-full sm:w-auto">
+                                Core Engine Matrix Standby. Initializing sequence offline.
+                            </div>
+                            <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                                <button id="btnStopSession" onclick="window.terminateLiveSessionRun()" class="hidden w-full sm:w-auto px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all">
+                                    Kill Broadcast Run
+                                </button>
+                                <button id="btnStartSession" onclick="window.initializeLiveSessionRun()" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-r from-sky-500 via-purple-500 to-indigo-600 text-white font-black rounded-2xl text-xs uppercase tracking-widest transition-all shadow-neon-glow">
+                                    Launch Session Matrix
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer flex-1 flex flex-col overflow-hidden">
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-sky-100 pb-3 mb-4 gap-3 shrink-0">
+                            <div class="space-y-0.5">
+                                <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fa-solid fa-list-check text-emerald-500"></i> Live Dynamic Attendance Ledger Records Matrix
+                                </h2>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Year and Section isolated synchronized viewports parsing data entries in actual real-time.</p>
+                            </div>
+                            <button onclick="window.executeGlobalWhatsAppBroadcast()" class="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[10px] font-black rounded-xl transition-all shadow flex items-center justify-center gap-1.5 uppercase tracking-widest">
+                                <i class="fa-brands fa-whatsapp text-sm"></i> 1-Click WhatsApp Absentee Alerts Dispatch
+                            </button>
+                        </div>
+
+                        <div class="overflow-x-auto border border-sky-100 rounded-2xl bg-white/50 shadow-inner">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="border-b border-sky-100 bg-sky-50/40 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                        <th class="py-3 px-4">Student Roll Number</th>
+                                        <th class="py-3 px-4">Official Student Name String</th>
+                                        <th class="py-3 px-4">Year & Sec Details</th>
+                                        <th class="py-3 px-4">Verification Status</th>
+                                        <th class="py-3 px-4 text-right">Manual Action Controller Overrides</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="liveAttendanceTableBody" class="divide-y divide-sky-100 text-xs font-bold text-slate-600">
+                                    <tr>
+                                        <td colspan="5" class="py-8 text-center text-slate-400 font-mono tracking-wide text-[11px]">
+                                            Runtime session layer unestablished. Fire live configuration parameter modules above.
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="facultyTab-approval" class="hidden space-y-4">
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer">
+                        <div class="border-b border-sky-100 pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div>
+                                <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fa-solid fa-user-plus text-purple-600"></i> Identity Registration Approval Gateway Desk
+                                </h2>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Student device binding tokens must be verified before check-in permissions grant access rights.</p>
+                            </div>
+                            <button onclick="window.executeBulkApproveStudentRegistrations()" class="w-full sm:w-auto px-4 py-2 bg-gradient-to-r from-purple-500 to-violet-600 text-white text-[10px] font-black rounded-xl transition-all shadow flex items-center justify-center gap-1.5 uppercase tracking-widest">
+                                <i class="fa-solid fa-users-check"></i> Bulk Approve All Pending Profiles
+                            </button>
+                        </div>
+                        <div id="registrationQueueContainer" class="space-y-3">
+                            <div class="p-5 text-center text-slate-400 font-mono text-[11px] border border-dashed border-sky-200 rounded-2xl bg-white/40">
+                                Profile registration authorization queue clean. No pending profiles require action.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="facultyTab-override" class="hidden space-y-4">
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer">
+                        <div class="border-b border-sky-100 pb-3 mb-4">
+                            <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-id-card-clip text-rose-500"></i> Exceptional Hardware Fault Override Fallback Authorization Desk
+                            </h2>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Authorize manual override passes for clients physically verified but dealing with sensor matrix anomalies.</p>
+                        </div>
+                        <div id="approvalQueueContainer" class="space-y-3">
+                            <div class="p-5 text-center text-slate-400 font-mono text-[11px] border border-dashed border-sky-200 rounded-2xl bg-white/40">
+                                Override intercept queue clear. No pending fallback requests reported.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="facultyTab-bulk" class="hidden space-y-4">
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer">
+                        <div class="border-b border-sky-100 pb-3 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                            <div class="space-y-0.5">
+                                <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                    <i class="fa-solid fa-expand text-cyan-600"></i> Automated Faculty Batch Biometric Scanning Matrix
+                                </h2>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Deploys peripheral camera optics arrays to batch scan and parse student faces instantly.</p>
+                            </div>
+                            <span class="text-[9px] font-mono font-black bg-cyan-50 border border-cyan-200 text-cyan-700 px-2.5 py-1 rounded-lg uppercase tracking-wider">Continuous Scan Vector</span>
+                        </div>
+                        
+                        <div id="bulkActiveSessionInfo" class="mb-4 p-3 bg-sky-50 border border-sky-100 rounded-xl hidden shadow-inner">
+                            <p class="text-[10px] text-slate-500 font-black uppercase tracking-wider mb-2">Targeting Active Session:</p>
+                            <div class="flex flex-wrap gap-2 text-xs font-black text-sky-700">
+                                <span id="bulkInfoSubject" class="bg-white px-2.5 py-1 rounded-lg shadow-sm border border-sky-100 uppercase">-</span>
+                                <span id="bulkInfoClass" class="bg-white px-2.5 py-1 rounded-lg shadow-sm border border-sky-100 uppercase">-</span>
+                                <span id="bulkInfoTime" class="bg-white px-2.5 py-1 rounded-lg shadow-sm border border-sky-100 font-mono">-</span>
+                            </div>
+                        </div>
+                        <div id="bulkNoSessionAlert" class="mb-4 p-3 bg-rose-50 border border-rose-100 rounded-xl text-rose-600 text-[10px] font-black uppercase tracking-wider text-center shadow-sm">
+                            <i class="fa-solid fa-circle-exclamation mr-1"></i> No Active Session Running. Please configure and launch a session first.
+                        </div>
+
+                        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                            <div class="lg:col-span-6 flex flex-col items-center justify-center bg-white/60 p-4 rounded-2xl border border-sky-100 shadow-sm">
+                                <div class="relative w-full aspect-video max-w-md bg-slate-950 rounded-2xl overflow-hidden border-2 border-sky-100 shadow-xl flex items-center justify-center group">
+                                    <video id="bulkScanVideo" autoplay muted playsinline class="w-full h-full object-cover hidden"></video>
+                                    <canvas id="bulkScanCanvas" class="w-full h-full object-cover hidden"></canvas>
+                                    <div id="bulkScanPlaceholder" class="text-center text-slate-400 text-[11px] p-4">
+                                        <i class="fa-solid fa-circle-nodes text-3xl mb-2 text-sky-200 block"></i>
+                                        Optical Scanning Matrix Interface Offline
+                                    </div>
+                                    <div id="bulkScanLine" class="scan-line hidden"></div>
+                                </div>
+                                <div class="mt-3 flex gap-2 w-full max-w-md">
+                                    <button onclick="window.initializeCamera('bulkScanVideo', 'bulkScanPlaceholder')" class="flex-1 py-2 bg-white hover:bg-sky-50 border border-sky-200 text-sky-700 text-[11px] font-black rounded-xl transition-all uppercase tracking-wider shadow-sm">
+                                        Open Optical Lens
+                                    </button>
+                                    <button onclick="window.executeBulkAiTrackingPass()" class="flex-1 py-2 bg-gradient-to-r from-cyan-500 to-sky-600 text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all shadow-neon-glow">
+                                        Process Matrix Pass
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="lg:col-span-6 flex flex-col">
+                                <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">Real-Time Processing Log Output Trace</h3>
+                                <div id="bulkScanLogs" class="flex-1 bg-white/90 border border-sky-100 rounded-2xl p-3.5 min-h-[160px] max-h-[240px] overflow-y-auto font-mono text-[10px] leading-relaxed text-emerald-600 space-y-1 shadow-inner">
+                                    <div class="text-slate-400 italic">Awaiting optical pipeline instantiation variables...</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="facultyTab-reports" class="hidden space-y-4">
+                    <div class="designer-glass rounded-3xl p-4 sm:p-5 shadow-designer flex flex-col h-full">
+                        <div class="border-b border-sky-100 pb-3 mb-4">
+                            <h2 class="text-xs font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+                                <i class="fa-solid fa-file-invoice text-purple-600"></i> Local Spreadsheet Compilation & Analytical Report Engine
+                            </h2>
+                            <p class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Review data in tabular format before exporting.</p>
+                        </div>
+
+                        <div class="flex-1 min-h-[250px] mb-4 border border-sky-100 rounded-2xl bg-white/50 shadow-inner overflow-hidden flex flex-col">
+                             <div class="bg-sky-50/80 p-2 flex justify-between items-center border-b border-sky-100">
+                                 <span class="text-[10px] font-black text-sky-700 uppercase tracking-wider pl-2">Live Data Preview</span>
+                                 <select id="reportFilterSelect" onchange="window.filterReportPreview()" class="text-[10px] font-bold text-slate-600 bg-white border border-sky-200 rounded p-1 outline-none">
+                                     <option value="all">All Sessions</option>
+                                 </select>
+                             </div>
+                             <div class="overflow-auto flex-1">
+                                <table class="w-full text-left border-collapse">
+                                    <thead>
+                                        <tr class="bg-white/90 text-[9px] font-black text-slate-500 uppercase tracking-widest sticky top-0 shadow-sm">
+                                            <th class="py-2 px-3">Date</th>
+                                            <th class="py-2 px-3">Session</th>
+                                            <th class="py-2 px-3">Roll No</th>
+                                            <th class="py-2 px-3">Name</th>
+                                            <th class="py-2 px-3">Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reportPreviewTableBody" class="divide-y divide-sky-100 text-[10px] font-medium text-slate-600">
+                                        <tr><td colspan="5" class="py-6 text-center text-slate-400 font-mono">No data available for preview.</td></tr>
+                                    </tbody>
+                                </table>
+                             </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 shrink-0">
+                            <div class="bg-white/80 border border-sky-100 p-3 rounded-2xl text-center space-y-2 shadow-sm">
+                                <i class="fa-solid fa-file-excel text-xl text-emerald-500"></i>
+                                <h3 class="text-[10px] font-black uppercase text-slate-600 tracking-wide">Export to Excel</h3>
+                                <button onclick="window.generateReport('all', 'excel')" class="w-full py-1.5 bg-brandGreen text-greenText text-[10px] font-black rounded-lg uppercase hover:bg-green-200 transition-all shadow-sm">Download XLSX</button>
+                            </div>
+                            <div class="bg-white/80 border border-sky-100 p-3 rounded-2xl text-center space-y-2 shadow-sm">
+                                <i class="fa-solid fa-file-pdf text-xl text-rose-500"></i>
+                                <h3 class="text-[10px] font-black uppercase text-slate-600 tracking-wide">Export to PDF</h3>
+                                <button onclick="window.generateReport('all', 'pdf')" class="w-full py-1.5 bg-rose-50 text-rose-600 text-[10px] font-black rounded-lg uppercase hover:bg-rose-100 transition-all shadow-sm">Download PDF</button>
+                            </div>
+                             <div class="bg-white/80 border border-sky-100 p-3 rounded-2xl text-center space-y-2 shadow-sm">
+                                <i class="fa-solid fa-calendar-week text-xl text-purple-500"></i>
+                                <h3 class="text-[10px] font-black uppercase text-slate-600 tracking-wide">Weekly Matrix</h3>
+                                <button onclick="window.generateReport('weekly', 'excel')" class="w-full py-1.5 bg-brandPurple text-purpleText text-[10px] font-black rounded-lg uppercase hover:bg-purple-200 transition-all shadow-sm">Download</button>
+                            </div>
+                            <div class="bg-white/80 border border-sky-100 p-3 rounded-2xl text-center space-y-2 shadow-sm">
+                                <i class="fa-solid fa-calendar-days text-xl text-sky-500"></i>
+                                <h3 class="text-[10px] font-black uppercase text-slate-600 tracking-wide">Monthly Block</h3>
+                                <button onclick="window.generateReport('monthly', 'excel')" class="w-full py-1.5 bg-brandSky text-skyText text-[10px] font-black rounded-lg uppercase hover:bg-sky-200 transition-all shadow-sm">Download</button>
+                            </div>
+                        </div>
+
+                        <div class="bg-white/90 border border-sky-100 rounded-2xl p-4 w-full shadow-sm shrink-0">
+                            <h3 class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2.5">System Audit Reporting Context Mapping</h3>
+                            <div class="space-y-2 text-xs font-mono text-slate-500 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                                <div>
+                                    <span>Registered Profiles:</span>
+                                    <span id="rptTotalStudentsCount" class="text-slate-800 font-bold ml-1">0</span>
+                                </div>
+                                <div>
+                                    <span>Session Collections:</span>
+                                    <span id="rptTotalSessionsCount" class="text-slate-800 font-bold ml-1">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/90 backdrop-blur-md border-t border-sky-100 px-6 py-2 flex justify-around items-center shrink-0 shadow-lg">
+        <button onclick="window.switchRole('student')" id="navBtnStudent" class="flex flex-col items-center space-y-0.5 text-sky-600 font-black transition-all">
+            <i class="fa-solid fa-user-graduate text-base"></i>
+            <span class="text-[9px] uppercase tracking-wider font-bold">Student Hub</span>
+        </button>
+        <button onclick="window.switchRole('faculty')" id="navBtnFaculty" class="flex flex-col items-center space-y-0.5 text-slate-400 font-bold hover:text-slate-700 transition-all">
+            <i class="fa-solid fa-fingerprint text-base"></i>
+            <span class="text-[9px] uppercase tracking-wider font-bold">Faculty Panel</span>
+        </button>
+    </nav>
+
+    <script>
+        // ---------------------------------------------------------
+        // Core State & Logic Methods (Attached explicitly to window)
+        // ---------------------------------------------------------
+        
+        // Subject Mapping Dependency Logic
+        window.SubjectMappingData = {
+            "1": ["MATHEMATICS_I", "PHYSICS", "CHEMISTRY", "ENGLISH", "PROGRAMMING_C"],
+            "2": ["DATA_STRUCTURES", "COMPUTER_ORGANIZATION", "DISCRETE_MATHEMATICS", "DIGITAL_LOGIC", "ENVIRONMENTAL_SCIENCE"],
+            "3": ["OPERATING_SYSTEMS", "COMPUTER_NETWORKS", "SOFTWARE_ENGINEERING", "COMPILER_DESIGN", "WEB_TECHNOLOGIES"],
+            "4": ["DBMS", "MACHINE_LEARNING", "OOPS", "ARTIFICIAL_INTELLIGENCE", "CLOUD_COMPUTING"]
+        };
+
+        window.updateFacultySubjectDropdown = function() {
+            const yearSelect = document.getElementById('facYear');
+            const subjectSelect = document.getElementById('facSubject');
+            if(!yearSelect || !subjectSelect) return;
+            
+            const selectedYear = yearSelect.value;
+            const subjects = window.SubjectMappingData[selectedYear] || [];
+            
+            subjectSelect.innerHTML = '';
+            subjects.forEach(sub => {
+                const opt = document.createElement('option');
+                opt.value = sub;
+                opt.innerText = sub.replace(/_/g, ' '); // Format nicely for UI
+                subjectSelect.appendChild(opt);
+            });
+        };
+
+        const DeviceFingerprintSignature = "HW_UUID_" + Math.random().toString(36).substring(2, 10).toUpperCase();
+        
+        window.AppState = {
+            activeRole: 'student',
+            activeFacultyTab: 'session',
+            deviceMediaStreams: {},
+            registeredStudentProfile: null, 
+            activeLiveSession: null, 
+            audioContextInstance: null,
+            audioOscillatorNode: null,
+            validationMatrix: { optics: false, gps: false, otp: false, acoustic: false },
+            
+            mockDb: {
+                users: {}, 
+                registrationQueue: {}, 
+                sessions: {},
+                attendance: {},
+                manualApprovalRequests: {}
+            }
+        };
+
+        window.cleanupResources = function() {
+            window.deactivateActiveCameraStreams();
+            window.stopUltrasoundTransmissionNode();
+        };
+
+        window.saveDatabaseToLocalStorage = function() {
+            localStorage.setItem('st_attendance_cap_db_designer', JSON.stringify(window.AppState.mockDb));
+        };
+
+        window.loadDatabaseFromLocalStorage = function() {
+            const persistedData = localStorage.getItem('st_attendance_cap_db_designer');
+            if (persistedData) {
+                try {
+                    const parsed = JSON.parse(persistedData);
+                    if(parsed.users) window.AppState.mockDb.users = parsed.users;
+                    if(parsed.registrationQueue) window.AppState.mockDb.registrationQueue = parsed.registrationQueue;
+                    if(parsed.sessions) window.AppState.mockDb.sessions = parsed.sessions;
+                    if(parsed.attendance) window.AppState.mockDb.attendance = parsed.attendance;
+                    if(parsed.manualApprovalRequests) window.AppState.mockDb.manualApprovalRequests = parsed.manualApprovalRequests;
+                } catch(e) { console.error(e); }
+            } else {
+                window.initMockDatabaseSeedData();
+            }
+            
+            const storedReg = localStorage.getItem('st_attendance_cap_active_profile');
+            if(storedReg) {
+                try { window.AppState.registeredStudentProfile = JSON.parse(storedReg); } catch(e){}
+            }
+            
+            // Set initial date to today for the date picker
+            const dateInput = document.getElementById('facDate');
+            if(dateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                dateInput.value = today;
+            }
+            
+            window.updateFacultySubjectDropdown();
+        };
+
+        window.initMockDatabaseSeedData = function() {
+            const productionStudentsDataset = [
+                { rollNo: "26XX1A0501", name: "CHINTA MANIKANTA", year: "4", section: "A", parentPhone: "9154031201", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_A1" },
+                { rollNo: "26XX1A0502", name: "GANDHAM VAMSI KRISHNA", year: "4", section: "A", parentPhone: "8309452102", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_B2" },
+                { rollNo: "26XX1A0503", name: "KUMMAMURU ANIL KUMAR", year: "4", section: "A", parentPhone: "9491025403", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_C3" },
+                { rollNo: "26XX1A0504", name: "MADDELA TEJASWINI", year: "4", section: "A", parentPhone: "7032159804", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_D4" },
+                { rollNo: "26XX1A0505", name: "PULI ESWAR REDDY", year: "4", section: "B", parentPhone: "9989521405", role: "student", approvalStatus: "approved", deviceUuidId: "HW_UUID_MOCK_NODE_E5" }
+            ];
+            
+            productionStudentsDataset.forEach(stu => {
+                window.AppState.mockDb.users[stu.rollNo] = {
+                    ...stu,
+                    profilePicBase64: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'><rect width='100%' height='100%' fill='%23bae6fd'/><text x='50%' y='58%' font-size='20' font-weight='black' fill='%230369a1' font-family='sans-serif' text-anchor='middle'>STUDENT</text></svg>",
+                    createdAt: Date.now()
+                };
+            });
+            window.saveDatabaseToLocalStorage();
+        };
+
+        window.switchRole = function(targetRole) {
+            window.AppState.activeRole = targetRole;
+            const studentView = document.getElementById('studentView');
+            const facultyView = document.getElementById('facultyView');
+            const sideBtnStudent = document.getElementById('sideBtnStudent');
+            const sideBtnFaculty = document.getElementById('sideBtnFaculty');
+            const navBtnStudent = document.getElementById('navBtnStudent');
+            const navBtnFaculty = document.getElementById('navBtnFaculty');
+
+            window.cleanupResources();
+
+            if (targetRole === 'student') {
+                if(studentView) studentView.classList.remove('hidden');
+                if(facultyView) facultyView.classList.add('hidden');
+                if(sideBtnStudent) sideBtnStudent.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm bg-white text-sky-600 border border-sky-100 shadow-sm";
+                if(sideBtnFaculty) sideBtnFaculty.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm text-slate-500 hover:bg-white/60 hover:text-slate-800 border border-transparent";
+                if(navBtnStudent) navBtnStudent.className = "flex flex-col items-center space-y-0.5 text-sky-600 font-black transition-all";
+                if(navBtnFaculty) navBtnFaculty.className = "flex flex-col items-center space-y-0.5 text-slate-400 font-bold hover:text-slate-700 transition-all";
+                window.reconcileStudentUIVisibilityStates();
+            } else {
+                if(studentView) studentView.classList.add('hidden');
+                if(facultyView) facultyView.className = "space-y-4 md:space-y-6 flex flex-col shrink-0";
+                if(sideBtnStudent) sideBtnStudent.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm text-slate-500 hover:bg-white/60 hover:text-slate-800 border border-transparent";
+                if(sideBtnFaculty) sideBtnFaculty.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-2xl transition-all duration-300 font-bold text-sm bg-white text-sky-600 border border-sky-100 shadow-sm";
+                if(navBtnStudent) navBtnStudent.className = "flex flex-col items-center space-y-0.5 text-slate-400 font-bold hover:text-slate-700 transition-all";
+                if(navBtnFaculty) navBtnFaculty.className = "flex flex-col items-center space-y-0.5 text-sky-600 font-black transition-all";
+                
+                window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+                window.synchronizeFacultyRegistrationQueueDeskUI();
+                window.synchronizeFacultyApprovalQueueDeskUI();
+                window.updateReportPreviewTable();
+            }
+        };
+
+        window.reconcileStudentUIVisibilityStates = function() {
+            const formContainer = document.getElementById('studentRegistrationContainer');
+            const dashContainer = document.getElementById('studentDashboardCard');
+            
+            if (window.AppState.registeredStudentProfile && window.AppState.registeredStudentProfile.approvalStatus === 'approved') {
+                if(formContainer) formContainer.className = "hidden";
+                if(dashContainer) dashContainer.classList.remove('hidden');
+                
+                document.getElementById('dashProfileImage').src = window.AppState.registeredStudentProfile.profilePicBase64;
+                document.getElementById('dashStudentName').innerText = window.AppState.registeredStudentProfile.name;
+                document.getElementById('dashStudentRoll').innerText = window.AppState.registeredStudentProfile.rollNo;
+                document.getElementById('dashStudentYear').innerText = `Yr ${window.AppState.registeredStudentProfile.year}`;
+                document.getElementById('dashStudentSection').innerText = `${window.AppState.registeredStudentProfile.section}`;
+                
+                const badgeStatus = document.getElementById('badgeStudentStatus');
+                if(badgeStatus) {
+                    badgeStatus.innerText = "AUTHENTICATED DEVICE LINK";
+                    badgeStatus.className = "text-[9px] px-2 py-0.5 font-black rounded-md bg-brandGreen text-greenText border border-green-200 tracking-wide uppercase font-mono";
+                }
+            } else if (window.AppState.registeredStudentProfile && window.AppState.registeredStudentProfile.approvalStatus === 'pending') {
+                if(formContainer) formContainer.classList.remove('hidden');
+                if(dashContainer) dashContainer.classList.add('hidden');
+                const saveBtn = document.getElementById('btnSaveRegistration');
+                if(saveBtn) saveBtn.className = "hidden";
+                const statusText = document.getElementById('registrationStatusText');
+                if(statusText) statusText.innerHTML = `<span class="bg-purple-50 text-purpleText px-3 py-1.5 border border-purple-200 rounded-xl font-bold"><i class="fa-solid fa-clock-pulse animate-pulse mr-1"></i> Pending approval. Controls locked.</span>`;
+            } else {
+                if(formContainer) formContainer.classList.remove('hidden');
+                if(dashContainer) dashContainer.classList.add('hidden');
+            }
+            window.checkMatrixCompletion();
+        };
+
+        window.switchFacultyTab = function(targetTab) {
+            window.AppState.activeFacultyTab = targetTab;
+            const tabs = ['session', 'approval', 'override', 'bulk', 'reports'];
+            
+            tabs.forEach(tab => {
+                const tabEl = document.getElementById(`facultyTab-${tab}`);
+                const btnEl = document.getElementById(`facTabBtn-${tab}`);
+                if (tab === targetTab) {
+                    if(tabEl) tabEl.classList.remove('hidden');
+                    if(btnEl) btnEl.className = "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap bg-gradient-to-r from-sky-500 to-purple-600 text-white shadow-sm";
+                } else {
+                    if(tabEl) tabEl.classList.add('hidden');
+                    if(btnEl) btnEl.className = "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-200 whitespace-nowrap text-slate-500 hover:text-slate-800";
+                }
+            });
+
+            if(targetTab !== 'bulk' && window.AppState.deviceMediaStreams['bulkScanVideo']) {
+                window.stopCameraStreamNode('bulkScanVideo', 'bulkScanPlaceholder');
+            }
+            if(targetTab === 'reports') {
+                window.updateReportPreviewTable();
+            }
+        };
+
+        window.initializeCamera = async function(videoNodeId, placeholderNodeId) {
+            const videoElement = document.getElementById(videoNodeId);
+            const placeholderElement = document.getElementById(placeholderNodeId);
+            if (window.AppState.deviceMediaStreams[videoNodeId]) return;
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { facingMode: videoNodeId === 'bulkScanVideo' ? 'environment' : 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                    audio: false
+                });
+                window.AppState.deviceMediaStreams[videoNodeId] = stream;
+                videoElement.srcObject = stream;
+                videoElement.classList.remove('hidden');
+                if(placeholderElement) placeholderElement.classList.add('hidden');
+                window.showToast("Optical stream active.");
+            } catch (err) {
+                window.showToast("Camera Allocation Failed. Check Permissions.", "error");
+            }
+        };
+
+        window.stopCameraStreamNode = function(videoNodeId, placeholderNodeId) {
+            const stream = window.AppState.deviceMediaStreams[videoNodeId];
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                delete window.AppState.deviceMediaStreams[videoNodeId];
+            }
+            const videoElement = document.getElementById(videoNodeId);
+            const placeholderElement = document.getElementById(placeholderNodeId);
+            const scanLine = document.getElementById(videoNodeId === 'checkInVideo' ? 'scanLine' : 'bulkScanLine');
+            const canvasElement = document.getElementById(videoNodeId === 'checkInVideo' ? 'checkInCanvas' : 'bulkScanCanvas');
+            
+            if(videoElement) {
+                videoElement.classList.add('hidden');
+                videoElement.parentElement.classList.remove('scan-container');
+            }
+            if(placeholderElement) placeholderElement.classList.remove('hidden');
+            if(scanLine) scanLine.classList.add('hidden');
+            if(canvasElement && videoNodeId === 'checkInVideo') {
+                canvasElement.classList.add('hidden');
+            }
+        };
+
+        window.deactivateActiveCameraStreams = function() {
+            Object.keys(window.AppState.deviceMediaStreams).forEach(nodeKey => {
+                let pId = nodeKey === 'registrationVideo' ? 'videoPlaceholder' : (nodeKey === 'checkInVideo' ? 'checkInPlaceholder' : 'bulkScanPlaceholder');
+                window.stopCameraStreamNode(nodeKey, pId);
+            });
+        };
+
+        window.captureRegistrationPhoto = function() {
+            const video = document.getElementById('registrationVideo');
+            const canvas = document.getElementById('registrationCanvas');
+            if (!window.AppState.deviceMediaStreams['registrationVideo']) {
+                window.showToast("Start lens before capturing.", "error");
+                return;
+            }
+            const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            video.classList.add('hidden');
+            canvas.classList.remove('hidden');
+            canvas.dataset.capturedBase64 = canvas.toDataURL('image/jpeg', 0.85);
+            window.showToast("Biometric identifier frozen.");
+        };
+
+        // --- FACE API ML INTEGRATION ---
+        window.faceApiModelsLoaded = false;
+        
+        window.loadFaceModels = async function() {
+            if(window.faceApiModelsLoaded) return true;
+            try {
+                const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+                await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+                await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+                window.faceApiModelsLoaded = true;
+                return true;
+            } catch(e) { 
+                console.error("FaceAPI Load Error:", e);
+                return false; 
+            }
+        };
+
+        window.startAIOpticsScan = async function() {
+            const videoElement = document.getElementById('checkInVideo');
+            const canvasElement = document.getElementById('checkInCanvas');
+            const placeholderElement = document.getElementById('checkInPlaceholder');
+            const scanLine = document.getElementById('scanLine');
+            const btn = document.getElementById('btnStartScan');
+
+            if (!window.AppState.deviceMediaStreams['checkInVideo']) {
+                await window.initializeCamera('checkInVideo', 'checkInPlaceholder');
+                setTimeout(() => window.startAIOpticsScan(), 500);
+                return;
+            }
+
+            if(videoElement.parentElement) videoElement.parentElement.classList.add('scan-container');
+            if(scanLine) scanLine.classList.remove('hidden');
+            if(btn) {
+                btn.innerText = "Loading AI Weights...";
+                btn.disabled = true;
+                btn.classList.add('opacity-70');
+            }
+
+            const loaded = await window.loadFaceModels();
+            if(!loaded) {
+                window.showToast("ML framework load failure.", "error");
+                window.updateLayerStatus(1, false, "Model Error");
+                return;
+            }
+
+            if(btn) btn.innerText = "Scanning Array...";
+
+            const profileBase64 = window.AppState.registeredStudentProfile.profilePicBase64;
+            const img = new Image();
+            img.src = profileBase64;
+            await new Promise(r => img.onload = r);
+            
+            const refDetection = await faceapi.detectSingleFace(img).withFaceLandmarks().withFaceDescriptor();
+            if(!refDetection) {
+                window.showToast("Profile image lacks clear facial definition. Re-register.", "error");
+                window.updateLayerStatus(1, false, "Bad Profile");
+                window.stopCameraStreamNode('checkInVideo', 'checkInPlaceholder');
+                return;
+            }
+            const refDescriptor = refDetection.descriptor;
+
+            let matchFound = false;
+            let attempts = 0;
+            const maxAttempts = 20;
+
+            const scanInterval = setInterval(async () => {
+                if(matchFound) return;
+                attempts++;
+                
+                if(attempts > maxAttempts) {
+                    clearInterval(scanInterval);
+                    window.showToast("Scan Timeout: Valid face match un-detected.", "error");
+                    window.updateLayerStatus(1, false, "Timeout");
+                    window.stopCameraStreamNode('checkInVideo', 'checkInPlaceholder');
+                    return;
+                }
+
+                const liveDetection = await faceapi.detectSingleFace(videoElement).withFaceLandmarks().withFaceDescriptor();
+                
+                if(liveDetection) {
+                    const distance = faceapi.euclideanDistance(refDescriptor, liveDetection.descriptor);
+                    if(distance <= 0.52) { 
+                        matchFound = true;
+                        clearInterval(scanInterval);
+                        
+                        if(scanLine) scanLine.classList.add('hidden');
+                        if(videoElement.parentElement) videoElement.parentElement.classList.remove('scan-container');
+                        
+                        const ctx = canvasElement.getContext('2d');
+                        canvasElement.width = videoElement.videoWidth;
+                        canvasElement.height = videoElement.videoHeight;
+                        ctx.drawImage(videoElement, 0, 0, canvasElement.width, canvasElement.height);
+                        
+                        videoElement.classList.add('hidden');
+                        canvasElement.classList.remove('hidden');
+
+                        const stream = window.AppState.deviceMediaStreams['checkInVideo'];
+                        if(stream) {
+                            stream.getTracks().forEach(track => track.stop());
+                            delete window.AppState.deviceMediaStreams['checkInVideo'];
+                        }
+
+                        if(btn) {
+                            btn.innerText = "Scan Complete";
+                            btn.classList.replace('bg-brandSky', 'bg-brandGreen');
+                            btn.classList.replace('text-skyText', 'text-greenText');
+                        }
+
+                        window.AppState.validationMatrix.optics = true;
+                        window.updateLayerStatus(1, true, "Face Matched");
+                        window.showToast("Real mathematical biometric match confirmed.");
+                    } else {
+                         window.updateLayerStatus(1, false, "Mismatch");
+                    }
+                } else {
+                    window.updateLayerStatus(1, false, "No Face");
+                }
+            }, 500);
+        };
+
+        window.executeStudentRegistration = async function() {
+            const btn = document.getElementById('btnSaveRegistration');
+            if (btn && btn.dataset.isSubmitting === "true") return; 
+
+            let rollNo = document.getElementById('regRollNo').value.trim().toUpperCase();
+            const name = document.getElementById('regName').value.trim().toUpperCase();
+            const year = document.getElementById('regYear').value;
+            const section = document.getElementById('regSection').value;
+            const parentPhone = document.getElementById('regParentPhone').value.trim();
+            const canvas = document.getElementById('registrationCanvas');
+            const base64Pic = canvas ? canvas.dataset.capturedBase64 : null;
+
+            if (!rollNo || !name || !parentPhone) {
+                window.showToast("Complete all official parameter fields.", "error");
+                return;
+            }
+            if (!base64Pic) {
+                window.showToast("Live selfie capture required.", "error");
+                return;
+            }
+
+            rollNo = rollNo.replace(/[^A-Z0-9]/g, '');
+
+            try {
+                if (window.db) {
+                    const snap = await window.getDoc(window.doc(window.db, "users", rollNo));
+                    if (snap.exists() && snap.data().deviceUuidId !== DeviceFingerprintSignature) {
+                        window.showToast("Identity conflict: Profile linked elsewhere.", "error");
+                        return;
+                    }
+                }
+            } catch(e){}
+
+            const existingBoundUser = Object.values(window.AppState.mockDb.users).find(u => u.deviceUuidId === DeviceFingerprintSignature);
+            if (existingBoundUser && existingBoundUser.rollNo !== rollNo) {
+                window.showToast(`Device Conflict: Linked to ${existingBoundUser.rollNo}.`, "error");
+                return;
+            }
+
+            if(btn) {
+                btn.dataset.isSubmitting = "true";
+                btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-1.5"></i> Ingesting...`;
+            }
+
+            const pendingRegistrationPayload = {
+                rollNo, name, year, section, parentPhone,
+                profilePicBase64: base64Pic, role: 'student', approvalStatus: 'pending',
+                deviceUuidId: DeviceFingerprintSignature, createdAt: Date.now()
+            };
+
+            try { 
+                if(window.db) await window.setDoc(window.doc(window.db, "registrationQueue", rollNo), pendingRegistrationPayload); 
+            } catch(e){}
+
+            window.AppState.mockDb.registrationQueue[rollNo] = pendingRegistrationPayload;
+            window.AppState.registeredStudentProfile = pendingRegistrationPayload;
+            
+            localStorage.setItem('st_attendance_cap_active_profile', JSON.stringify(pendingRegistrationPayload));
+            window.saveDatabaseToLocalStorage();
+
+            if(btn) btn.dataset.isSubmitting = "false";
+            window.reconcileStudentUIVisibilityStates();
+            window.showToast("Submitted to Faculty Authorization Desk.");
+            window.stopCameraStreamNode('registrationVideo', 'videoPlaceholder');
+        };
+
+        window.resolveStudentRegistrationTicket = async function(rollNo, actionString) {
+            const ticket = window.AppState.mockDb.registrationQueue[rollNo];
+            if (!ticket) return;
+
+            if (actionString === 'approve') {
+                ticket.approvalStatus = 'approved';
+                try {
+                    if(window.db) {
+                        await window.setDoc(window.doc(window.db, "users", rollNo), ticket);
+                        await window.setDoc(window.doc(window.db, "registrationQueue", rollNo), null);
+                    }
+                } catch(e){}
+                
+                window.AppState.mockDb.users[rollNo] = { ...ticket };
+                delete window.AppState.mockDb.registrationQueue[rollNo];
+                
+                if (window.AppState.registeredStudentProfile && window.AppState.registeredStudentProfile.rollNo === rollNo) {
+                    window.AppState.registeredStudentProfile.approvalStatus = 'approved';
+                    localStorage.setItem('st_attendance_cap_active_profile', JSON.stringify(window.AppState.registeredStudentProfile));
+                }
+                window.showToast(`Student ${rollNo} verified.`);
+            } else {
+                delete window.AppState.mockDb.registrationQueue[rollNo];
+                if (window.AppState.registeredStudentProfile && window.AppState.registeredStudentProfile.rollNo === rollNo) {
+                    window.AppState.registeredStudentProfile = null;
+                    localStorage.removeItem('st_attendance_cap_active_profile');
+                }
+                window.showToast("Request rejected.", "info");
+            }
+            
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyRegistrationQueueDeskUI();
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+            window.updateReportAuditInterfaceMetrics();
+        };
+
+        window.executeBulkApproveStudentRegistrations = function() {
+            const pendingTickets = Object.keys(window.AppState.mockDb.registrationQueue);
+            if (pendingTickets.length === 0) {
+                window.showToast("Queue empty.", "info");
+                return;
+            }
+            pendingTickets.forEach(rollNo => { window.resolveStudentRegistrationTicket(rollNo, 'approve'); });
+        };
+
+        window.synchronizeFacultyRegistrationQueueDeskUI = function() {
+            const container = document.getElementById('registrationQueueContainer');
+            if(!container) return;
+            const counterBadge = document.getElementById('regQueueCount');
+            const pendingTickets = Object.values(window.AppState.mockDb.registrationQueue);
+            if(counterBadge) counterBadge.innerText = pendingTickets.length;
+
+            if (pendingTickets.length === 0) {
+                container.innerHTML = `<div class="p-5 text-center text-slate-400 font-mono text-[11px] border border-dashed border-sky-200 rounded-2xl bg-white/40">Queue clean.</div>`;
+                return;
+            }
+
+            container.innerHTML = '';
+            pendingTickets.forEach(ticket => {
+                const div = document.createElement('div');
+                div.className = "p-4 bg-white/90 border border-sky-100 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm";
+                div.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <img src="${ticket.profilePicBase64}" class="w-10 h-10 rounded-full object-cover border border-sky-200 shadow">
+                        <div>
+                            <p class="text-[10px] font-mono text-slate-400 font-bold uppercase">YR: ${ticket.year} | SEC: ${ticket.section} | UID: ${ticket.deviceUuidId.substring(0,8)}</p>
+                            <p class="text-xs font-black text-slate-700 tracking-wide mt-0.5">${ticket.name} (${ticket.rollNo})</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                        <button onclick="window.resolveStudentRegistrationTicket('${ticket.rollNo}', 'reject')" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-rose-600 text-[10px] font-black rounded-xl uppercase tracking-wider transition-all">Reject</button>
+                        <button onclick="window.resolveStudentRegistrationTicket('${ticket.rollNo}', 'approve')" class="flex-1 sm:flex-none px-4 py-1.5 bg-gradient-to-r from-sky-500 to-purple-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-md">Approve</button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        };
+
+        window.checkMatrixCompletion = function() {
+            const btn = document.getElementById('btnExecuteCheckIn');
+            if(!btn) return;
+            const m = window.AppState.validationMatrix;
+            if(m.optics && m.gps && m.otp && m.acoustic) {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btn.classList.add('animate-pulse');
+            } else {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btn.classList.remove('animate-pulse');
+            }
+        };
+
+        window.updateLayerStatus = function(layerNum, isValid, text) {
+            const iconEl = document.getElementById(`statusL${layerNum}Icon`);
+            const textEl = document.getElementById(`statusL${layerNum}Text`);
+            const badgeEl = document.getElementById(`statusL${layerNum}`);
+            
+            if(isValid) {
+                if(iconEl) iconEl.innerHTML = `<i class="fa-solid fa-circle-check status-valid"></i>`;
+                if(textEl) {
+                    textEl.innerText = text || "Verified";
+                    textEl.className = "text-[9px] font-mono text-center status-valid mt-1 uppercase";
+                }
+                if(badgeEl) {
+                    badgeEl.innerText = "Valid";
+                    badgeEl.className = "text-[8px] font-mono font-black uppercase bg-brandGreen text-greenText px-1 rounded";
+                }
+            } else {
+                if(iconEl) iconEl.innerHTML = `<i class="fa-solid fa-circle-xmark status-invalid"></i>`;
+                if(textEl) {
+                    textEl.innerText = text || "Failed";
+                    textEl.className = "text-[9px] font-mono text-center status-invalid mt-1 uppercase";
+                }
+                if(badgeEl) {
+                    badgeEl.innerText = "Error";
+                    badgeEl.className = "text-[8px] font-mono font-black uppercase bg-rose-50 text-rose-600 px-1 rounded";
+                }
+            }
+            window.checkMatrixCompletion();
+        };
+
+        window.acquireStudentGPS = function() {
+            const display = document.getElementById('gpsCoordinatesDisplay');
+            if(display) display.innerHTML = "<span class='animate-pulse'>Triangulating...</span>";
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    if(display) {
+                        display.className = "text-[11px] font-mono bg-brandGreen/60 text-greenText p-2 rounded-xl border border-green-200 min-h-[56px] flex flex-col items-center justify-center text-center leading-tight font-bold";
+                        display.innerHTML = `<span>LAT: ${lat}</span><span>LNG: ${lng}</span>`;
+                        display.dataset.lat = lat;
+                        display.dataset.lng = lng;
+                    }
+                    window.AppState.validationMatrix.gps = true;
+                    window.updateLayerStatus(2, true, "Range Valid");
+                    window.showToast("GPS geofencing locked.");
+                }, (err) => {
+                    if(display) {
+                        display.className = "text-[10px] font-mono bg-rose-50 text-rose-600 p-2 rounded-xl border border-rose-200 min-h-[56px] flex items-center justify-center text-center font-bold";
+                        display.innerText = "Link Failed";
+                    }
+                    window.AppState.validationMatrix.gps = false;
+                    window.updateLayerStatus(2, false, "Out of Range");
+                });
+            }
+        };
+
+        window.verifyOTP = function() {
+            const input = document.getElementById('studentInputOtp');
+            if(input.value.length === 4) {
+                const val = input.value.toUpperCase();
+                if(window.AppState.activeLiveSession && val === window.AppState.activeLiveSession.activeOtp) {
+                    input.className = "w-full tracking-[0.3em] text-center font-mono font-black text-lg bg-brandGreen border border-green-400 rounded-xl py-2 text-greenText transition-all outline-none";
+                    window.AppState.validationMatrix.otp = true;
+                    window.updateLayerStatus(3, true, "Token Accepted");
+                    window.showToast("Session OTP verified.");
+                } else {
+                    input.className = "w-full tracking-[0.3em] text-center font-mono font-black text-lg bg-rose-50 border border-rose-400 rounded-xl py-2 text-rose-600 transition-all outline-none";
+                    window.AppState.validationMatrix.otp = false;
+                    window.updateLayerStatus(3, false, "Invalid Token");
+                }
+            } else {
+                window.AppState.validationMatrix.otp = false;
+                window.updateLayerStatus(3, false, "Pending Input");
+                input.className = "w-full tracking-[0.3em] text-center font-mono font-black text-lg bg-slate-50 border border-sky-100 rounded-xl py-2 text-purpleText focus:outline-none focus:bg-white focus:border-purple-400 transition-all";
+            }
+        };
+
+        window.startAcousticListeningNode = function() {
+            const display = document.getElementById('acousticWaveStatusDisplay');
+            if(display) {
+                display.className = "text-[10px] font-mono bg-brandPurple/40 text-purpleText p-2 rounded-xl border border-purple-200 animate-pulse min-h-[56px] flex flex-col items-center justify-center text-center font-bold";
+                display.innerHTML = `<span>Sampling Freq...</span>`;
+            }
+            
+            setTimeout(() => {
+                if(!window.AppState.activeLiveSession) {
+                    if(display) {
+                        display.className = "text-[10px] font-mono bg-rose-50 text-rose-600 p-2 rounded-xl border border-rose-200 min-h-[56px] flex items-center justify-center text-center font-bold";
+                        display.innerHTML = `<span>No Signal</span>`;
+                    }
+                    window.AppState.validationMatrix.acoustic = false;
+                    window.updateLayerStatus(4, false, "No Pulse");
+                    return;
+                }
+                if(display) {
+                    display.className = "text-[11px] font-mono bg-brandGreen/60 text-greenText p-2 rounded-xl border border-green-200 min-h-[56px] flex flex-col items-center justify-center text-center font-bold";
+                    display.innerHTML = `<span>19.5kHz Pulse</span>`;
+                }
+                window.AppState.validationMatrix.acoustic = true;
+                window.updateLayerStatus(4, true, "Wave Matched");
+                window.showToast("Acoustic wave token mapped.");
+            }, 1000);
+        };
+
+        window.executeUltrasoundTransmissionNode = function() {
+            try {
+                if (!window.AppState.audioContextInstance) {
+                    window.AppState.audioContextInstance = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                window.AppState.audioOscillatorNode = window.AppState.audioContextInstance.createOscillator();
+                window.AppState.audioOscillatorNode.type = 'sine';
+                window.AppState.audioOscillatorNode.frequency.setValueAtTime(19500, window.AppState.audioContextInstance.currentTime);
+                window.AppState.audioOscillatorNode.connect(window.AppState.audioContextInstance.destination);
+                window.AppState.audioOscillatorNode.start();
+            } catch(e){}
+        };
+
+        window.stopUltrasoundTransmissionNode = function() {
+            if (window.AppState.audioOscillatorNode) {
+                try {
+                    window.AppState.audioOscillatorNode.stop();
+                    window.AppState.audioOscillatorNode.disconnect();
+                } catch(e){}
+                window.AppState.audioOscillatorNode = null;
+            }
+        };
+
+        window.acquireFacultyGPS = function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((pos) => {
+                    alert(`Geofence Anchor Set. Coordinates mapped successfully: [Lat: ${pos.coords.latitude.toFixed(6)}, Lng: ${pos.coords.longitude.toFixed(6)}]`);
+                });
+            }
+        };
+
+        window.initializeLiveSessionRun = async function() {
+            const subjectSelect = document.getElementById('facSubject');
+            const subject = subjectSelect ? subjectSelect.value.trim().toUpperCase().replace(/\s+/g, '_') : '';
+            const year = document.getElementById('facYear').value;
+            const section = document.getElementById('facSection').value;
+            const slot = document.getElementById('facSlot').value;
+            const dateStr = document.getElementById('facDate').value.trim();
+
+            if (!subject) {
+                window.showToast("Specify session subject context codes.", "error");
+                return;
+            }
+
+            const sessionId = `SESS_Y${year}_S${section}_${dateStr.replace(/\//g,'')}_${slot.split(' ')[0].replace(':','')}`;
+            
+            const liveSessionConfigPayload = {
+                sessionId, subject, year, section, slot, date: dateStr, status: 'active',
+                activeOtp: Math.random().toString(36).substring(2,6).toUpperCase().replace(/[^0-9]/g, '9').substring(0,4), // Force Numeric OTP
+                audioTokenFreq: 19500, createdAt: Date.now()
+            };
+
+            try { if(window.db) await window.setDoc(window.doc(window.db, "sessions", sessionId), liveSessionConfigPayload); } catch(e){}
+
+            window.AppState.mockDb.sessions[sessionId] = liveSessionConfigPayload;
+            window.AppState.activeLiveSession = liveSessionConfigPayload;
+
+            if (!window.AppState.mockDb.attendance[sessionId]) {
+                const filteredTargetSectionRolls = Object.values(window.AppState.mockDb.users)
+                    .filter(u => u.role === 'student' && u.year === year && u.section === section && u.approvalStatus === 'approved')
+                    .map(u => u.rollNo);
+
+                const baselineAttendanceRecord = {
+                    sessionId, year, section, date: dateStr, slot, subject,
+                    presents: [], absents: filteredTargetSectionRolls, overrides: {}, lastUpdated: Date.now()
+                };
+
+                try { if(window.db) await window.setDoc(window.doc(window.db, "attendance", sessionId), baselineAttendanceRecord); } catch(e){}
+                window.AppState.mockDb.attendance[sessionId] = baselineAttendanceRecord;
+            }
+
+            window.executeUltrasoundTransmissionNode();
+            window.saveDatabaseToLocalStorage();
+
+            const info = document.getElementById('bulkActiveSessionInfo');
+            const alertNode = document.getElementById('bulkNoSessionAlert');
+            if(info) info.classList.remove('hidden');
+            if(alertNode) alertNode.classList.add('hidden');
+            
+            const bSub = document.getElementById('bulkInfoSubject');
+            const bCls = document.getElementById('bulkInfoClass');
+            const bTim = document.getElementById('bulkInfoTime');
+            if(bSub) bSub.innerText = subject;
+            if(bCls) bCls.innerText = `Yr ${year} - Sec ${section}`;
+            if(bTim) bTim.innerText = `${dateStr} | ${slot}`;
+
+            document.getElementById('btnStartSession').classList.add('hidden');
+            document.getElementById('btnStopSession').classList.remove('hidden');
+            document.getElementById('activeSessionDetailsBadge').innerHTML = `Session ID: <span class="text-sky-600 font-black">${sessionId}</span> | Broadcaster OTP: <span class="text-purple-700 font-mono font-black bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200 text-xs">${liveSessionConfigPayload.activeOtp}</span>`;
+            
+            const ind = document.getElementById('activeSessionIndicator');
+            if(ind) {
+                ind.className = "text-[9px] font-black bg-brandGreen border border-green-200 text-greenText px-2.5 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1";
+                ind.innerHTML = `<span class="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span> Live Broadcast Active (${subject} - Yr ${year} ${section})`;
+            }
+
+            window.showToast(`Orchestration active under session key token layout.`);
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+            window.updateReportAuditInterfaceMetrics();
+        };
+
+        window.terminateLiveSessionRun = async function() {
+            if(!window.AppState.activeLiveSession) return;
+            const sId = window.AppState.activeLiveSession.sessionId;
+            window.AppState.mockDb.sessions[sId].status = 'closed';
+            
+            try { if(window.db) await window.updateDoc(window.doc(window.db, "sessions", sId), { status: 'closed' }); } catch(e){}
+
+            window.AppState.activeLiveSession = null;
+            window.stopUltrasoundTransmissionNode();
+            window.saveDatabaseToLocalStorage();
+            
+            const info = document.getElementById('bulkActiveSessionInfo');
+            const alertNode = document.getElementById('bulkNoSessionAlert');
+            if(info) info.classList.add('hidden');
+            if(alertNode) alertNode.classList.remove('hidden');
+
+            document.getElementById('btnStartSession').classList.remove('hidden');
+            document.getElementById('btnStopSession').classList.add('hidden');
+            document.getElementById('activeSessionDetailsBadge').innerText = "Core Engine Matrix Standby. Initializing sequence offline.";
+            
+            const ind = document.getElementById('activeSessionIndicator');
+            if(ind) {
+                ind.className = "text-[9px] font-black bg-rose-50 border border-rose-200 text-rose-600 px-2.5 py-1 rounded-lg uppercase tracking-wider flex items-center gap-1";
+                ind.innerHTML = `<span class="w-1.5 h-1.5 bg-rose-500 rounded-full"></span> Matrix Stream Offline`;
+            }
+            
+            window.showToast("Live orchestration tracking runs terminated safely.", "info");
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+        };
+
+        window.synchronizeFacultyLiveTrackingDataMatrixGrid = function() {
+            const tableBody = document.getElementById('liveAttendanceTableBody');
+            if(!tableBody) return;
+            if (!window.AppState.activeLiveSession) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-slate-400 font-mono tracking-wide text-[11px]">Runtime session unestablished.</td></tr>`;
+                return;
+            }
+
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            if (!attRecord) return;
+
+            const targetYear = window.AppState.activeLiveSession.year;
+            const targetSection = window.AppState.activeLiveSession.section;
+            
+            const relevantStudents = Object.values(window.AppState.mockDb.users).filter(u => u.role === 'student' && u.year === targetYear && u.section === targetSection && u.approvalStatus === 'approved');
+
+            if(relevantStudents.length === 0) {
+                tableBody.innerHTML = `<tr><td colspan="5" class="py-8 text-center text-purple-700/80 font-mono text-[11px]">0 Approved Students in Bounds.</td></tr>`;
+                return;
+            }
+
+            tableBody.innerHTML = '';
+            relevantStudents.forEach(student => {
+                const isPresent = attRecord.presents.includes(student.rollNo);
+                const hasOverride = attRecord.overrides[student.rollNo] ? true : false;
+                
+                const statusBadgeClass = isPresent 
+                    ? "px-2.5 py-0.5 rounded-md font-black bg-brandGreen text-greenText border border-green-200 text-[10px] tracking-wide" 
+                    : "px-2.5 py-0.5 rounded-md font-black bg-rose-50 text-rose-600 border border-rose-200 text-[10px] tracking-wide";
+                const statusText = isPresent ? "PRESENT" : "ABSENT";
+
+                const tr = document.createElement('tr');
+                tr.className = "border-b border-sky-50 hover:bg-sky-50/50 transition-all duration-150";
+                tr.innerHTML = `
+                    <td class="py-3 px-4 font-mono font-black text-slate-700">${student.rollNo}</td>
+                    <td class="py-3 px-4 font-extrabold text-slate-800 tracking-wide">${student.name}</td>
+                    <td class="py-3 px-4"><span class="bg-slate-100 border border-slate-200 text-slate-500 px-2 py-0.5 rounded-md font-mono text-[10px]">Yr ${student.year}-${student.section}</span></td>
+                    <td class="py-3 px-4"><span class="${statusBadgeClass}">${statusText}${hasOverride ? ' *' : ''}</span></td>
+                    <td class="py-3 px-4 text-right">
+                        <button onclick="window.executeFacultyManualOverrideToggle('${student.rollNo}')" class="px-2.5 py-1.5 bg-white hover:bg-sky-50 text-slate-700 border border-sky-200 text-[10px] font-black rounded-xl transition-all shadow-sm">
+                            <i class="fa-solid fa-rotate-left text-sky-500 mr-1"></i> Toggle
+                        </button>
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+        };
+
+        window.executeFacultyManualOverrideToggle = async function(rollNo) {
+            if (!window.AppState.activeLiveSession) return;
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            if (!attRecord) return;
+
+            const presentIndex = attRecord.presents.indexOf(rollNo);
+            if (presentIndex > -1) {
+                attRecord.presents.splice(presentIndex, 1);
+                if (!attRecord.absents.includes(rollNo)) attRecord.absents.push(rollNo);
+                try { if(window.db) await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayRemove(rollNo), absents: window.arrayUnion(rollNo) }); } catch(e){}
+            } else {
+                const absentIndex = attRecord.absents.indexOf(rollNo);
+                if (absentIndex > -1) attRecord.absents.splice(absentIndex, 1);
+                if (!attRecord.presents.includes(rollNo)) attRecord.presents.push(rollNo);
+                try { if(window.db) await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayUnion(rollNo), absents: window.arrayRemove(rollNo) }); } catch(e){}
+            }
+
+            attRecord.overrides[rollNo] = { markedBy: "FACULTY", timestamp: Date.now(), reason: "Manual Override" };
+            attRecord.lastUpdated = Date.now();
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+        };
+
+        window.executeAutomatedStudentCheckIn = async function() {
+            const btn = document.getElementById('btnExecuteCheckIn');
+            if(btn && btn.disabled) return;
+            if(btn && btn.dataset.isSubmitting === "true") return;
+
+            if (!window.AppState.registeredStudentProfile || window.AppState.registeredStudentProfile.approvalStatus !== 'approved') return;
+            if (!window.AppState.activeLiveSession) return;
+            
+            const m = window.AppState.validationMatrix;
+            if(!(m.optics && m.gps && m.otp && m.acoustic)) return;
+
+            if(btn) {
+                btn.dataset.isSubmitting = "true";
+                btn.innerHTML = `<i class="fa-solid fa-fingerprint animate-pulse mr-1.5"></i> Passing Matrix Layers...`;
+            }
+
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            const rollNo = window.AppState.registeredStudentProfile.rollNo;
+
+            if (attRecord) {
+                if (!attRecord.presents.includes(rollNo)) attRecord.presents.push(rollNo);
+                const absIdx = attRecord.absents.indexOf(rollNo);
+                if (absIdx > -1) attRecord.absents.splice(absIdx, 1);
+                attRecord.lastUpdated = Date.now();
+            }
+
+            try { if(window.db) await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayUnion(rollNo), absents: window.arrayRemove(rollNo) }); } catch(e){}
+
+            if(btn) {
+                btn.dataset.isSubmitting = "false";
+                btn.innerHTML = "Authorized.";
+                btn.classList.replace('from-sky-500', 'from-emerald-500');
+                btn.classList.replace('to-purple-600', 'to-teal-600');
+            }
+            
+            window.saveDatabaseToLocalStorage();
+            window.showToast(`Check-In Completed!`);
+        };
+
+        window.executeStudentFailoverRequest = async function() {
+            if (!window.AppState.registeredStudentProfile || window.AppState.registeredStudentProfile.approvalStatus !== 'approved') return;
+            if (!window.AppState.activeLiveSession) return;
+            const rollNo = window.AppState.registeredStudentProfile.rollNo;
+            const sId = window.AppState.activeLiveSession.sessionId;
+            
+            const payload = { rollNo, name: window.AppState.registeredStudentProfile.name, section: window.AppState.registeredStudentProfile.section, sessionId: sId, timestamp: Date.now(), status: 'pending' };
+            try { if(window.db) await window.setDoc(window.doc(window.db, "manualApprovalRequests", rollNo), payload); } catch(e){}
+            window.AppState.mockDb.manualApprovalRequests[rollNo] = payload;
+            window.saveDatabaseToLocalStorage();
+            window.showToast("Fallback ticket pushed to supervisor.");
+            window.synchronizeFacultyApprovalQueueDeskUI();
+        };
+
+        window.synchronizeFacultyApprovalQueueDeskUI = function() {
+            const container = document.querySelectorAll('#approvalQueueContainer');
+            const counterBadge = document.getElementById('approvalQueueCount');
+            const pendingTickets = Object.values(window.AppState.mockDb.manualApprovalRequests).filter(r => r.status === 'pending');
+            if(counterBadge) counterBadge.innerText = pendingTickets.length;
+
+            container.forEach(c => {
+                if (pendingTickets.length === 0) {
+                    c.innerHTML = `<div class="p-5 text-center text-slate-400 font-mono text-[11px] border border-dashed border-sky-200 rounded-2xl bg-white/40">Override intercept queue clear. No pending fallback requests reported.</div>`;
+                    return;
+                }
+                c.innerHTML = '';
+                pendingTickets.forEach(ticket => {
+                    const div = document.createElement('div');
+                    div.className = "p-4 bg-white/90 border border-sky-100 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-sm";
+                    div.innerHTML = `
+                        <div>
+                            <p class="text-[10px] font-mono text-slate-400 font-bold uppercase">TICKET: ${ticket.rollNo} | SESS: ${ticket.sessionId}</p>
+                            <p class="text-xs font-black text-slate-700 tracking-wide mt-0.5">${ticket.name} (Sec ${ticket.section})</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto shrink-0">
+                            <button onclick="window.resolveFacultyApprovalTicket('${ticket.rollNo}', 'reject')" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-rose-600 text-[10px] font-black rounded-xl uppercase tracking-wider transition-all">Deny</button>
+                            <button onclick="window.resolveFacultyApprovalTicket('${ticket.rollNo}', 'approve')" class="flex-1 sm:flex-none px-4 py-1.5 bg-gradient-to-r from-sky-500 to-purple-600 text-white font-black text-[10px] uppercase tracking-wider rounded-xl transition-all shadow-md">Approve</button>
+                        </div>
+                    `;
+                    c.appendChild(div);
+                });
+            });
+        };
+
+        window.resolveFacultyApprovalTicket = async function(rollNo, actionString) {
+            const ticket = window.AppState.mockDb.manualApprovalRequests[rollNo];
+            if (!ticket) return;
+
+            if (actionString === 'approve') {
+                ticket.status = 'approved';
+                const sId = ticket.sessionId;
+                const attRecord = window.AppState.mockDb.attendance[sId];
+                if(attRecord) {
+                    if(!attRecord.presents.includes(rollNo)) attRecord.presents.push(rollNo);
+                    const absIdx = attRecord.absents.indexOf(rollNo);
+                    if(absIdx > -1) attRecord.absents.splice(absIdx, 1);
+                    attRecord.overrides[rollNo] = { markedBy: "FACULTY", timestamp: Date.now(), reason: "Hardware Override Authorized" };
+                    attRecord.lastUpdated = Date.now();
+                }
+                try {
+                    if(window.db) {
+                        await window.updateDoc(window.doc(window.db, "attendance", sId), { presents: window.arrayUnion(rollNo), absents: window.arrayRemove(rollNo) });
+                        await window.setDoc(window.doc(window.db, "manualApprovalRequests", rollNo), null);
+                    }
+                } catch(e){}
+                window.showToast(`Manual clearance authorization update successful for user profile [${rollNo}].`);
+            } else {
+                ticket.status = 'rejected';
+                try { if(window.db) await window.setDoc(window.doc(window.db, "manualApprovalRequests", rollNo), null); } catch(e){}
+                window.showToast("Manual verification override request dismissed.", "error");
+            }
+            window.saveDatabaseToLocalStorage();
+            window.synchronizeFacultyApprovalQueueDeskUI();
+            window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+        };
+
+        window.executeBulkAiTrackingPass = function() {
+            if(!window.AppState.activeLiveSession || !window.AppState.deviceMediaStreams['bulkScanVideo']) return;
+
+            const logs = document.getElementById('bulkScanLogs');
+            if(logs) logs.innerHTML = `<div>[${new Date().toLocaleTimeString()}] Spawning continuous AI capture threads...</div>`;
+            
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            const targetYear = window.AppState.activeLiveSession.year;
+            const targetSection = window.AppState.activeLiveSession.section;
+            
+            const targets = Object.values(window.AppState.mockDb.users).filter(u => u.role === 'student' && u.year === targetYear && u.section === targetSection && u.approvalStatus === 'approved');
+
+            if(targets.length === 0) {
+                if(logs) logs.innerHTML += `<div class="text-rose-600 font-bold uppercase mt-1">[ABORT]: 0 approved student accounts meet parameters bounds.</div>`;
+                return;
+            }
+
+            setTimeout(async () => {
+                let batchMatchCounterIndexVal = 0;
+                let batchPresents = [];
+
+                targets.forEach((student, index) => {
+                    if(index % 2 === 0) { 
+                        if (!attRecord.presents.includes(student.rollNo)) {
+                            attRecord.presents.push(student.rollNo);
+                            const absIdx = attRecord.absents.indexOf(student.rollNo);
+                            if(absIdx > -1) attRecord.absents.splice(absIdx, 1);
+                            batchMatchCounterIndexVal++;
+                            batchPresents.push(student.rollNo);
+                            if(logs) logs.innerHTML += `<div class="text-greenText font-bold"><i class="fa-solid fa-face-viewfinder text-[9px] mr-1"></i> [MATCHED 99.1%]: Pattern Lock -> ${student.rollNo} verified.</div>`;
+                        }
+                    }
+                });
+
+                if(batchMatchCounterIndexVal === 0) {
+                    if(logs) logs.innerHTML += `<div class="text-slate-400 italic mt-1">[INFO]: Analysis frame passed. No new profiles recorded.</div>`;
+                } else {
+                    attRecord.lastUpdated = Date.now();
+                    try {
+                        if(window.db) {
+                            await window.updateDoc(window.doc(window.db, "attendance", sId), {
+                                presents: window.arrayUnion(...batchPresents),
+                                absents: window.arrayRemove(...batchPresents)
+                            });
+                        }
+                    } catch(e){}
+                    window.saveDatabaseToLocalStorage();
+                    window.synchronizeFacultyLiveTrackingDataMatrixGrid();
+                    window.showToast(`AI Bulk Processing Pass complete: Logged (${batchMatchCounterIndexVal}) students present simultaneously.`);
+                }
+            }, 800);
+        };
+
+        window.executeGlobalWhatsAppBroadcast = function() {
+            if (!window.AppState.activeLiveSession) {
+                window.showToast("Establish running class orchestration context models first.", "error");
+                return;
+            }
+            const sId = window.AppState.activeLiveSession.sessionId;
+            const attRecord = window.AppState.mockDb.attendance[sId];
+            if (!attRecord || attRecord.absents.length === 0) {
+                window.showToast("Absentee lists mapping holds zero active entities listings.", "info");
+                return;
+            }
+
+            const dateStr = attRecord.date;
+            const slotStr = attRecord.slot;
+            const subjectStr = attRecord.subject;
+
+            let stringPayloadGroupLogsSummaryTrace = "System Compiled Consolidated WhatsApp Payload Strings Buffer Map:\n------------------------------------------------------------\n";
+            attRecord.absents.forEach(rollNo => {
+                const student = window.AppState.mockDb.users[rollNo];
+                if (student) {
+                    const compiledString = `Dear Parent, your ward ${student.name} (${rollNo}) was ABSENT during the ${subjectStr} class session run on ${dateStr} at slot period hours ${slotStr}. Kindly confirm tracking details with academic office.`;
+                    stringPayloadGroupLogsSummaryTrace += `Number: [+91${student.parentPhone}] \nMessage: "${compiledString}"\n\n`;
+                }
+            });
+
+            console.log(stringPayloadGroupLogsSummaryTrace);
+            const targetSamplePhoneNum = window.AppState.mockDb.users[attRecord.absents[0]]?.parentPhone || "9154031201";
+            const targetSampleMsgString = encodeURIComponent(`Dear Parent, your ward was ABSENT during the ${subjectStr} class on ${dateStr}. Reference Key: st_attendance_cap.`);
+            const nativeWhatsAppGatewayUrlEndpointLink = `https://api.whatsapp.com/send?phone=91${targetSamplePhoneNum}&text=${targetSampleMsgString}`;
+            
+            window.showToast(`Compiled alerts strings payloads successfully for ${attRecord.absents.length} accounts.`);
+            window.open(nativeWhatsAppGatewayUrlEndpointLink, '_blank');
+        };
+
+        window.filterReportPreview = function() {
+            const select = document.getElementById('reportFilterSelect');
+            const tbody = document.getElementById('reportPreviewTableBody');
+            if(!tbody || !select) return;
+            
+            const records = Object.values(window.AppState.mockDb.attendance);
+            if(records.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="py-6 text-center text-slate-400 font-mono">No data available.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = '';
+            let filterVal = select.value;
+            
+            records.forEach(rec => {
+                if(filterVal !== 'all' && rec.sessionId !== filterVal) return;
+                const allRolls = [...rec.presents, ...rec.absents];
+                
+                allRolls.forEach(rNo => {
+                    const u = window.AppState.mockDb.users[rNo] || { name: "-" };
+                    const isPresent = rec.presents.includes(rNo);
+                    const statusClass = isPresent ? "text-greenText font-black" : "text-rose-600 font-black";
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-sky-50 transition-colors";
+                    tr.innerHTML = `
+                        <td class="py-2 px-3">${rec.date}</td>
+                        <td class="py-2 px-3 font-mono">${rec.subject}</td>
+                        <td class="py-2 px-3 font-mono font-bold">${rNo}</td>
+                        <td class="py-2 px-3 truncate max-w-[100px]" title="${u.name}">${u.name}</td>
+                        <td class="py-2 px-3 ${statusClass}">${isPresent ? 'P' : 'A'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        };
+
+        window.updateReportPreviewTable = function() {
+            const select = document.getElementById('reportFilterSelect');
+            if(!select) return;
+            select.innerHTML = '<option value="all">All Sessions</option>';
+            const records = Object.values(window.AppState.mockDb.attendance);
+            records.forEach(rec => {
+                const opt = document.createElement('option');
+                opt.value = rec.sessionId;
+                opt.innerText = `${rec.subject} (${rec.date})`;
+                select.appendChild(opt);
+            });
+            window.filterReportPreview();
+            window.updateReportAuditInterfaceMetrics();
+        };
+
+        window.updateReportAuditInterfaceMetrics = function() {
+            const countStudents = Object.values(window.AppState.mockDb.users).filter(u => u.approvalStatus === 'approved').length;
+            const countSessions = Object.keys(window.AppState.mockDb.attendance).length;
+            
+            const sCountEl = document.getElementById('rptTotalStudentsCount');
+            const sessCountEl = document.getElementById('rptTotalSessionsCount');
+            if(sCountEl) sCountEl.innerText = `${countStudents} Approved Profiles Matrix`;
+            if(sessCountEl) sessCountEl.innerText = `${countSessions} Active Session Documents Mapped`;
+        };
+
+        window.generateReport = function(reportScopeSegmentationKey, documentFormatExtensionType) {
+            const attendanceRecordsList = Object.values(window.AppState.mockDb.attendance);
+            if (attendanceRecordsList.length === 0) {
+                window.showToast("Reporting matrices failure: Operational repository empty.", "error");
+                return;
+            }
+
+            const flatTabularDataRowsMatrix = [];
+            attendanceRecordsList.forEach(rec => {
+                const absoluteSectionStudentRollsCollection = [...rec.presents, ...rec.absents];
+                absoluteSectionStudentRollsCollection.forEach(rNo => {
+                    const studentInfoDetailsObject = window.AppState.mockDb.users[rNo] || { name: "Unknown Profile", parentPhone: "-" };
+                    flatTabularDataRowsMatrix.push({
+                        "Date Matrix Parameter": rec.date,
+                        "Time Slot Boundary": rec.slot,
+                        "Subject Key Code": rec.subject,
+                        "Year Parameter": rec.year,
+                        "Section Bound": rec.section,
+                        "Student Roll No ID": rNo,
+                        "Official Full Name String": studentInfoDetailsObject.name,
+                        "Parent Contact Number": studentInfoDetailsObject.parentPhone,
+                        "Real-Time Verification Metric": rec.presents.includes(rNo) ? "PRESENT" : "ABSENT",
+                        "System Manual Override Flag": rec.overrides[rNo] ? "TRUE" : "FALSE"
+                    });
+                });
+            });
+
+            if (documentFormatExtensionType === 'excel') {
+                const worksheet = XLSX.utils.json_to_sheet(flatTabularDataRowsMatrix);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Logs");
+                XLSX.writeFile(workbook, `st_attendance_cap_${reportScopeSegmentationKey.toUpperCase()}_Ledger.xlsx`);
+                window.showToast("Tabular Excel workbook generated successfully.");
+            } else if (documentFormatExtensionType === 'pdf') {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(14);
+                doc.setTextColor(15, 23, 42);
+                doc.text("st_attendance_cap - Production System Reporting Analytics Grid", 14, 20);
+                
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.setTextColor(100, 116, 139);
+                doc.text(`Scope: ${reportScopeSegmentationKey.toUpperCase()} | Target App Name Namespace: st_attendance_cap`, 14, 26);
+                
+                doc.setDrawColor(226, 232, 240);
+                doc.line(14, 35, 196, 35);
+                
+                let verticalPositionOffsetOffsetAxisVal = 44;
+                doc.setFont("helvetica", "bold");
+                doc.setTextColor(51, 65, 85);
+                doc.text("Date", 14, verticalPositionOffsetOffsetAxisVal);
+                doc.text("Subject", 34, verticalPositionOffsetOffsetAxisVal);
+                doc.text("Yr-Sec", 64, verticalPositionOffsetOffsetAxisVal);
+                doc.text("Roll Number", 84, verticalPositionOffsetOffsetAxisVal);
+                doc.text("Student Name String", 114, verticalPositionOffsetOffsetAxisVal);
+                doc.text("Status", 174, verticalPositionOffsetOffsetAxisVal);
+                
+                doc.line(14, verticalPositionOffsetOffsetAxisVal + 2, 196, verticalPositionOffsetOffsetAxisVal + 2);
+                verticalPositionOffsetOffsetAxisVal += 8;
+                
+                doc.setFont("helvetica", "normal");
+                doc.setTextColor(71, 85, 105);
+                
+                flatTabularDataRowsMatrix.slice(0, 24).forEach(row => {
+                    doc.text(String(row["Date Matrix Parameter"]), 14, verticalPositionOffsetOffsetAxisVal);
+                    doc.text(String(row["Subject Key Code"]).substring(0, 12), 34, verticalPositionOffsetOffsetAxisVal);
+                    doc.text(`Yr ${row["Year Parameter"]}-${row["Section Bound"]}`, 64, verticalPositionOffsetOffsetAxisVal);
+                    doc.text(String(row["Student Roll No ID"]), 84, verticalPositionOffsetOffsetAxisVal);
+                    doc.text(String(row["Official Full Name String"]).substring(0, 24), 114, verticalPositionOffsetOffsetAxisVal);
+                    doc.text(String(row["Real-Time Verification Metric"]), 174, verticalPositionOffsetOffsetAxisVal);
+                    verticalPositionOffsetOffsetAxisVal += 7;
+                });
+                doc.save(`st_attendance_cap_Report_${reportScopeSegmentationKey.toUpperCase()}_Layout.pdf`);
+                window.showToast("Printable PDF data document compiled successfully.");
+            }
+        };
+
+        window.addEventListener('beforeunload', window.cleanupResources);
+        document.addEventListener("visibilitychange", function() { if (document.visibilityState === 'hidden') window.cleanupResources(); });
+
+        window.executeModuleExports = function(dbRef, setDocRef, docRef, updateDocRef, arrayUnionRef, arrayRemoveRef) {
+            window.db = dbRef;
+            window.setDoc = setDocRef;
+            window.doc = docRef;
+            window.updateDoc = updateDocRef;
+            window.arrayUnion = arrayUnionRef;
+            window.arrayRemove = arrayRemoveRef;
+        };
+
+        window.loadDatabaseFromLocalStorage();
+    </script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getMessaging } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+            authDomain: "stuattnd.firebaseapp.com",
+            projectId: "stuattnd",
+            storageBucket: "stuattnd.firebasestorage.app",
+            messagingSenderId: "511533506488",
+            appId: "1:511533506488:web:aca4de3d513915d012f94d",
+            measurementId: "G-9PZZM5LFKX"
+        };
+
+        try {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+            let messaging = null;
+            try { messaging = getMessaging(app); } catch(e){}
+            window.executeModuleExports(db, setDoc, doc, updateDoc, arrayUnion, arrayRemove);
+        } catch(e) {}
+    </script>
+</body>
+</html>
