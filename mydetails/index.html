@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Data Hub - Entry Portal</title>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.12);
+            --glass-border: rgba(255, 255, 255, 0.25);
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.75);
+            --text-dark: #0f172a;
+            --accent: #22d3ee; /* Light Cyan */
+            --success: #34d399; /* Emerald Green */
+            --primary-gradient: linear-gradient(135deg, #0d9488 0%, #0284c7 50%, #10b981 100%);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            min-height: 100vh;
+            background: var(--primary-gradient);
+            background-size: 200% 200%;
+            animation: gradientShift 15s ease infinite;
+            color: var(--text-main);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 20px;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-radius: 24px;
+            border: 1px solid var(--glass-border);
+            box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.2);
+            overflow: hidden;
+            margin-top: 5vh;
+            padding: 30px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Form Styles */
+        .form-group {
+            margin-bottom: 22px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 0.95rem;
+            letter-spacing: 0.5px;
+            color: var(--text-main);
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid var(--glass-border);
+            color: var(--text-main);
+            font-size: 1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        /* Enforce capitals only visually in text inputs */
+        .form-control-caps {
+            text-transform: uppercase;
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.22);
+            box-shadow: 0 0 12px rgba(34, 211, 238, 0.2);
+        }
+
+        /* Year Select Cards */
+        .year-selector {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .year-card {
+            position: relative;
+        }
+
+        .year-card input {
+            display: none;
+        }
+
+        .year-card label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px 5px;
+            background: rgba(255, 255, 255, 0.12);
+            border: 1px solid var(--glass-border);
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            margin: 0;
+            text-align: center;
+            color: var(--text-main);
+        }
+
+        .year-card input:checked + label {
+            background: var(--success);
+            border-color: var(--success);
+            color: var(--text-dark);
+            box-shadow: 0 4px 15px rgba(52, 211, 153, 0.4);
+        }
+
+        /* Buttons */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 12px;
+            border: none;
+            background: var(--success);
+            color: var(--text-dark);
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(52, 211, 153, 0.4);
+            background: #2ebd85;
+        }
+
+        .btn:disabled {
+            background: rgba(255, 255, 255, 0.2);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Responsive Breakpoints */
+        @media (max-width: 600px) {
+            .year-selector { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+            .container { margin-top: 0; border-radius: 0; border: none; padding: 25px 15px; }
+            body { padding: 0; }
+        }
+
+        /* Custom Modal System (Avoiding alert()) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-box {
+            background: #ffffff;
+            color: var(--text-dark);
+            padding: 25px;
+            border-radius: 16px;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #0f172a;
+        }
+
+        .modal-text {
+            font-size: 0.95rem;
+            color: #475569;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .modal-btn {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .modal-btn:hover {
+            background: #0369a1;
+        }
+
+        /* Toast Notification */
+        #toast {
+            visibility: hidden;
+            min-width: 280px;
+            background-color: #0f172a;
+            color: #fff;
+            text-align: center;
+            border-radius: 10px;
+            padding: 16px;
+            position: fixed;
+            z-index: 99;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 0.95rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        #toast.show {
+            visibility: visible;
+            animation: fadein 0.5s, fadeout 0.5s 2.5s;
+        }
+        @keyframes fadein {
+            from {bottom: 0; opacity: 0;}
+            to {bottom: 30px; opacity: 1;}
+        }
+        @keyframes fadeout {
+            from {bottom: 30px; opacity: 0;}
+            to {bottom: 0; opacity: 0;}
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid var(--text-dark);
+            width: 18px;
+            height: 18px;
+            animation: spin 0.8s linear infinite;
+            display: none;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Student Data Entry</h1>
+            <p>Enter information to register the student onto the cloud network</p>
+        </div>
+
+        <form id="studentForm">
+            <div class="form-group">
+                <label for="rollno">Roll Number</label>
+                <input type="text" id="rollno" class="form-control form-control-caps" placeholder="e.g. 24091A3300" required>
+            </div>
+
+            <div class="form-group">
+                <label for="name">Student Name</label>
+                <input type="text" id="name" class="form-control form-control-caps" placeholder="e.g. V RAGHAVENDRA" required>
+            </div>
+
+            <div class="form-group">
+                <label for="mobile">Mobile Number (10 Digits)</label>
+                <input type="tel" id="mobile" class="form-control" placeholder="9874561239" required>
+            </div>
+
+            <div class="form-group">
+                <label>Class Year</label>
+                <div class="year-selector">
+                    <div class="year-card">
+                        <input type="radio" name="year" id="yr1" value="1st Year" required>
+                        <label for="yr1">1st Yr</label>
+                    </div>
+                    <div class="year-card">
+                        <input type="radio" name="year" id="yr2" value="2nd Year">
+                        <label for="yr2">2nd Yr</label>
+                    </div>
+                    <div class="year-card">
+                        <input type="radio" name="year" id="yr3" value="3rd Year">
+                        <label for="yr3">3rd Yr</label>
+                    </div>
+                    <div class="year-card">
+                        <input type="radio" name="year" id="yr4" value="4th Year">
+                        <label for="yr4">4th Yr</label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" id="submitBtn" class="btn" disabled>
+                <span class="spinner" id="btnSpinner"></span>
+                <span id="btnText">Connecting Cloud...</span>
+            </button>
+        </form>
+    </div>
+
+    <!-- Alert Modal -->
+    <div class="modal-overlay" id="alertModal">
+        <div class="modal-box">
+            <div class="modal-title" id="modalTitle">Notice</div>
+            <div class="modal-text" id="modalText">Message goes here.</div>
+            <button class="modal-btn" onclick="closeModal()">Dismiss</button>
+        </div>
+    </div>
+
+    <div id="toast">Data Saved Successfully!</div>
+
+    <!-- Firebase SDK Imports -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuration (Uses platform environment or default fallback)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+            authDomain: "stuattnd.firebaseapp.com",
+            projectId: "stuattnd",
+            storageBucket: "stuattnd.firebasestorage.app",
+            messagingSenderId: "511533506488",
+            appId: "1:511533506488:web:aca4de3d513915d012f94d",
+            measurementId: "G-9PZZM5LFKX"
+            };
+
+        // App Id tracking Rule 1
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'student-data-hub-prod';
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State Tracking
+        let dbUser = null;
+        const submitBtn = document.getElementById('submitBtn');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnText = document.getElementById('btnText');
+        const mobileInput = document.getElementById('mobile');
+
+        // Dynamic Real-Time Restriction: Limit mobile input strictly to 10 numerical digits
+        mobileInput.addEventListener('input', function(e) {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+        });
+
+        // Custom Notification Handlers
+        window.showToast = function(message) {
+            const toast = document.getElementById("toast");
+            toast.textContent = message;
+            toast.className = "show";
+            setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3000);
+        };
+
+        window.showAlert = function(title, text) {
+            document.getElementById('modalTitle').textContent = title;
+            document.getElementById('modalText').textContent = text;
+            document.getElementById('alertModal').classList.add('active');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('alertModal').classList.remove('active');
+        };
+
+        // RULE 3 - Custom auth prioritization before loading database
+        async function initializeSecurity() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (err) {
+                console.error("Auth Failure:", err);
+                showToast("Security Link Failure, Retrying...");
+                setTimeout(initializeSecurity, 2000);
+            }
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            dbUser = user;
+            if (user) {
+                submitBtn.disabled = false;
+                btnText.textContent = "Save Student Data";
+                btnSpinner.style.display = "none";
+            } else {
+                submitBtn.disabled = true;
+                btnText.textContent = "Connecting Cloud...";
+                btnSpinner.style.display = "inline-block";
+            }
+        });
+
+        // Initialize connection
+        initializeSecurity();
+
+        // Form Preprocessing and Data Submission with No Duplicates Logic
+        document.getElementById('studentForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            // Guard Statement Rule 3
+            if (!dbUser) {
+                showAlert("Authentication Required", "Please wait for your secured session connection to establish.");
+                return;
+            }
+
+            // Gather and sanitize inputs
+            const rawRoll = document.getElementById('rollno').value.trim().toUpperCase();
+            const rawName = document.getElementById('name').value.trim().toUpperCase(); // Enforce strict Capitals
+            const mobile = document.getElementById('mobile').value.trim();
+            const yearRadio = document.querySelector('input[name="year"]:checked');
+            
+            if (!yearRadio) {
+                showAlert("Form Error", "Please select a valid class year.");
+                return;
+            }
+            const year = yearRadio.value;
+
+            // Extra Mobile check (Strict 10 digits restriction)
+            if (mobile.length !== 10) {
+                showAlert("Validation Error", "The mobile number must be exactly 10 digits.");
+                return;
+            }
+
+            // Prep state
+            submitBtn.disabled = true;
+            btnSpinner.style.display = "inline-block";
+            btnText.textContent = "Checking Duplicates...";
+
+            try {
+                // Rule 1 & Rule 2: Strict paths and Simple queries (fetch collection in memory for duplicate checks)
+                const targetCollection = collection(db, 'artifacts', appId, 'public', 'data', 'students');
+                const snapshot = await getDocs(targetCollection);
+                
+                let isDuplicate = false;
+                snapshot.forEach((doc) => {
+                    const existingData = doc.data();
+                    if (existingData.rollno === rawRoll) {
+                        isDuplicate = true;
+                    }
+                });
+
+                if (isDuplicate) {
+                    showAlert("Duplicate Error", `A student with Roll Number "${rawRoll}" is already registered.`);
+                    submitBtn.disabled = false;
+                    btnSpinner.style.display = "none";
+                    btnText.textContent = "Save Student Data";
+                    return;
+                }
+
+                btnText.textContent = "Saving Record...";
+
+                // Cost-saving, clean document schema (Strict Capitals Only)
+                const studentRecord = {
+                    rollno: rawRoll,
+                    name: rawName, 
+                    mobile: mobile,
+                    year: year,
+                    timestamp: new Date().toISOString()
+                };
+
+                await addDoc(targetCollection, studentRecord);
+                
+                document.getElementById('studentForm').reset();
+                showToast("Data Uploaded to Cloud Successfully!");
+            } catch (error) {
+                console.error("Firestore Write Error:", error);
+                showAlert("Storage Fail", "Unable to save record online. Please verify connection and try again.");
+            } finally {
+                submitBtn.disabled = false;
+                btnSpinner.style.display = "none";
+                btnText.textContent = "Save Student Data";
+            }
+        });
+    </script>
+</body>
+</html>
