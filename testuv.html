@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ultrasonic Diagnostic & Auto-Scanner</title>
+    <!-- Tailwind CSS for modern look -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Smooth transitions for interactive elements */
+        .transition-all { transition: all 0.2s ease-in-out; }
+        /* Custom track styling for range slider */
+        input[type="range"]::-webkit-slider-runnable-track {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 4px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            background: #3b82f6;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col justify-between font-sans selection:bg-blue-500 selection:text-white">
+
+    <!-- Header Navigation -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-blue-600 p-2 rounded-lg text-white animate-pulse">
+                    <i data-lucide="activity" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight">UltraScanner</h1>
+                    <p class="text-xs text-slate-400">Acoustic & Ultrasonic Hardware Diagnostics</p>
+                </div>
+            </div>
+            <div id="sample-rate-badge" class="hidden md:flex items-center gap-2 bg-slate-800 px-3 py-1 rounded-full text-xs text-slate-300 border border-slate-700">
+                <i data-lucide="cpu" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>Sample Rate: <strong id="system-sample-rate">Detecting...</strong></span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Grid -->
+    <main class="max-w-4xl mx-auto px-4 py-6 flex-1 w-full grid grid-cols-1 md:grid-cols-3 gap-6">
+        
+        <!-- Left Side Controls (Transmitter / Sweeper) -->
+        <div class="md:col-span-1 flex flex-col gap-6">
+            <!-- Transmitter Card -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="font-semibold text-md text-slate-200 flex items-center gap-2">
+                        <i data-lucide="radio" class="text-blue-500 w-5 h-5"></i>
+                        Transmitter
+                    </h2>
+                    <span id="tx-status" class="px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-slate-700 text-slate-400">
+                        Muted
+                    </span>
+                </div>
+
+                <!-- Frequency Dial/Output -->
+                <div class="bg-slate-950/60 rounded-xl p-4 text-center border border-slate-900 mb-4">
+                    <div id="freq-display" class="text-3xl font-mono font-bold text-blue-400">15.000 <span class="text-sm font-normal text-slate-500">kHz</span></div>
+                    <div class="text-2xs text-slate-500 uppercase tracking-widest mt-1">Target Wave Frequency</div>
+                </div>
+
+                <!-- Manual Range Slider -->
+                <div class="space-y-2 mb-6">
+                    <div class="flex justify-between text-xs text-slate-400">
+                        <span>Min (10 kHz)</span>
+                        <span>Max (22 kHz)</span>
+                    </div>
+                    <input id="freq-slider" type="range" min="10000" max="22000" step="100" value="15000" class="w-full accent-blue-500 bg-transparent appearance-none cursor-pointer">
+                    <div class="text-center text-xs text-slate-400 italic pt-1">
+                        10–15 kHz is audible. 18.5+ kHz is ultrasound.
+                    </div>
+                </div>
+
+                <!-- Action Controls -->
+                <div class="flex gap-2">
+                    <button id="btn-toggle-play" onclick="togglePlayback()" class="flex-1 py-3 px-4 bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        <span>Start Tone</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Auto Scanner Control Card -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm">
+                <h2 class="font-semibold text-md text-slate-200 flex items-center gap-2 mb-3">
+                    <i data-lucide="sparkles" class="text-amber-500 w-5 h-5"></i>
+                    Auto-Limit Scan
+                </h2>
+                <p class="text-xs text-slate-400 leading-relaxed mb-4">
+                    The scanner automatically sweeps frequencies from 10 kHz to 22 kHz, measuring how well your microphone captures the signal to locate your hardware's safe maximum boundary.
+                </p>
+                <button id="btn-auto-scan" onclick="startAutoScan()" class="w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i data-lucide="zap" class="w-4 h-4"></i>
+                    <span>Run Auto Scan</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Side Visualization & Diagnostics -->
+        <div class="md:col-span-2 flex flex-col gap-6">
+            <!-- Spectrogram / Analysis Visualizer -->
+            <div class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm flex-1 flex flex-col">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-semibold text-md text-slate-200 flex items-center gap-2">
+                        <i data-lucide="waveform" class="text-green-500 w-5 h-5"></i>
+                        Acoustic Analysis Spectrum
+                    </h2>
+                    <button id="btn-mic-toggle" onclick="toggleMic()" class="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition-all">
+                        <i data-lucide="mic-off" id="mic-btn-icon" class="w-3.5 h-3.5 text-red-400"></i>
+                        <span id="mic-btn-text">Mic Disconnected</span>
+                    </button>
+                </div>
+
+                <!-- Main Detection Meter -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                    <div class="bg-slate-950/60 border border-slate-900 rounded-xl p-3 flex flex-col justify-between">
+                        <span class="text-2xs text-slate-500 uppercase font-semibold">Active Band Response</span>
+                        <div class="text-xl font-mono font-bold text-green-400 mt-1" id="active-signal-db">0%</div>
+                        <!-- Micro Meter Bar -->
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-2">
+                            <div id="signal-meter-fill" class="h-full bg-green-500 w-0 transition-all duration-75"></div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-900 rounded-xl p-3 flex flex-col justify-between">
+                        <span class="text-2xs text-slate-500 uppercase font-semibold">Distortion Level</span>
+                        <div class="text-xl font-mono font-bold text-yellow-500 mt-1" id="distortion-value">None</div>
+                        <div class="text-3xs text-slate-500 mt-2">Detecting audible harmonics</div>
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-900 rounded-xl p-3 flex flex-col justify-between">
+                        <span class="text-2xs text-slate-500 uppercase font-semibold">Max Safe Limit</span>
+                        <div class="text-xl font-mono font-bold text-cyan-400 mt-1" id="calc-max-limit">Undetected</div>
+                        <div class="text-3xs text-slate-500 mt-2">Determined by system scan</div>
+                    </div>
+                </div>
+
+                <!-- Visualization Canvas Container -->
+                <div class="bg-slate-950/80 border border-slate-900 rounded-xl p-2 relative flex-1 min-h-[220px]">
+                    <div class="absolute top-2 left-2 bg-slate-900/90 text-slate-400 border border-slate-800 px-2 py-0.5 rounded text-3xs font-mono flex items-center gap-1">
+                        <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-ping"></span>
+                        Real-Time high frequency FFT (10kHz - 22kHz)
+                    </div>
+                    <canvas id="visualizer-canvas" class="w-full h-full rounded"></canvas>
+                </div>
+            </div>
+
+            <!-- Auto-Scan Report Display (Hidden by default, shown after scan) -->
+            <div id="scan-report-card" class="hidden bg-slate-800/60 border border-slate-700/60 rounded-2xl p-5 shadow-xl backdrop-blur-sm animate-fade-in">
+                <h2 class="font-semibold text-md text-slate-200 flex items-center gap-2 mb-3">
+                    <i data-lucide="clipboard-check" class="text-cyan-500 w-5 h-5"></i>
+                    Diagnostic Scan Results
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <div class="text-xs text-slate-400">Hardware Profile Details:</div>
+                        <ul class="text-xs space-y-1.5 text-slate-300 font-mono">
+                            <li>• Native Sample Rate: <span id="report-sample" class="text-blue-400">Detecting...</span></li>
+                            <li>• Max Nyquist Barrier: <span id="report-nyquist" class="text-purple-400">Detecting...</span></li>
+                            <li>• Maximum Clean Capture: <span id="report-clean-limit" class="text-green-400">Detecting...</span></li>
+                        </ul>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="text-xs text-slate-400">Hardware Evaluation:</div>
+                        <p id="report-advice" class="text-xs text-slate-300 leading-relaxed bg-slate-900/60 border border-slate-950 p-3 rounded-lg">
+                            Run a full system scan to analyze the hardware capabilities.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Page Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950/40 text-center py-4 text-xs text-slate-500 mt-8">
+        <div class="max-w-4xl mx-auto px-4 flex flex-col sm:flex-row justify-between items-center gap-2">
+            <div>Device Diagnostics Suite &bull; Pure Wave Synthesis Engine</div>
+            <div class="flex items-center gap-1">
+                <i data-lucide="shield-alert" class="w-3.5 h-3.5 text-slate-400"></i>
+                Protect hearing: Do not test at maximum volume for extended periods.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Audio & Analysis Processing Script -->
+    <script>
+        // --- Web Audio State and Contexts ---
+        let txAudioCtx = null;
+        let rxAudioCtx = null;
+        let oscillator = null;
+        let micStream = null;
+        let analyser = null;
+        let sourceNode = null;
+
+        // UI Variables
+        let isTransmitting = false;
+        let isMicActive = false;
+        let isAutoScanning = false;
+        let scanTimer = null;
+        let scanFreq = 10000;
+        let scanHistory = []; // Tracks output vs received signal strength
+
+        // Canvas Settings
+        const canvas = document.getElementById('visualizer-canvas');
+        const canvasCtx = canvas.getContext('2d');
+        let drawVisualId = null;
+
+        // On document load, configure icons and responsive elements
+        window.onload = function() {
+            lucide.createIcons();
+            initResponsiveCanvas();
+            setupSliders();
+            checkSystemCapabilities();
+        };
+
+        // Ensure canvas behaves on resize
+        window.addEventListener('resize', initResponsiveCanvas);
+        function initResponsiveCanvas() {
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            canvasCtx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            drawStaticVisual();
+        }
+
+        // Setup sliders and display indicators
+        function setupSliders() {
+            const freqSlider = document.getElementById('freq-slider');
+            const freqDisplay = document.getElementById('freq-display');
+
+            freqSlider.addEventListener('input', (e) => {
+                if (isAutoScanning) return; // Ignore input during automatic sweeps
+                const targetValue = parseInt(e.target.value);
+                updateFrequency(targetValue);
+            });
+        }
+
+        function checkSystemCapabilities() {
+            // Attempt a safe temporary context to check device specs
+            try {
+                const tempCtx = new (window.AudioContext || window.webkitAudioContext)();
+                document.getElementById('system-sample-rate').innerText = `${tempCtx.sampleRate} Hz`;
+                document.getElementById('sample-rate-badge').classList.remove('hidden');
+                tempCtx.close();
+            } catch (e) {
+                console.warn("Could not check sample rate ahead of initialization.", e);
+            }
+        }
+
+        // Update Frequency live on dynamic components
+        function updateFrequency(hz) {
+            document.getElementById('freq-slider').value = hz;
+            document.getElementById('freq-display').innerHTML = `${(hz / 1000).toFixed(3)} <span class="text-sm font-normal text-slate-500">kHz</span>`;
+            if (oscillator && isTransmitting) {
+                // Smooth transition frequency changes to prevent pops/clicks
+                oscillator.frequency.setTargetAtTime(hz, txAudioCtx.currentTime, 0.05);
+            }
+        }
+
+        // Play/Pause Control of the Tone generator
+        function togglePlayback() {
+            if (isAutoScanning) return; // Prevent manual disruption during scans
+
+            const playBtn = document.getElementById('btn-toggle-play');
+            const statusBadge = document.getElementById('tx-status');
+
+            if (!isTransmitting) {
+                // Initialize context
+                if (!txAudioCtx) {
+                    txAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                // Audio safety guard: Resume context if suspended
+                if (txAudioCtx.state === 'suspended') {
+                    txAudioCtx.resume();
+                }
+
+                // Setup raw high frequency sine wave oscillator
+                oscillator = txAudioCtx.createOscillator();
+                oscillator.type = 'sine';
+                
+                // Read current slider frequency
+                const currentFreq = parseInt(document.getElementById('freq-slider').value);
+                oscillator.frequency.setValueAtTime(currentFreq, txAudioCtx.currentTime);
+
+                oscillator.connect(txAudioCtx.destination);
+                oscillator.start();
+                
+                // Update UI state
+                isTransmitting = true;
+                playBtn.innerHTML = `<i data-lucide="square" class="w-4 h-4"></i><span>Stop Tone</span>`;
+                playBtn.className = playBtn.className.replace('bg-blue-600 hover:bg-blue-500', 'bg-red-600 hover:bg-red-500');
+                statusBadge.innerText = 'Transmitting';
+                statusBadge.className = "px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-green-500/20 text-green-400";
+            } else {
+                stopTransmission();
+                
+                // Reset play button styling
+                playBtn.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Start Tone</span>`;
+                playBtn.className = playBtn.className.replace('bg-red-600 hover:bg-red-500', 'bg-blue-600 hover:bg-blue-500');
+            }
+            lucide.createIcons();
+        }
+
+        function stopTransmission() {
+            if (oscillator) {
+                try {
+                    oscillator.stop();
+                    oscillator.disconnect();
+                } catch(e) {}
+                oscillator = null;
+            }
+            isTransmitting = false;
+            const statusBadge = document.getElementById('tx-status');
+            statusBadge.innerText = 'Muted';
+            statusBadge.className = "px-2 py-0.5 rounded text-2xs font-bold uppercase tracking-wider bg-slate-700 text-slate-400";
+        }
+
+        // --- Microphone Audio Listener Logic ---
+        async function toggleMic() {
+            const micBtnIcon = document.getElementById('mic-btn-icon');
+            const micBtnText = document.getElementById('mic-btn-text');
+
+            if (!isMicActive) {
+                try {
+                    // Standard configurations to prevent browser echo cancellation filters from clipping high tones
+                    const constraints = {
+                        audio: {
+                            echoCancellation: false,
+                            noiseSuppression: false,
+                            autoGainControl: false
+                        }
+                    };
+
+                    micStream = await navigator.mediaDevices.getUserMedia(constraints);
+                    rxAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    
+                    sourceNode = rxAudioCtx.createMediaStreamSource(micStream);
+                    analyser = rxAudioCtx.createAnalyser();
+                    
+                    // Large window size for precise frequency classification
+                    analyser.fftSize = 4096; 
+                    sourceNode.connect(analyser);
+
+                    // Sync UI
+                    isMicActive = true;
+                    micBtnIcon.setAttribute('data-lucide', 'mic');
+                    micBtnIcon.classList.remove('text-red-400');
+                    micBtnIcon.classList.add('text-green-400');
+                    micBtnText.innerText = 'Listening Enabled';
+                    
+                    // Update sample rate readout
+                    document.getElementById('system-sample-rate').innerText = `${rxAudioCtx.sampleRate} Hz`;
+                    document.getElementById('sample-rate-badge').classList.remove('hidden');
+
+                    runAnalyserLoop();
+                } catch (err) {
+                    showFallbackMessage("Microphone Blocked", "Please verify microphone permissions in your browser. Audio testing requires active audio permissions.");
+                    console.error("Microphone access failed: ", err);
+                }
+            } else {
+                disableMic();
+            }
+            lucide.createIcons();
+        }
+
+        function disableMic() {
+            isMicActive = false;
+            cancelAnimationFrame(drawVisualId);
+            
+            if (micStream) {
+                micStream.getTracks().forEach(track => track.stop());
+                micStream = null;
+            }
+            if (rxAudioCtx) {
+                try { rxAudioCtx.close(); } catch(e) {}
+                rxAudioCtx = null;
+            }
+            
+            const micBtnIcon = document.getElementById('mic-btn-icon');
+            const micBtnText = document.getElementById('mic-btn-text');
+            micBtnIcon.setAttribute('data-lucide', 'mic-off');
+            micBtnIcon.classList.remove('text-green-400');
+            micBtnIcon.classList.add('text-red-400');
+            micBtnText.innerText = 'Mic Disconnected';
+            
+            document.getElementById('active-signal-db').innerText = '0%';
+            document.getElementById('signal-meter-fill').style.width = '0%';
+            document.getElementById('distortion-value').innerText = 'None';
+            document.getElementById('distortion-value').className = "text-xl font-mono font-bold text-yellow-500 mt-1";
+
+            drawStaticVisual();
+        }
+
+        // Active loop tracking decibel spectrum ranges
+        function runAnalyserLoop() {
+            if (!isMicActive) return;
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
+            analyser.getByteFrequencyData(dataArray);
+
+            const sampleRate = rxAudioCtx.sampleRate;
+            const binSize = (sampleRate / 2) / bufferLength;
+
+            // Compute current target frequency bin
+            const targetFreq = isAutoScanning ? scanFreq : parseInt(document.getElementById('freq-slider').value);
+            const targetBin = Math.round(targetFreq / binSize);
+
+            // Read target bin energy level with neighboring bins to tolerate minor hardware phase shifts
+            const rawAmplitude = Math.max(
+                dataArray[targetBin - 2] || 0,
+                dataArray[targetBin - 1] || 0,
+                dataArray[targetBin] || 0,
+                dataArray[targetBin + 1] || 0,
+                dataArray[targetBin + 2] || 0
+            );
+
+            // Normalize energy readout (0-255 scale to percentage)
+            const signalPercentage = Math.round((rawAmplitude / 255) * 100);
+            
+            document.getElementById('active-signal-db').innerText = `${signalPercentage}%`;
+            document.getElementById('signal-meter-fill').style.width = `${signalPercentage}%`;
+
+            // Detect Speaker Distortion / Audible harmonics leak
+            // We measure typical speech range lower frequency harmonics (e.g., 2 kHz to 8 kHz) 
+            // relative to our silent high-frequency sweep.
+            let subharmonicLeak = 0;
+            const lowBinLimit = Math.round(2000 / binSize);
+            const highBinLimit = Math.round(8000 / binSize);
+            let peakLowEnergy = 0;
+
+            for (let i = lowBinLimit; i <= highBinLimit; i++) {
+                if (dataArray[i] > peakLowEnergy) {
+                    peakLowEnergy = dataArray[i];
+                }
+            }
+
+            // If we are actively transmitting a near-ultrasound tone, but also detect a surge of audible low frequency noise:
+            if (isTransmitting && signalPercentage > 15 && peakLowEnergy > 100) {
+                const distIndicator = document.getElementById('distortion-value');
+                distIndicator.innerText = "High (Audible Buzz)";
+                distIndicator.className = "text-xl font-mono font-bold text-red-500 mt-1 animate-pulse";
+            } else if (isTransmitting && signalPercentage > 10 && peakLowEnergy > 45) {
+                const distIndicator = document.getElementById('distortion-value');
+                distIndicator.innerText = "Medium (Distortion)";
+                distIndicator.className = "text-xl font-mono font-bold text-yellow-500 mt-1";
+            } else {
+                const distIndicator = document.getElementById('distortion-value');
+                distIndicator.innerText = "Clean Wave";
+                distIndicator.className = "text-xl font-mono font-bold text-green-500 mt-1";
+            }
+
+            // Log performance details if auto-scanning is currently running
+            if (isAutoScanning) {
+                scanHistory.push({ frequency: targetFreq, amplitude: signalPercentage });
+            }
+
+            // Draw real-time spectrum graph
+            drawSpectrum(dataArray, binSize, targetFreq);
+
+            drawVisualId = requestAnimationFrame(runAnalyserLoop);
+        }
+
+        // Draw Canvas visualizer layout
+        function drawSpectrum(dataArray, binSize, currentHighlightFreq) {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            
+            // Clear Frame with sophisticated deep navy slate gradient background
+            canvasCtx.fillStyle = '#020617';
+            canvasCtx.fillRect(0, 0, w, h);
+
+            // Define frequency window boundaries to display 8 kHz up to 22.5 kHz
+            const startDisplayHz = 8000;
+            const endDisplayHz = 22500;
+            const totalRange = endDisplayHz - startDisplayHz;
+
+            // Generate horizontal grids
+            canvasCtx.strokeStyle = 'rgba(30, 41, 59, 0.7)';
+            canvasCtx.lineWidth = 1;
+            for (let dbGrid = 0.25; dbGrid < 1; dbGrid += 0.25) {
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(0, h * dbGrid);
+                canvasCtx.lineTo(w, h * dbGrid);
+                canvasCtx.stroke();
+            }
+
+            // Draw spectrum line graph
+            canvasCtx.beginPath();
+            canvasCtx.lineWidth = 2;
+            
+            // Generate glowing blue-to-green gradient stroke
+            const lineGradient = canvasCtx.createLinearGradient(0, h, w, 0);
+            lineGradient.addColorStop(0, '#3b82f6');
+            lineGradient.addColorStop(0.5, '#10b981');
+            lineGradient.addColorStop(1, '#a855f7');
+            canvasCtx.strokeStyle = lineGradient;
+
+            let points = [];
+            for (let i = 0; i < dataArray.length; i++) {
+                const freq = i * binSize;
+                if (freq >= startDisplayHz && freq <= endDisplayHz) {
+                    // Normalize position along spectrum line
+                    const x = ((freq - startDisplayHz) / totalRange) * w;
+                    // Scale amplitude
+                    const val = dataArray[i];
+                    const y = h - (val / 255) * (h - 20) - 5;
+                    points.push({ x, y });
+                }
+            }
+
+            if (points.length > 0) {
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(points[0].x, points[0].y);
+                for (let i = 1; i < points.length; i++) {
+                    canvasCtx.lineTo(points[i].x, points[i].y);
+                }
+                canvasCtx.stroke();
+            }
+
+            // Draw Frequency Marker Lines
+            const markerFrequencies = [10000, 12000, 15000, 18500, 20000, 22000];
+            canvasCtx.fillStyle = '#64748b';
+            canvasCtx.font = '9px monospace';
+            canvasCtx.textAlign = 'center';
+
+            markerFrequencies.forEach((f) => {
+                const x = ((f - startDisplayHz) / totalRange) * w;
+                if (x >= 0 && x <= w) {
+                    canvasCtx.strokeStyle = 'rgba(51, 65, 85, 0.4)';
+                    canvasCtx.beginPath();
+                    canvasCtx.moveTo(x, 0);
+                    canvasCtx.lineTo(x, h - 15);
+                    canvasCtx.stroke();
+                    
+                    canvasCtx.fillText(`${(f / 1000).toFixed(1)}k`, x, h - 4);
+                }
+            });
+
+            // Draw target frequency highlight bubble
+            const highlightX = ((currentHighlightFreq - startDisplayHz) / totalRange) * w;
+            if (highlightX >= 0 && highlightX <= w) {
+                canvasCtx.strokeStyle = '#ef4444';
+                canvasCtx.lineWidth = 1.5;
+                canvasCtx.setLineDash([4, 4]);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(highlightX, 0);
+                canvasCtx.lineTo(highlightX, h - 15);
+                canvasCtx.stroke();
+                canvasCtx.setLineDash([]); // clear dash
+
+                // Target tooltip indicator text
+                canvasCtx.fillStyle = '#ef4444';
+                canvasCtx.fillRect(highlightX - 25, 5, 50, 14);
+                canvasCtx.fillStyle = '#ffffff';
+                canvasCtx.font = 'bold 8px sans-serif';
+                canvasCtx.textAlign = 'center';
+                canvasCtx.fillText(`${(currentHighlightFreq/1000).toFixed(2)}k`, highlightX, 15);
+            }
+        }
+
+        function drawStaticVisual() {
+            const w = canvas.width / window.devicePixelRatio;
+            const h = canvas.height / window.devicePixelRatio;
+            canvasCtx.clearRect(0, 0, w, h);
+            canvasCtx.fillStyle = '#0f172a';
+            canvasCtx.fillRect(0, 0, w, h);
+
+            // Render instructional static baseline text
+            canvasCtx.fillStyle = '#475569';
+            canvasCtx.font = '12px sans-serif';
+            canvasCtx.textAlign = 'center';
+            canvasCtx.fillText("Acoustic Stream Offline", w / 2, h / 2 - 10);
+            canvasCtx.font = '9px sans-serif';
+            canvasCtx.fillText("Connect your microphone and play a tone to see wave diagnostics", w / 2, h / 2 + 10);
+        }
+
+        // --- Auto-Frequency Sweep Scanner Logic ---
+        async function startAutoScan() {
+            if (isAutoScanning) return;
+
+            // Step 1: Force Mic connection setup
+            if (!isMicActive) {
+                await toggleMic();
+                if (!isMicActive) return; // Abort if mic initialization fails
+            }
+
+            // Step 2: Set up transmitter parameters
+            if (!isTransmitting) {
+                togglePlayback();
+            }
+
+            // Lock manual elements and prep scanning arrays
+            isAutoScanning = true;
+            scanFreq = 10000;
+            scanHistory = [];
+            
+            const autoScanBtn = document.getElementById('btn-auto-scan');
+            autoScanBtn.disabled = true;
+            autoScanBtn.innerText = "Running sweep...";
+            autoScanBtn.className = "w-full py-3 px-4 bg-slate-700 text-slate-400 rounded-xl cursor-not-allowed";
+
+            document.getElementById('scan-report-card').classList.add('hidden');
+
+            // Begin auto sweep timer loop
+            runAutoScanStep();
+        }
+
+        function runAutoScanStep() {
+            if (!isAutoScanning) return;
+
+            updateFrequency(scanFreq);
+
+            // Increment sweep frequency (by 250 Hz intervals to gather granular resolution)
+            scanFreq += 250;
+
+            if (scanFreq <= 22000) {
+                scanTimer = setTimeout(runAutoScanStep, 80); // Quick incremental steps
+            } else {
+                finishAutoScan();
+            }
+        }
+
+        function finishAutoScan() {
+            isAutoScanning = false;
+            stopTransmission();
+
+            // Re-render trigger buttons
+            const autoScanBtn = document.getElementById('btn-auto-scan');
+            autoScanBtn.disabled = false;
+            autoScanBtn.innerHTML = `<i data-lucide="zap" class="w-4 h-4"></i><span>Run Auto Scan</span>`;
+            autoScanBtn.className = "w-full py-3 px-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 active:scale-[0.98] text-white font-semibold rounded-xl transition-all shadow-lg flex items-center justify-center gap-2";
+            lucide.createIcons();
+
+            // Analyze collected sweep dataset
+            generateDiagnosticReport();
+        }
+
+        // Parse dataset to output absolute safe bandwidth operational thresholds
+        function generateDiagnosticReport() {
+            if (scanHistory.length === 0) return;
+
+            const sampleRate = rxAudioCtx ? rxAudioCtx.sampleRate : 48000;
+            const theoreticalNyquist = sampleRate / 2;
+
+            // Filter history records to establish standard peak readings
+            // Find highest frequency that returns an amplitude signal of at least 15% strength
+            let maxSafeFreq = 0;
+            let healthySignals = scanHistory.filter(item => item.amplitude >= 15);
+
+            if (healthySignals.length > 0) {
+                // Pick the highest frequency successfully validated by active response threshold
+                const highestRecord = healthySignals[healthySignals.length - 1];
+                maxSafeFreq = highestRecord.frequency;
+            }
+
+            // Configure displays
+            const reportCard = document.getElementById('scan-report-card');
+            reportCard.classList.remove('hidden');
+
+            document.getElementById('report-sample').innerText = `${sampleRate} Hz`;
+            document.getElementById('report-nyquist').innerText = `${theoreticalNyquist / 1000} kHz`;
+
+            const calcLimitDisplay = document.getElementById('calc-max-limit');
+            const cleanLimitDisplay = document.getElementById('report-clean-limit');
+            const adviceParagraph = document.getElementById('report-advice');
+
+            if (maxSafeFreq > 0) {
+                const maxKhz = (maxSafeFreq / 1000).toFixed(2);
+                calcLimitDisplay.innerText = `${maxKhz} kHz`;
+                cleanLimitDisplay.innerText = `${maxKhz} kHz`;
+
+                if (maxSafeFreq >= 18500) {
+                    calcLimitDisplay.className = "text-xl font-mono font-bold text-green-400 mt-1";
+                    adviceParagraph.innerHTML = `🌟 <strong>Excellent hardware capability!</strong> Your microphone successfully captured tones up to <strong>${maxKhz} kHz</strong>. This device can easily run 18.5 kHz ultrasonic waves with perfect fidelity.`;
+                } else if (maxSafeFreq >= 16000) {
+                    calcLimitDisplay.className = "text-xl font-mono font-bold text-yellow-400 mt-1";
+                    adviceParagraph.innerHTML = `⚠️ <strong>Partial capabilities:</strong> Communication was stable up to <strong>${maxKhz} kHz</strong>, but failed on 18.5 kHz ultrasound. Your speakers or microphone software are filtering out higher frequencies. Try using a frequency below 16 kHz.`;
+                } else {
+                    calcLimitDisplay.className = "text-xl font-mono font-bold text-red-400 mt-1";
+                    adviceParagraph.innerHTML = `❌ <strong>Heavy software limit:</strong> Your device stopped picking up waves over <strong>${maxKhz} kHz</strong>. Most likely, your operating system or device utilizes aggressive acoustic noise cancellation.`;
+                }
+            } else {
+                calcLimitDisplay.innerText = "No Wave Seen";
+                calcLimitDisplay.className = "text-xl font-mono font-bold text-red-500 mt-1";
+                cleanLimitDisplay.innerText = "Unavailable";
+                adviceParagraph.innerHTML = `❌ <strong>Scan inconclusive.</strong> The microphone did not hear any of the produced sweep tones. Ensure your device speakers are unmuted, turned up, and the microphone is placed near the speaker.`;
+            }
+        }
+
+        // User helper alerts
+        function showFallbackMessage(title, text) {
+            const container = document.createElement('div');
+            container.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur px-4";
+            container.innerHTML = `
+                <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl max-w-sm w-full shadow-2xl">
+                    <h3 class="font-bold text-lg text-slate-100 mb-2">${title}</h3>
+                    <p class="text-sm text-slate-400 leading-relaxed mb-4">${text}</p>
+                    <button onclick="this.parentElement.parentElement.remove()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg transition-all">Dismiss</button>
+                </div>
+            `;
+            document.body.appendChild(container);
+        }
+    </script>
+</body>
+</html>
