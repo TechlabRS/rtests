@@ -3,436 +3,2222 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>VConnect | Intelligent Campus OS</title>
+    <title>Aura | AI Attendance</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+    <!-- FaceAPI.js (Stable Versioned Release) -->
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/dist/face-api.js"></script>
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <!-- Excel Export Library (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['"Plus Jakarta Sans"', 'sans-serif'] },
+                    colors: {
+                        brand: { 50: '#f0fdfa', 100: '#ccfbf1', 500: '#14b8a6', 600: '#0d9488', 900: '#134e4a' },
+                        surface: { 50: '#f8fafc', 100: '#f1f5f9', 800: '#1e293b', 900: '#0f172a' }
+                    }
+                }
+            }
+        }
+    </script>
     <style>
-        :root {
-            --bg-main: #fefefe;
-            --nav-bg: #1e1b26;
-        }
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: var(--bg-main);
-            min-height: 100vh;
-            color: #1e293b;
-            overflow-x: hidden;
-        }
-        .font-brand { font-family: 'Space Grotesk', sans-serif; }
+        body { background-color: #f8fafc; color: #0f172a; overflow-x: hidden; }
         
-        /* High-Fidelity OS Gradients */
-        .grad-pink { background: linear-gradient(180deg, #ffffff 0%, #fff1f2 40%, #fbcfe8 100%); }
-        .grad-blue { background: linear-gradient(180deg, #ffffff 0%, #eff6ff 40%, #bfdbfe 100%); }
-        .grad-green { background: linear-gradient(180deg, #ffffff 0%, #f0fdf4 40%, #bbf7d0 100%); }
-        .grad-orange { background: linear-gradient(180deg, #ffffff 0%, #fff7ed 40%, #fed7aa 100%); }
-        .grad-purple { background: linear-gradient(180deg, #ffffff 0%, #faf5ff 40%, #e9d5ff 100%); }
-        .grad-wheat { background: linear-gradient(180deg, #ffffff 0%, #fffbeb 40%, #fef3c7 100%); }
-        .grad-red { background: linear-gradient(180deg, #ffffff 0%, #fef2f2 40%, #fecaca 100%); }
-
-        .os-card {
-            border-radius: 48px;
-            box-shadow: 0 10px 40px -15px rgba(0,0,0,0.06);
-            border: 1px solid rgba(0,0,0,0.04);
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        /* Glassmorphism utilities */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
         }
-
-        .bottom-nav {
-            background: var(--nav-bg);
-            border-radius: 40px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-        }
-
-        .nav-item { transition: all 0.3s ease; color: #64748b; }
-        .nav-item.active { background: white; color: #1e1b26; border-radius: 50%; }
-
-        .os-title {
-            font-weight: 800;
-            letter-spacing: -0.03em;
-            color: #0f172a;
-            line-height: 1.1;
-        }
-
-        @keyframes slideUp {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        .animate-card { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-
-        /* Custom Table Style for Exams */
-        .exam-table {
+        
+        /* Video Container Styling */
+        .video-wrapper {
+            position: relative;
             width: 100%;
-            border-collapse: separate;
-            border-spacing: 0 8px;
+            border-radius: 1.25rem;
+            overflow: hidden;
+            background: #0f172a;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            aspect-ratio: 4/3;
         }
-        .exam-table td {
-            background: rgba(255,255,255,0.4);
-            padding: 12px 20px;
+        .video-wrapper video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
-        .exam-table td:first-child { border-radius: 16px 0 0 16px; font-weight: 800; }
-        .exam-table td:last-child { border-radius: 0 16px 16px 0; text-align: right; font-weight: 600; color: #6366f1; }
+        .video-wrapper canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+        }
+
+        /* Dynamic Mirrored Class (Applied to User/Front facing cams dynamically) */
+        .mirrored {
+            transform: scaleX(-1);
+        }
+
+        /* Scanning Radar Animation */
+        .scanning-overlay {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: linear-gradient(to bottom, rgba(20, 184, 166, 0) 0%, rgba(20, 184, 166, 0.25) 50%, rgba(20, 184, 166, 0) 100%);
+            background-size: 100% 200%;
+            animation: scanWave 2.5s linear infinite;
+            z-index: 5;
+            pointer-events: none;
+            display: none;
+        }
+        .is-scanning .scanning-overlay { display: block; }
+        
+        @keyframes scanWave {
+            0% { background-position: 0 -100%; }
+            100% { background-position: 0 200%; }
+        }
+
+        /* Spinner Loader */
+        .spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(20, 184, 166, 0.15);
+            border-radius: 50%;
+            border-top-color: #14b8a6;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @media (max-width: 1023px) {
+            .sidebar-drawer {
+                transform: translateX(-100%);
+                transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+            .sidebar-drawer.sidebar-open {
+                transform: translateX(0);
+            }
+        }
     </style>
 </head>
-<body class="pb-32">
+<body class="antialiased min-h-screen flex flex-col">
 
-    <!-- Header Section -->
-    <header class="w-full pt-16 pb-12 px-8 text-center">
-        <h1 class="text-4xl font-black tracking-[0.5em] text-slate-900 font-brand">V C O N N E C T</h1>
-        <p class="text-[11px] uppercase tracking-[0.4em] font-extrabold text-slate-400 mt-3">Campus Operating System</p>
-    </header>
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="fixed bottom-6 right-6 z-50 flex flex-col gap-3 max-w-sm w-full px-4 pointer-events-none"></div>
 
-    <!-- Auth View -->
-    <div id="authView" class="w-full max-w-md mx-auto px-6">
-        <div class="os-card grad-blue p-12 text-center">
-            <div class="w-20 h-20 bg-white rounded-[32px] shadow-xl mx-auto mb-8 flex items-center justify-center">
-                <i data-lucide="fingerprint" class="w-10 h-10 text-indigo-600"></i>
-            </div>
-            <h2 class="text-2xl font-black mb-10 text-slate-900">Secure Access</h2>
-            
-            <form id="loginForm" class="space-y-4">
-                <input type="tel" id="loginMobile" placeholder="Mobile Number" class="w-full p-5 rounded-3xl bg-white/80 border border-slate-100 outline-none focus:ring-4 ring-indigo-500/10 font-bold" required>
-                <input type="password" id="loginPass" placeholder="Access PIN" class="w-full p-5 rounded-3xl bg-white/80 border border-slate-100 outline-none focus:ring-4 ring-indigo-500/10 font-bold" required>
-                <button type="submit" class="w-full bg-slate-900 text-white p-6 rounded-3xl font-black hover:scale-[0.98] transition-all shadow-xl shadow-slate-200">Initialize Identity</button>
-            </form>
-            
-            <button onclick="toggleReg(true)" class="mt-10 text-xs font-black text-slate-400 hover:text-indigo-600 tracking-widest uppercase">Request New ID</button>
-        </div>
-
-        <!-- Registration Modal -->
-        <div id="regModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-white/95 backdrop-blur-2xl">
-            <div class="w-full max-w-lg">
-                <h3 class="text-3xl font-black mb-8 font-brand">IDENTITY GENESIS</h3>
-                <form id="registerForm" class="space-y-4">
-                    <input type="text" id="regName" placeholder="Full Legal Name" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 outline-none font-bold" required>
-                    <div class="grid grid-cols-2 gap-4">
-                        <input type="tel" id="regMobile" placeholder="Mobile" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
-                        <input type="date" id="regDob" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
+    <!-- Image Expansion / Lightbox Modal -->
+    <div id="image-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4" onclick="window.app.closeImageModal()">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="window.app.closeImageModal()" class="absolute top-4 right-4 bg-slate-900/10 hover:bg-slate-900/20 text-slate-700 w-8 h-8 rounded-full flex items-center justify-center transition-colors">
+                <i class="ph ph-x text-lg font-bold"></i>
+            </button>
+            <div class="p-6 text-center">
+                <img id="modal-img" src="" alt="Enlarged profile pic" class="w-48 h-48 rounded-2xl object-cover mx-auto mb-4 border-4 border-brand-100 shadow-md">
+                <h4 id="modal-name" class="text-xl font-bold text-slate-800">Student Name</h4>
+                <p id="modal-roll" class="text-brand-600 font-semibold mb-3">CS-2026-000</p>
+                <div class="grid grid-cols-2 gap-4 text-left border-t border-slate-100 pt-4 mt-4 text-xs md:text-sm">
+                    <div>
+                        <span class="block text-slate-400 font-medium">Year & Section</span>
+                        <span id="modal-yr-sec" class="font-bold text-slate-800">3rd Year (B)</span>
                     </div>
-                    <select id="regRole" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 appearance-none font-bold" required onchange="handleRoleChange()">
-                        <option value="Faculty">Faculty Member</option>
-                        <option value="Student">Student Learner</option>
-                        <option value="Staff">Academic Staff</option>
-                        <option value="Management">Global Management</option>
-                    </select>
-                    <input type="text" id="regRollNo" placeholder="Roll Identity" class="hidden w-full p-5 rounded-2xl bg-indigo-50 border border-indigo-100 font-bold">
-                    <input type="password" id="regPass" placeholder="Set Access PIN" class="w-full p-5 rounded-2xl bg-slate-50 border border-slate-100 font-bold" required>
-                    <div class="flex gap-4 pt-8">
-                        <button type="button" onclick="toggleReg(false)" class="flex-1 p-5 font-black text-slate-400 uppercase text-xs tracking-widest">Abort</button>
-                        <button type="submit" class="flex-1 bg-indigo-600 text-white p-5 rounded-2xl font-black uppercase text-xs tracking-widest shadow-lg shadow-indigo-100">Establish ID</button>
+                    <div>
+                        <span class="block text-slate-400 font-medium">Status</span>
+                        <span id="modal-status" class="font-bold text-teal-600">Approved</span>
                     </div>
-                </form>
+                    <div>
+                        <span class="block text-slate-400 font-medium">Student Mobile</span>
+                        <span id="modal-st-phone" class="font-bold text-slate-800">-</span>
+                    </div>
+                    <div>
+                        <span class="block text-slate-400 font-medium">Parent Mobile</span>
+                        <span id="modal-pt-phone" class="font-bold text-slate-800">-</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Main OS Interface -->
-    <div id="mainView" class="hidden w-full max-w-3xl mx-auto px-6">
-        
-        <!-- Dashboard: My Identity -->
-        <div id="dashboardTab" class="animate-card">
-            <div class="os-card bg-white p-10 text-center relative overflow-hidden">
-                <div class="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-pink-500 via-indigo-600 to-emerald-400"></div>
-                <img id="dashPic" src="" class="w-40 h-40 rounded-[52px] mx-auto mb-8 shadow-2xl border-4 border-white object-cover">
-                <div id="dashRole" class="inline-block bg-indigo-600 text-white text-[10px] font-black px-5 py-2 rounded-full tracking-[0.2em] uppercase mb-6 shadow-lg shadow-indigo-100">ROLE</div>
-                <h2 id="dashName" class="text-4xl font-black text-slate-900 mb-2 font-brand">Name</h2>
-                <p id="dashDept" class="text-slate-400 font-bold text-sm tracking-wide mb-12">DEPT OF ARCHITECTURE</p>
-                
-                <div class="grid grid-cols-2 gap-y-10 text-left border-t border-slate-50 pt-10">
-                    <div>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">SERIAL KEY</p>
-                        <p id="dashID" class="font-black text-slate-700 font-brand">VC-0000</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">COMMS</p>
-                        <p id="dashMobile" class="font-black text-slate-700">+91 000</p>
-                    </div>
-                    <div>
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">GENESIS DATE</p>
-                        <p id="dashDob" class="font-black text-slate-700">--</p>
-                    </div>
-                    <div id="dashRollArea" class="hidden">
-                        <p class="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">LEARNER ID</p>
-                        <p id="dashRoll" class="font-black text-slate-700">--</p>
-                    </div>
+    <!-- Student Auth Modal -->
+    <div id="student-login-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative">
+            <button onclick="window.app.closeStudentLogin()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 rounded-full w-8 h-8 flex items-center justify-center bg-slate-100 transition-colors">
+                <i class="ph ph-x text-sm font-bold"></i>
+            </button>
+            <div class="mb-5">
+                <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center mb-3">
+                    <i class="ph ph-user-circle text-2xl"></i>
                 </div>
-
-                <div class="mt-16 pt-10 border-t border-slate-50 flex justify-between items-center">
-                    <div class="w-16 h-16 bg-slate-50 rounded-2xl flex items-center justify-center p-3 opacity-20 grayscale">
-                        <i data-lucide="qr-code" class="w-full h-full"></i>
-                    </div>
-                    <div class="text-right">
-                        <p class="text-[9px] font-black text-slate-300 uppercase tracking-widest mb-1">Verified OS Instance</p>
-                        <p class="text-sm font-black text-slate-900 font-brand">VCONNECT.ROOT</p>
-                    </div>
-                </div>
+                <h3 class="text-xl font-bold text-slate-800 mb-1">Student Access</h3>
+                <p class="text-xs text-slate-500">Enter your Roll Number. If unregistered, you will be redirected to setup.</p>
             </div>
-            
-            <button onclick="logout()" class="w-full mt-8 p-6 rounded-[40px] border-2 border-slate-100 font-black text-slate-400 flex items-center justify-center gap-3 hover:bg-red-50 hover:text-red-500 transition-all uppercase text-xs tracking-widest">
-                <i data-lucide="log-out" class="w-4 h-4"></i> De-Initialize Session
+            <input type="text" id="login-roll-input" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all mb-4 uppercase font-mono" placeholder="e.g. CS-2026-042">
+            <button onclick="window.app.processStudentLogin()" class="w-full py-3 bg-slate-900 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg transition-all text-sm flex items-center justify-center gap-2">
+                Continue <i class="ph ph-arrow-right"></i>
             </button>
         </div>
-
-        <!-- Pulse: Intelligent Broadcast Feed -->
-        <div id="feedsTab" class="hidden space-y-10 pb-20">
-            <div id="postsFeed" class="space-y-10">
-                <!-- Posts dynamic -->
-            </div>
-        </div>
     </div>
 
-    <!-- Intelligence Input Trigger (Non-students) -->
-    <button id="createTrigger" onclick="openPostModal()" class="hidden fixed bottom-32 right-8 w-20 h-20 bg-slate-900 text-white rounded-[32px] shadow-2xl flex items-center justify-center z-40 hover:scale-110 transition-transform active:scale-95">
-        <i data-lucide="sparkles" class="w-8 h-8"></i>
-    </button>
+    <!-- Faculty Secure Master Login Modal -->
+    <div id="faculty-auth-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl relative overflow-hidden">
+            <button onclick="window.app.closeFacultyAuth()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 rounded-full w-8 h-8 flex items-center justify-center bg-slate-100 transition-colors z-10">
+                <i class="ph ph-x text-sm font-bold"></i>
+            </button>
 
-    <!-- AI Intelligence Post Modal -->
-    <div id="postModal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-xl">
-        <div class="w-full max-w-xl bg-white rounded-[56px] p-12 animate-card shadow-2xl">
-            <div class="flex items-center gap-4 mb-8">
-                <div class="w-12 h-12 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-100">
-                    <i data-lucide="zap" class="text-white w-6 h-6"></i>
+            <!-- VIEW 1: Standard PIN Login (For Returning Faculty) -->
+            <div id="fac-view-pin-login" class="hidden flex-col">
+                <div class="mb-6 text-center mt-4">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-4 mx-auto shadow-inner">
+                        <i class="ph ph-user-circle text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-1" id="fac-welcome-name">Welcome Back</h3>
+                    <p class="text-xs text-slate-500">Enter your 6-digit PIN to access the console.</p>
                 </div>
-                <h3 class="text-3xl font-black text-slate-900 font-brand">Intelligent Broadcast</h3>
+                <input type="password" id="fac-login-pin" maxlength="6" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none text-center text-2xl tracking-[0.5em] font-bold mb-4" placeholder="••••••">
+                <button onclick="window.app.processPinLogin()" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl shadow-lg transition-all text-sm mb-4">
+                    Unlock Console
+                </button>
+                <button onclick="window.app.resetFacultyDevice()" class="text-xs text-slate-400 hover:text-slate-600 font-medium text-center w-full transition-colors">
+                    Not you? Use Master Key
+                </button>
             </div>
-            
-            <p class="text-slate-400 text-sm mb-6 font-medium">Type your update naturally. Gemini AI will handle the categories, visual style, and structured formatting (tables, venue chips, etc).</p>
-            
-            <div class="space-y-6">
-                <textarea id="pPrompt" placeholder="Example: Placement results are out! Congrats to Rahul for getting into Google..." class="w-full p-6 rounded-[32px] bg-slate-50 border-2 border-slate-100 h-48 resize-none outline-none focus:border-indigo-500 transition-all font-bold text-slate-700"></textarea>
+
+            <!-- VIEW 2: Master Key Entry (For First Time Setup) -->
+            <div id="fac-view-master" class="flex flex-col">
+                <div class="mb-6 text-center mt-4">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-50 text-amber-500 flex items-center justify-center mb-4 mx-auto shadow-inner">
+                        <i class="ph ph-shield-check text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-1">Master Console</h3>
+                    <p class="text-xs text-slate-500">Secure entry requires an authorized faculty master key.</p>
+                </div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Faculty Name</label>
+                <input type="text" id="fac-master-name" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm mb-4 font-semibold" placeholder="e.g. Dr. John Doe">
                 
-                <div id="pAiLoading" class="hidden items-center justify-center gap-3 py-4 text-indigo-600 font-black text-xs uppercase tracking-widest">
-                    <div class="w-4 h-4 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-                    AI is designing your identity pulse...
-                </div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Master Access Key</label>
+                <input type="password" id="fac-master-code" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-amber-500 outline-none text-sm mb-6" placeholder="Enter Secure Master Code">
+                
+                <button onclick="window.app.processMasterKey()" class="w-full py-3.5 bg-slate-900 hover:bg-amber-500 text-white font-bold rounded-xl shadow-lg transition-all text-sm flex justify-center items-center gap-2">
+                    <i class="ph ph-lock-key text-lg"></i> Authenticate Key
+                </button>
+            </div>
 
-                <div class="flex gap-4">
-                    <button onclick="document.getElementById('postModal').classList.add('hidden')" class="flex-1 p-6 font-black text-slate-400 uppercase text-xs tracking-widest">Cancel</button>
-                    <button id="pSubmit" onclick="intelligentPost()" class="flex-[2] bg-slate-900 text-white p-6 rounded-[32px] font-black uppercase text-xs tracking-widest shadow-xl shadow-slate-200">Broadcast Update</button>
+            <!-- VIEW 3: Setup PIN (Triggered after Master Key is Validated) -->
+            <div id="fac-view-setup-pin" class="hidden flex-col">
+                <div class="mb-6 text-center mt-4">
+                    <div class="w-16 h-16 rounded-2xl bg-emerald-50 text-emerald-500 flex items-center justify-center mb-4 mx-auto shadow-inner">
+                        <i class="ph ph-password text-3xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-1">Set Your PIN</h3>
+                    <p class="text-xs text-slate-500">Create a 6-digit PIN for future quick access on this device.</p>
+                </div>
+                
+                <input type="password" id="fac-setup-pin1" maxlength="6" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-center text-xl tracking-[0.5em] font-bold mb-3" placeholder="6-Digit PIN">
+                <input type="password" id="fac-setup-pin2" maxlength="6" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none text-center text-xl tracking-[0.5em] font-bold mb-6" placeholder="Confirm PIN">
+                
+                <button onclick="window.app.setupFacultyPIN()" class="w-full py-3.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-lg transition-all text-sm flex justify-center items-center gap-2">
+                    <i class="ph ph-check-circle text-lg"></i> Save & Enter Dashboard
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Custom Modal -->
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 shadow-2xl relative text-center">
+            <div class="w-16 h-16 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto mb-4">
+                <i class="ph ph-warning text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-800 mb-2">Remove Student?</h3>
+            <p class="text-sm text-slate-500 mb-6">Are you sure you want to permanently delete <span id="delete-student-name" class="font-bold text-slate-800"></span> from the roster? This action cannot be reversed.</p>
+            <div class="flex gap-3">
+                <button onclick="window.app.closeDeleteModal()" class="flex-1 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl transition-all text-sm">Cancel</button>
+                <button onclick="window.app.processDelete()" class="flex-1 py-3 bg-rose-500 hover:bg-rose-600 text-white font-bold rounded-xl shadow-lg transition-all text-sm shadow-rose-500/30">Yes, Delete</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Detailed View Modal -->
+    <div id="report-view-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 hidden items-center justify-center p-4" onclick="window.app.closeReportView()">
+        <div class="bg-white rounded-2xl max-w-3xl w-full flex flex-col shadow-2xl relative max-h-[90vh]" onclick="event.stopPropagation()">
+            <button onclick="window.app.closeReportView()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 rounded-full w-8 h-8 flex items-center justify-center bg-slate-100 transition-colors z-20">
+                <i class="ph ph-x text-sm font-bold"></i>
+            </button>
+            <div class="p-6 border-b border-slate-100 pr-14">
+                <h3 class="text-xl font-black text-slate-800" id="rv-subject">Subject Name</h3>
+                <p class="text-xs text-slate-500 font-mono mt-1" id="rv-meta">Date: -- | Hr: -- | Year: --</p>
+            </div>
+            <div class="flex-1 overflow-y-auto bg-surface-50">
+                <table class="w-full text-left border-collapse bg-white">
+                    <thead class="sticky top-0 bg-slate-100 z-10 shadow-sm">
+                        <tr class="border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="p-3 pl-6">Roll No</th>
+                            <th class="p-3">Student Name</th>
+                            <th class="p-3 text-right pr-6">Attendance Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rv-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="p-4 border-t border-slate-200 bg-white rounded-b-2xl flex justify-between items-center shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] z-10">
+                <div>
+                    <span class="text-xs text-slate-500 uppercase font-bold tracking-wider">Summary Stats</span>
+                </div>
+                <div class="text-sm font-black text-slate-800 bg-slate-100 px-4 py-2 rounded-xl" id="rv-summary">Present: 0 / 0</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- VIEW 1: Loading Initializer -->
+    <div id="view-loading" class="fixed inset-0 z-50 bg-white flex flex-col items-center justify-center transition-opacity duration-500">
+        <div class="relative flex items-center justify-center mb-8">
+            <div class="absolute inset-0 bg-brand-100 rounded-full blur-xl opacity-50 animate-pulse"></div>
+            <div class="spinner relative z-10"></div>
+            <i class="ph ph-aperture absolute text-brand-600 text-2xl z-20"></i>
+        </div>
+        <h2 class="text-2xl font-bold text-slate-800 tracking-tight mb-2">Aura Systems</h2>
+        <p id="loading-text" class="text-slate-500 font-medium">Powering up biometric architecture...</p>
+        <p class="text-xs text-slate-400 mt-2">Initializing Spatial Deep Field Neural Engine</p>
+    </div>
+
+    <!-- VIEW 2: Dynamic Role Selection -->
+    <div id="view-role" class="hidden flex-1 flex flex-col lg:flex-row h-screen">
+        <div class="w-full lg:w-1/2 bg-surface-900 text-white flex flex-col justify-between p-8 md:p-12 relative overflow-hidden">
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div class="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-600 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            
+            <div class="relative z-10 my-auto lg:my-0">
+                <div class="flex items-center gap-2.5 mb-12">
+                    <i class="ph ph-aperture text-4xl text-brand-500"></i>
+                    <span class="text-2xl font-bold tracking-tight">Aura</span>
+                </div>
+                <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-6">Classroom Biometrics,<br>Radically Simplified.</h1>
+                <p class="text-slate-400 text-base md:text-lg max-w-md">The next-generation smart register. Utilizing on-device edge AI to detect, scan, and authenticate multiple student faces up to 10 feet away.</p>
+            </div>
+            <div class="relative z-10 text-slate-500 text-xs mt-8">
+                Aura Attendance Platform &bull; Secure Local Processing
+            </div>
+        </div>
+        
+        <div class="w-full lg:w-1/2 bg-white flex items-center justify-center p-6 md:p-12 overflow-y-auto">
+            <div class="max-w-md w-full my-auto py-8">
+                <h2 class="text-2xl font-bold mb-2 text-slate-800">Identify Yourself</h2>
+                <p class="text-slate-500 mb-8 text-sm">Welcome back. Please select an entry path below to continue.</p>
+                
+                <div class="space-y-4">
+                    
+                    <button onclick="window.app.openStudentLogin()" class="w-full group p-5 bg-white border border-slate-200 hover:border-brand-500 rounded-2xl hover:shadow-lg hover:shadow-brand-500/5 transition-all text-left flex items-center gap-5">
+                        <div class="w-12 h-12 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <i class="ph ph-student text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Student Portal</h3>
+                            <p class="text-xs text-slate-500">Log in to view dashboard or initiate enrollment</p>
+                        </div>
+                        <i class="ph ph-caret-right ml-auto text-slate-300 group-hover:text-brand-500 transition-colors"></i>
+                    </button>
+
+                    <button onclick="window.app.openFacultyAuth()" class="w-full group p-5 bg-white border border-slate-200 hover:border-indigo-500 rounded-2xl hover:shadow-lg hover:shadow-indigo-500/5 transition-all text-left flex items-center gap-5">
+                        <div class="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                            <i class="ph ph-chalkboard-teacher text-2xl"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800">Faculty Dashboard</h3>
+                            <p class="text-xs text-slate-500">Initiate live sweep scans and manage operations</p>
+                        </div>
+                        <i class="ph ph-caret-right ml-auto text-indigo-300 group-hover:text-indigo-500 transition-colors"></i>
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Navigation Hub -->
-    <nav id="bottomNav" class="hidden fixed bottom-10 left-1/2 -translate-x-1/2 w-[90%] max-w-sm h-20 bottom-nav flex items-center justify-around px-6 z-50">
-        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-14 h-14 flex items-center justify-center active">
-            <i data-lucide="user" class="w-6 h-6"></i>
-        </button>
-        <button onclick="switchTab('feeds')" id="nav-feeds" class="nav-item w-14 h-14 flex items-center justify-center">
-            <i data-lucide="layout" class="w-6 h-6"></i>
-        </button>
-        <div class="nav-item opacity-10"><i data-lucide="calendar" class="w-6 h-6"></i></div>
-        <div class="nav-item opacity-10"><i data-lucide="search" class="w-6 h-6"></i></div>
-    </nav>
+    <!-- VIEW 3: Student Registration Portal (Circular Camera Layout & Dedicated Capture Flow) -->
+    <div id="view-student" class="hidden h-screen bg-surface-50 overflow-y-auto relative">
+        <div class="max-w-5xl mx-auto w-full my-8 p-4">
+            <button onclick="window.app.logout()" class="mb-4 text-slate-500 hover:text-slate-800 flex items-center gap-1 text-sm font-bold transition-colors bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm w-fit">
+                <i class="ph ph-arrow-left"></i> Return to Menu
+            </button>
 
-    <script>
-        const apiKey = "AIzaSyAWEu3Vp5IPnbL4VRJNxIvzH7t7rgWcToU";
-        let currentUser = null;
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden items-start">
+                
+                <!-- Circular Video/Camera Capture Column -->
+                <div class="lg:col-span-5 bg-surface-900 p-6 relative lg:sticky lg:top-0 h-auto lg:h-full flex flex-col justify-center items-center min-h-[400px]">
+                    <h3 class="text-white font-bold mb-6 hidden md:block">Face Verification</h3>
+                    
+                    <div class="relative group w-56 h-56 md:w-72 md:h-72 rounded-full overflow-hidden shadow-[0_0_40px_rgba(20,184,166,0.3)] ring-4 ring-brand-500/50 mb-8 bg-black">
+                        <!-- Camera Flip -->
+                        <button onclick="window.app.switchCamera('student-video')" class="absolute top-4 right-1/2 translate-x-1/2 z-30 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-md">
+                            <i class="ph ph-camera-rotate text-lg"></i>
+                        </button>
+                        
+                        <!-- The mirrored class is applied dynamically in JS based on camera mode, but we default it here -->
+                        <video id="student-video" autoplay muted playsinline class="w-full h-full object-cover mirrored"></video>
+                        
+                        <!-- Preview of captured face -->
+                        <img id="student-captured-preview" class="absolute inset-0 w-full h-full object-cover hidden z-20" />
+                    </div>
 
-        window.onload = () => {
-            lucide.createIcons();
-            const session = JSON.parse(localStorage.getItem('vc_current_session'));
-            if(session) loginSuccess(session);
-        };
+                    <!-- Dedicated Capture Buttons -->
+                    <button id="btn-capture-face" onclick="window.app.captureFace()" class="px-8 py-3.5 bg-brand-500 hover:bg-brand-400 text-white font-bold rounded-full shadow-lg shadow-brand-500/30 transition-all flex items-center justify-center gap-2 active:scale-95 w-full max-w-[250px]">
+                        <i class="ph ph-camera text-xl"></i> Take Snapshot
+                    </button>
+                    
+                    <button id="btn-retake-face" onclick="window.app.retakeFace()" class="hidden px-8 py-3.5 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-full shadow-lg transition-all items-center justify-center gap-2 active:scale-95 w-full max-w-[250px]">
+                        <i class="ph ph-arrow-counter-clockwise text-xl"></i> Retake Photo
+                    </button>
+                    
+                    <div class="mt-6 text-center text-slate-400 text-xs flex items-center justify-center gap-1.5 px-4 leading-relaxed">
+                        <i class="ph ph-shield-check text-brand-400 text-lg"></i> Frame your face securely in the circle to extract mesh identity.
+                    </div>
+                </div>
 
-        function toggleReg(show) { document.getElementById('regModal').classList.toggle('hidden', !show); }
-        function handleRoleChange() { document.getElementById('regRollNo').classList.toggle('hidden', document.getElementById('regRole').value !== 'Student'); }
+                <!-- Registration Details Form -->
+                <div class="lg:col-span-7 p-6 sm:p-10 flex flex-col justify-center bg-white z-10">
+                    <div id="student-form-section">
+                        <h2 class="text-3xl font-extrabold text-slate-800 mb-2 tracking-tight">Enroll Biometrics</h2>
+                        <p class="text-slate-500 mb-8 text-sm leading-relaxed">Please capture your face using the camera panel, then submit your academic profile details.</p>
 
-        document.getElementById('registerForm').onsubmit = (e) => {
-            e.preventDefault();
-            const users = JSON.parse(localStorage.getItem('vc_users') || '[]');
-            const mobile = document.getElementById('regMobile').value;
-            if(users.some(u => u.mobile === mobile)) return alert("ID already allocated.");
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Full Legal Name</label>
+                                <input type="text" id="reg-name" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all" placeholder="Alex Rivera">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Student ID / Roll No</label>
+                                <input type="text" id="reg-roll" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all uppercase" placeholder="CS-2026-042">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Academic Year</label>
+                                <select id="reg-year" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all">
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Section</label>
+                                <select id="reg-section" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all">
+                                    <option value="A">Section A</option>
+                                    <option value="B">Section B</option>
+                                    <option value="C">Section C</option>
+                                    <option value="D">Section D</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Student Mobile</label>
+                                <input type="tel" id="reg-st-mobile" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all" placeholder="e.g. 9876543210">
+                            </div>
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5 pl-1">Parent Mobile</label>
+                                <input type="tel" id="reg-pt-mobile" class="w-full px-4 py-3 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all" placeholder="Must be different from yours">
+                            </div>
+                        </div>
 
-            const newUser = {
-                id: 'VC-' + Math.floor(1000 + Math.random() * 9000),
-                name: document.getElementById('regName').value,
-                mobile: mobile,
-                dob: document.getElementById('regDob').value,
-                role: document.getElementById('regRole').value,
-                pass: document.getElementById('regPass').value,
-                roll: document.getElementById('regRollNo').value || 'N/A',
-                pic: `https://api.dicebear.com/7.x/notionists/svg?seed=${mobile}&backgroundColor=f8fafc`
-            };
-            users.push(newUser);
-            localStorage.setItem('vc_users', JSON.stringify(users));
-            toggleReg(false);
-            alert("ID created. System ready for initialization.");
-        };
+                        <button id="btn-register-face" class="w-full py-4 bg-slate-900 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg hover:shadow-brand-500/20 transition-all flex justify-center items-center gap-2">
+                            <i class="ph ph-check-circle text-xl"></i> Complete Enrollment
+                        </button>
+                    </div>
 
-        document.getElementById('loginForm').onsubmit = (e) => {
-            e.preventDefault();
-            const users = JSON.parse(localStorage.getItem('vc_users') || '[]');
-            const user = users.find(u => u.mobile === document.getElementById('loginMobile').value && u.pass === document.getElementById('loginPass').value);
-            if(user) loginSuccess(user); else alert("Identity mismatch.");
-        };
+                    <div id="student-status-section" class="hidden text-center py-20">
+                        <div class="w-20 h-20 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-6 text-brand-500 shadow-inner">
+                            <i class="ph ph-check-circle text-4xl"></i>
+                        </div>
+                        <h3 class="text-2xl font-black text-slate-800 mb-3">Biometrics Secured</h3>
+                        <p class="text-slate-500 text-sm leading-relaxed max-w-sm mx-auto">Your identity mesh has been securely verified and extracted. You may now return to the main menu while awaiting faculty approval.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        function loginSuccess(user) {
-            currentUser = user;
-            localStorage.setItem('vc_current_session', JSON.stringify(user));
-            document.getElementById('authView').classList.add('hidden');
-            document.getElementById('mainView').classList.remove('hidden');
-            document.getElementById('bottomNav').classList.remove('hidden');
-            if(user.role !== 'Student') document.getElementById('createTrigger').classList.remove('hidden');
-            updateDashboard();
-            renderFeed();
-            switchTab('dashboard');
-        }
-
-        function logout() { localStorage.removeItem('vc_current_session'); location.reload(); }
-
-        function updateDashboard() {
-            document.getElementById('dashName').innerText = currentUser.name;
-            document.getElementById('dashRole').innerText = currentUser.role;
-            document.getElementById('dashID').innerText = currentUser.id;
-            document.getElementById('dashMobile').innerText = currentUser.mobile;
-            document.getElementById('dashDob').innerText = new Date(currentUser.dob).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric'});
-            document.getElementById('dashPic').src = currentUser.pic;
-            if(currentUser.role === 'Student') {
-                document.getElementById('dashRollArea').classList.remove('hidden');
-                document.getElementById('dashRoll').innerText = currentUser.roll;
-            }
-        }
-
-        function switchTab(tab) {
-            document.getElementById('dashboardTab').classList.toggle('hidden', tab !== 'dashboard');
-            document.getElementById('feedsTab').classList.toggle('hidden', tab !== 'feeds');
-            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
-            document.getElementById('nav-' + tab).classList.add('active');
-            lucide.createIcons();
-        }
-
-        function openPostModal() { document.getElementById('postModal').classList.remove('hidden'); }
-
-        async function intelligentPost() {
-            const prompt = document.getElementById('pPrompt').value;
-            if(!prompt) return alert("System prompt required.");
-
-            const loading = document.getElementById('pAiLoading');
-            const submitBtn = document.getElementById('pSubmit');
-            loading.classList.remove('hidden');
-            submitBtn.disabled = true;
-
-            try {
-                // STEP 1: AI Content Analysis (Gemini 2.5)
-                const analysisResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-image-preview:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: `You are a campus operating system assistant. Analyze this update: "${prompt}". Return a JSON object ONLY with: category (Exam, Placement, Alert, Greeting, Event), title (stunning title), summary (engaging description), structuredData (if Exam: array of objects {subject, date}, if Event: {date, venue, time}, if Placement: {name, company}, otherwise null), gradient (red, pink, blue, green, orange, purple, wheat).` }] }],
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                const analysisText = await analysisResponse.json();
-                const intent = JSON.parse(analysisText.candidates[0].content.parts[0].text);
-
-                // STEP 2: AI Visual Generation (Imagen 4.0)
-                const imgPrompt = `Stunning high-end academic 3D illustration for ${intent.category} broadcast titled "${intent.title}". Modern minimalist, professional university branding, glassmorphism elements, high resolution 4k.`;
-                const imgResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ instances: [{ prompt: imgPrompt }], parameters: { sampleCount: 1 } })
-                });
-                const imgData = await imgResponse.json();
-                const visual = `data:image/png;base64,${imgData.predictions[0].bytesBase64Encoded}`;
-
-                // STEP 3: Save to OS Feed
-                const posts = JSON.parse(localStorage.getItem('vc_posts') || '[]');
-                posts.unshift({
-                    id: Date.now(),
-                    ...intent,
-                    visual,
-                    author: currentUser.name,
-                    timestamp: new Date().toISOString()
-                });
-                localStorage.setItem('vc_posts', JSON.stringify(posts));
-
-                loading.classList.add('hidden');
-                submitBtn.disabled = false;
-                document.getElementById('postModal').classList.add('hidden');
-                document.getElementById('pPrompt').value = "";
-                renderFeed();
-                switchTab('feeds');
-
-            } catch (err) {
-                console.error(err);
-                alert("AI initialization failed. Check connectivity.");
-                loading.classList.add('hidden');
-                submitBtn.disabled = false;
-            }
-        }
-
-        function renderFeed() {
-            const posts = JSON.parse(localStorage.getItem('vc_posts') || '[]');
-            const container = document.getElementById('postsFeed');
+    <!-- VIEW 3.5: Student Login Dashboard Area -->
+    <div id="view-student-dash" class="hidden flex-1 bg-surface-50 p-4 md:p-8 items-center justify-center h-screen overflow-y-auto">
+        <div class="max-w-5xl w-full flex flex-col md:flex-row gap-6 my-auto">
             
-            if(posts.length === 0) {
-                container.innerHTML = `<div class="p-20 text-center opacity-10"><i data-lucide="layers" class="mx-auto w-12 h-12 mb-4"></i><p class="font-bold">System pulse idle</p></div>`;
-                lucide.createIcons();
-                return;
-            }
+            <div class="w-full md:w-1/3 bg-white rounded-3xl p-6 shadow-sm border border-slate-200 flex flex-col relative h-fit">
+                <button onclick="window.app.logout()" class="absolute top-4 left-4 text-slate-400 hover:text-slate-700 flex items-center gap-1 text-xs font-semibold transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-full">
+                    <i class="ph ph-arrow-left"></i> Logout
+                </button>
+                
+                <div class="mt-8 flex flex-col items-center text-center pb-6 border-b border-slate-100">
+                    <img id="dash-photo" src="" alt="Student Photo" class="w-28 h-28 rounded-full object-cover mb-4 border-4 border-brand-50 shadow-md">
+                    <h2 id="dash-name" class="text-xl font-extrabold text-slate-800">Student Name</h2>
+                    <p id="dash-roll" class="text-brand-600 font-bold font-mono text-sm mb-1">CS-XXXX-XXX</p>
+                    <span class="bg-teal-50 text-teal-600 px-3 py-1 rounded-full text-xs font-bold mt-2 inline-flex items-center gap-1"><i class="ph ph-shield-check"></i> Verified Profile</span>
+                </div>
+                
+                <div class="pt-6 space-y-4 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500 font-medium">Academic Year</span>
+                        <span id="dash-year" class="font-bold text-slate-800">1st Year</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500 font-medium">Section</span>
+                        <span id="dash-sec" class="font-bold text-slate-800">A</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-500 font-medium">Phone</span>
+                        <span id="dash-phone" class="font-bold font-mono text-slate-800">9876543210</span>
+                    </div>
+                </div>
+            </div>
 
-            container.innerHTML = posts.map(post => {
-                const isCentered = post.category === 'Greeting' || post.category === 'Placement';
-                const gradClass = `grad-${post.gradient}`;
-                const badgeColor = post.gradient === 'red' ? 'bg-red-600' : 'bg-indigo-600';
+            <div class="w-full md:w-2/3 bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-slate-200 flex flex-col h-[500px]">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-slate-800">Weekly Attendance Log</h3>
+                        <p class="text-sm text-slate-500">Your session records for the last 7 days.</p>
+                    </div>
+                    <div class="bg-brand-50 text-brand-700 px-4 py-2 rounded-xl text-center">
+                        <div class="text-xs font-semibold uppercase tracking-wider mb-0.5">Present %</div>
+                        <div id="dash-percentage" class="text-lg font-black">100%</div>
+                    </div>
+                </div>
 
-                let structuredHtml = '';
-                if(post.category === 'Exam' && Array.isArray(post.structuredData)) {
-                    structuredHtml = `
-                        <table class="exam-table mt-8">
-                            ${post.structuredData.map(row => `<tr><td>${row.subject}</td><td>${row.date}</td></tr>`).join('')}
-                        </table>`;
-                } else if(post.category === 'Event' && post.structuredData) {
-                    structuredHtml = `
-                        <div class="flex flex-wrap gap-3 mt-8">
-                            <div class="bg-white/60 px-5 py-3 rounded-2xl flex items-center gap-2 border border-white"><i data-lucide="calendar" class="w-4 h-4"></i> <span class="text-xs font-bold">${post.structuredData.date}</span></div>
-                            <div class="bg-white/60 px-5 py-3 rounded-2xl flex items-center gap-2 border border-white"><i data-lucide="map-pin" class="w-4 h-4"></i> <span class="text-xs font-bold">${post.structuredData.venue}</span></div>
-                        </div>`;
-                } else if(post.category === 'Placement' && post.structuredData) {
-                    structuredHtml = `
-                        <div class="mt-8 py-6 px-8 bg-white/40 rounded-[32px] border border-white/60 text-center">
-                            <p class="text-[10px] font-black uppercase text-indigo-500 tracking-widest mb-2">Offer Secured At</p>
-                            <h4 class="text-2xl font-black text-slate-900">${post.structuredData.company}</h4>
-                        </div>`;
-                }
+                <div class="flex-1 overflow-y-auto pr-2 rounded-xl border border-slate-100 bg-surface-50 p-2">
+                    <div class="overflow-hidden rounded-lg">
+                        <table class="w-full text-left border-collapse bg-white">
+                            <thead>
+                                <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                    <th class="p-3 pl-4">Date</th>
+                                    <th class="p-3">Subject</th>
+                                    <th class="p-3">Session Hr</th>
+                                    <th class="p-3 text-right pr-4">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dash-sessions-tbody" class="divide-y divide-slate-100 text-xs md:text-sm">
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div id="dash-empty" class="hidden flex-col items-center justify-center py-16 text-slate-400">
+                        <i class="ph ph-calendar-blank text-5xl mb-3 text-slate-200"></i>
+                        <p class="font-medium text-sm">No class sessions recorded in the last 7 days.</p>
+                    </div>
+                </div>
+            </div>
 
-                return `
-                <div class="os-card ${gradClass} p-10 animate-card">
-                    <div class="flex items-center justify-between mb-10">
-                        <span class="${badgeColor} text-white text-[10px] font-black uppercase px-6 py-2 rounded-full tracking-widest shadow-lg shadow-indigo-100">
-                            ${post.category}
-                        </span>
-                        <div class="flex items-center gap-2">
-                            <div class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                            <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">LIVE BROADCAST</span>
+        </div>
+    </div>
+
+    <!-- VIEW 4: Faculty Administration Command Center -->
+    <div id="view-faculty" class="hidden h-screen flex flex-col lg:flex-row overflow-hidden bg-surface-50">
+        
+        <header class="lg:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 z-30">
+            <div class="flex items-center gap-2">
+                <div class="w-7 h-7 rounded bg-brand-500 text-white flex items-center justify-center font-bold text-xs">A</div>
+                <span class="font-bold text-slate-800 text-base">Aura Console</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="window.app.toggleSidebar()" class="p-2 bg-slate-100 rounded-lg text-slate-600 hover:bg-slate-200">
+                    <i class="ph ph-list text-xl"></i>
+                </button>
+            </div>
+        </header>
+
+        <aside id="sidebar-nav" class="sidebar-drawer fixed inset-y-0 left-0 w-64 bg-white border-r border-slate-200 flex flex-col z-40 lg:static lg:transform-none">
+            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-brand-500 text-white flex items-center justify-center font-bold">A</div>
+                    <span class="font-bold text-slate-800 tracking-tight text-lg">Aura Faculty</span>
+                </div>
+                <button onclick="window.app.toggleSidebar()" class="lg:hidden p-1 bg-slate-100 rounded text-slate-500">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            
+            <nav class="p-4 space-y-1 flex-1">
+                <button onclick="window.app.switchTab('approvals')" id="nav-approvals" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-brand-600 bg-brand-50 font-semibold transition-all">
+                    <i class="ph ph-fingerprint text-lg"></i> Pending Approvals
+                </button>
+                <button onclick="window.app.switchTab('roster')" id="nav-roster" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-medium transition-all">
+                    <i class="ph ph-users text-lg"></i> Approved Roster
+                </button>
+                <button onclick="window.app.switchTab('session')" id="nav-session" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-medium transition-all">
+                    <i class="ph ph-scan text-lg"></i> Live Class Sweep
+                </button>
+                <button onclick="window.app.switchTab('reports')" id="nav-reports" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-medium transition-all">
+                    <i class="ph ph-file-csv text-lg"></i> Reports & Analytics
+                </button>
+                <button onclick="window.app.switchTab('master')" id="nav-master" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-medium transition-all">
+                    <i class="ph ph-database text-lg"></i> Master Data
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="window.app.logout()" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-rose-50 hover:text-rose-600 font-medium transition-all">
+                    <i class="ph ph-sign-out text-lg"></i> Exit Dashboard
+                </button>
+            </div>
+        </aside>
+
+        <div id="sidebar-overlay" class="fixed inset-0 bg-black/40 z-30 hidden lg:hidden" onclick="window.app.toggleSidebar()"></div>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            <header class="glass h-20 px-4 md:px-8 flex items-center justify-between sticky top-0 z-10">
+                <div>
+                    <h2 id="header-title" class="text-lg md:text-xl font-bold text-slate-800">Pending Approvals</h2>
+                </div>
+                
+                <div class="flex items-center gap-4 md:gap-6">
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] md:text-xs font-semibold text-slate-400 uppercase tracking-wider">Approved Roster</span>
+                        <span class="font-bold text-slate-800 text-base md:text-lg" id="stat-approved">0</span>
+                    </div>
+                    <div class="w-px h-8 bg-slate-200"></div>
+                    <div class="flex flex-col items-end">
+                        <span class="text-[10px] md:text-xs font-semibold text-amber-500 uppercase tracking-wider">Pending Approvals</span>
+                        <span class="font-bold text-amber-600 text-base md:text-lg" id="stat-pending">0</span>
+                    </div>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-4 md:p-8">
+                <!-- TAB 1: Approvals Grid -->
+                <div id="tab-approvals" class="max-w-5xl mx-auto space-y-6">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-3">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800">Process Pending Enrollees</h3>
+                            <p class="text-xs md:text-sm text-slate-500">Review, approve, or clear student profiles registered with details.</p>
+                        </div>
+                        <div class="flex gap-2 w-full sm:w-auto">
+                            <button onclick="window.app.bulkUpdate('rejected')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg font-semibold text-xs border border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 transition-all">Reject All</button>
+                            <button onclick="window.app.bulkUpdate('approved')" class="flex-1 sm:flex-initial px-4 py-2 rounded-lg font-semibold text-xs bg-slate-900 text-white hover:bg-brand-600 transition-all shadow-md">Approve All</button>
                         </div>
                     </div>
 
-                    <div class="${isCentered ? 'text-center' : 'text-left'}">
-                        ${isCentered ? `<div class="w-24 h-24 bg-white rounded-[32px] mx-auto mb-8 shadow-xl flex items-center justify-center text-5xl">🏆</div>` : ''}
-                        <h3 class="os-title text-5xl mb-6">${post.title}</h3>
-                        <p class="text-slate-500 font-bold leading-relaxed max-w-lg ${isCentered ? 'mx-auto' : ''}">
-                            ${post.summary}
-                        </p>
-                        
-                        ${structuredHtml}
-                    </div>
-
-                    <div class="mt-12 w-full aspect-video rounded-[40px] overflow-hidden shadow-2xl border-8 border-white group relative">
-                        <img src="${post.visual}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    </div>
-
-                    <div class="flex gap-4 mt-12 ${isCentered ? 'justify-center' : ''}">
-                        <button class="${badgeColor} text-white font-black text-[11px] uppercase px-10 py-5 rounded-2xl tracking-widest shadow-xl shadow-indigo-100 hover:scale-[0.98] transition-all">Acknowledge</button>
-                        <button class="bg-white/80 text-slate-900 border border-white font-black text-[11px] uppercase px-10 py-5 rounded-2xl tracking-widest backdrop-blur-sm hover:bg-white transition-all">Details</button>
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-surface-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4 pl-6">Profile</th>
+                                        <th class="p-4">Student Details</th>
+                                        <th class="p-4">Student Phone</th>
+                                        <th class="p-4">Parent Phone</th>
+                                        <th class="p-4 pr-6 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="approvals-tbody" class="divide-y divide-slate-100 text-xs md:text-sm"></tbody>
+                            </table>
+                        </div>
+                        <div id="approvals-empty" class="hidden flex flex-col items-center justify-center py-16 text-slate-400">
+                            <i class="ph ph-check-circle text-5xl mb-3 text-slate-200"></i>
+                            <p class="font-medium text-sm">No pending authorizations</p>
+                        </div>
                     </div>
                 </div>
-                `;
-            }).join('');
-            lucide.createIcons();
+
+                <!-- TAB 2: Approved Roster -->
+                <div id="tab-roster" class="hidden max-w-5xl mx-auto space-y-6">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800">Biometric Directory</h3>
+                            <p class="text-xs md:text-sm text-slate-500">Fully validated registered student roster sorted ascendingly by Roll Number.</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-white p-4 border border-slate-200 rounded-2xl shadow-sm">
+                            <div class="relative">
+                                <i class="ph ph-magnifying-glass absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="roster-search" oninput="window.app.renderRoster()" class="w-full pl-9 pr-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500" placeholder="Search by name/roll...">
+                            </div>
+                            <div>
+                                <select id="roster-filter-year" onchange="window.app.renderRoster()" class="w-full px-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="all">All Years</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select id="roster-filter-section" onchange="window.app.renderRoster()" class="w-full px-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="all">All Sections</option>
+                                    <option value="A">Section A</option>
+                                    <option value="B">Section B</option>
+                                    <option value="C">Section C</option>
+                                    <option value="D">Section D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-surface-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4 pl-6">Profile</th>
+                                        <th class="p-4">Roll Number</th>
+                                        <th class="p-4">Name</th>
+                                        <th class="p-4">Year & Section</th>
+                                        <th class="p-4 pr-6 text-right">Reference</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="roster-tbody" class="divide-y divide-slate-100 text-xs md:text-sm"></tbody>
+                            </table>
+                        </div>
+                        <div id="roster-empty" class="hidden flex flex-col items-center justify-center py-16 text-slate-400">
+                            <i class="ph ph-tray text-5xl mb-3 text-slate-200"></i>
+                            <p class="font-medium text-sm">No matched students found.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Session Deep Scan (Sweep Interface) -->
+                <div id="tab-session" class="hidden max-w-5xl mx-auto">
+                    <div id="session-setup" class="bg-white border border-slate-200 p-6 md:p-8 rounded-3xl shadow-sm max-w-xl mx-auto w-full mt-4 md:mt-10">
+                        <div class="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mb-4">
+                            <i class="ph ph-video-camera text-2xl"></i>
+                        </div>
+                        <h2 class="text-xl md:text-2xl font-bold text-slate-800 mb-1">Start Spatial Sweep</h2>
+                        <p class="text-xs md:text-sm text-slate-500 mb-6">Configure the class session details, then sweep your camera across the class to capture attendance.</p>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+                            <div class="sm:col-span-2">
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Subject / Module Name</label>
+                                <input type="text" id="session-subject" class="w-full px-3.5 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all" placeholder="e.g. Advanced AI">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Year & Section</label>
+                                <div class="flex gap-2">
+                                    <select id="session-year" class="w-1/2 px-3.5 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all">
+                                        <option value="1">1st Yr</option>
+                                        <option value="2">2nd Yr</option>
+                                        <option value="3">3rd Yr</option>
+                                        <option value="4">4th Yr</option>
+                                    </select>
+                                    <select id="session-section" class="w-1/2 px-3.5 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all">
+                                        <option value="A">Sec A</option>
+                                        <option value="B">Sec B</option>
+                                        <option value="C">Sec C</option>
+                                        <option value="D">Sec D</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Class Hour</label>
+                                    <select id="session-hour" class="w-full px-3.5 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all">
+                                        <option value="1">1st Hr</option>
+                                        <option value="2">2nd Hr</option>
+                                        <option value="3">3rd Hr</option>
+                                        <option value="4">4th Hr</option>
+                                        <option value="5">5th Hr</option>
+                                        <option value="6">6th Hr</option>
+                                    </select>
+                                </div>
+                                <div class="w-1/2">
+                                    <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Date</label>
+                                    <input type="date" id="session-date" class="w-full px-3.5 py-2.5 bg-surface-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-brand-500 outline-none text-sm transition-all font-mono font-bold">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button onclick="window.app.startSession()" class="w-full py-3 bg-slate-900 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg transition-all text-sm">
+                            Initialize Scanning Hardware
+                        </button>
+                    </div>
+
+                    <div id="session-active" class="hidden flex flex-col xl:flex-row gap-6 h-full">
+                        <div class="flex-1 flex flex-col">
+                            <div class="bg-slate-900 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-center justify-between mb-4">
+                                <div>
+                                    <div class="text-brand-400 font-bold text-[10px] md:text-xs tracking-wider uppercase flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                                        <span id="active-session-meta">Biometric Sweep Engine Online</span>
+                                    </div>
+                                    <div class="text-white text-base md:text-lg font-bold" id="active-course-name">Class Session</div>
+                                </div>
+                                <button onclick="window.app.endSession()" class="px-4 py-2 bg-rose-500/20 text-rose-400 hover:bg-rose-50 hover:text-white rounded-xl font-bold transition-all text-xs border border-rose-500/20">
+                                    Complete Session
+                                </button>
+                            </div>
+
+                            <!-- UPDATED: UI controls moved BELOW the video to prevent overlapping on mobile -->
+                            <div class="w-full flex flex-col items-center">
+                                <div id="video-box" class="video-wrapper relative group mb-4">
+                                    <button onclick="window.app.switchCamera('faculty-video')" class="absolute top-3 right-3 z-30 p-2 bg-black/40 hover:bg-black/70 text-white rounded-full transition-colors backdrop-blur-md">
+                                        <i class="ph ph-camera-rotate text-lg"></i>
+                                    </button>
+
+                                    <div class="scanning-overlay"></div>
+                                    <video id="faculty-video" autoplay muted playsinline></video>
+                                    <canvas id="faculty-canvas"></canvas>
+                                </div>
+                                
+                                <div id="sweep-ui" class="w-full max-w-sm flex flex-col items-center gap-3">
+                                    <div id="sweep-status" class="bg-black/85 text-white px-4 py-2 rounded-full text-xs font-semibold hidden items-center justify-center gap-2 w-full text-center shadow-lg">
+                                        <i class="ph ph-circle-notch animate-spin text-brand-400 text-sm"></i> 
+                                        <span id="sweep-timer" class="text-brand-400 font-mono w-6">10s</span> | <span id="sweep-msg">Sweeping Desk Blocks...</span>
+                                    </div>
+                                    
+                                    <div class="flex gap-2 w-full">
+                                        <button id="btn-sweep" onclick="window.app.runSweep()" class="flex-1 px-6 py-3 bg-brand-500 hover:bg-brand-400 text-white font-bold rounded-xl shadow-lg shadow-brand-500/30 flex items-center justify-center gap-2 transition-all active:scale-95 text-sm">
+                                            <i class="ph ph-radar text-lg animate-[spin_5s_linear_infinite]"></i> Begin Class Sweep
+                                        </button>
+                                        <button id="btn-pause" onclick="window.app.toggleSweep()" class="hidden px-5 py-3 bg-amber-500 hover:bg-amber-400 text-white font-bold rounded-xl shadow-lg transition-all active:scale-95 text-sm flex items-center justify-center">
+                                            <i class="ph ph-pause text-lg"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="w-full xl:w-72 bg-white border border-slate-200 rounded-2xl flex flex-col overflow-hidden shadow-sm h-[350px] xl:h-auto">
+                            <div class="p-4 border-b border-slate-100 bg-surface-50 flex justify-between items-center">
+                                <h3 class="font-bold text-slate-800 text-sm">Recognized Students</h3>
+                                <span class="bg-brand-100 text-brand-700 px-2 py-0.5 rounded-md text-xs font-bold" id="present-count">0</span>
+                            </div>
+                            <div class="flex-1 overflow-y-auto p-3 space-y-2" id="present-list">
+                                <div class="h-full flex flex-col items-center justify-center text-slate-400 text-xs text-center p-4">
+                                    <i class="ph ph-users-three text-3xl mb-2 text-slate-200"></i>
+                                    Perform a camera sweep to automatically register present students.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: Reports & Analytics -->
+                <div id="tab-reports" class="hidden max-w-5xl mx-auto space-y-6">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800">Session Reports & Exports</h3>
+                            <p class="text-xs md:text-sm text-slate-500">Filter historical class sessions, view individual records, and download Excel/CSV logs.</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-white p-4 border border-slate-200 rounded-2xl shadow-sm">
+                            <div class="relative">
+                                <i class="ph ph-books absolute left-3 top-3 text-slate-400"></i>
+                                <input type="text" id="report-search-sub" oninput="window.app.renderReports()" class="w-full pl-9 pr-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500" placeholder="Filter Subject...">
+                            </div>
+                            <div class="relative">
+                                <i class="ph ph-calendar-blank absolute left-3 top-3 text-slate-400"></i>
+                                <input type="date" id="report-filter-date" onchange="window.app.renderReports()" class="w-full pl-9 pr-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500">
+                            </div>
+                            <div>
+                                <select id="report-filter-year" onchange="window.app.renderReports()" class="w-full px-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="all">All Years</option>
+                                    <option value="1">1st Year</option>
+                                    <option value="2">2nd Year</option>
+                                    <option value="3">3rd Year</option>
+                                    <option value="4">4th Year</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select id="report-filter-section" onchange="window.app.renderReports()" class="w-full px-3 py-2 text-sm bg-surface-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-brand-500">
+                                    <option value="all">All Sections</option>
+                                    <option value="A">Section A</option>
+                                    <option value="B">Section B</option>
+                                    <option value="C">Section C</option>
+                                    <option value="D">Section D</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse min-w-[600px]">
+                                <thead>
+                                    <tr class="bg-surface-50 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4 pl-6">Session Details</th>
+                                        <th class="p-4">Target Class</th>
+                                        <th class="p-4 text-center">Stats (Present / Reg)</th>
+                                        <th class="p-4 text-center">Attendance %</th>
+                                        <th class="p-4 pr-6 text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reports-tbody" class="divide-y divide-slate-100 text-xs md:text-sm"></tbody>
+                            </table>
+                        </div>
+                        <div id="reports-empty" class="hidden flex flex-col items-center justify-center py-16 text-slate-400">
+                            <i class="ph ph-file-dashed text-5xl mb-3 text-slate-200"></i>
+                            <p class="font-medium text-sm">No recorded sessions match the filters.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: Master Student Data Upload -->
+                <div id="tab-master" class="hidden max-w-5xl mx-auto space-y-6">
+                    <div class="flex flex-col gap-4">
+                        <div>
+                            <h3 class="text-base md:text-lg font-bold text-slate-800">Master Roster Data</h3>
+                            <p class="text-xs md:text-sm text-slate-500">Upload a CSV or Excel file containing approved Roll Numbers and Names. Only students in this master list can enroll.</p>
+                        </div>
+                        
+                        <div class="bg-white p-6 border border-slate-200 rounded-2xl shadow-sm text-center">
+                            <div class="w-16 h-16 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center mb-4 mx-auto">
+                                <i class="ph ph-file-csv text-3xl"></i>
+                            </div>
+                            <h4 class="font-bold text-slate-800 mb-2">Upload Master List</h4>
+                            <p class="text-xs text-slate-500 mb-6 max-w-sm mx-auto">File must contain headers: <br><strong>Column 1: Roll No</strong> | <strong>Column 2: Name</strong></p>
+                            
+                            <input type="file" id="master-file" accept=".csv, .xlsx, .xls" class="hidden" onchange="window.app.uploadMasterData(event)">
+                            <button onclick="document.getElementById('master-file').click()" class="px-6 py-3 bg-slate-900 hover:bg-brand-600 text-white font-bold rounded-xl shadow-lg transition-all text-sm flex items-center justify-center gap-2 mx-auto">
+                                <i class="ph ph-upload-simple text-lg"></i> Select File & Upload
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-100 bg-surface-50 flex justify-between items-center">
+                            <h3 class="font-bold text-slate-800 text-sm">Current Master Records</h3>
+                            <span class="bg-brand-100 text-brand-700 px-2 py-0.5 rounded-md text-xs font-bold" id="master-count">0 Loaded</span>
+                        </div>
+                        <div class="overflow-x-auto max-h-[400px] overflow-y-auto">
+                            <table class="w-full text-left border-collapse min-w-[400px]">
+                                <thead class="sticky top-0 bg-white">
+                                    <tr class="bg-slate-100 border-b border-slate-200 text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                                        <th class="p-4 pl-6">Roll Number</th>
+                                        <th class="p-4">Student Name</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="master-tbody" class="divide-y divide-slate-100 text-xs md:text-sm"></tbody>
+                            </table>
+                        </div>
+                        <div id="master-empty" class="hidden flex flex-col items-center justify-center py-16 text-slate-400">
+                            <i class="ph ph-database text-5xl mb-3 text-slate-200"></i>
+                            <p class="font-medium text-sm">Master roster is empty.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Script Assets -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const State = {
+            db: null, auth: null, user: null,
+            appId: typeof __app_id !== 'undefined' ? __app_id : 'test_aura_v1',
+            isSubscribed: false, 
+            students: [],
+            sessions: [], 
+            faculty: [],
+            masterStudents: [],
+            currentStudent: null, 
+            studentSessionToken: null,
+            currentFaculty: null, 
+            pendingFacultyName: null, 
+            pendingDeleteId: null,
+            faceMatcher: null, 
+            videoStream: null,
+            cameraMode: 'user', 
+            activeSessionId: null,
+            sessionData: null,
+            presentIds: new Set(),
+            isSweeping: false,
+            sweepTimeout: null,
+            timerInterval: null,
+            tempEnrollment: null,
+            persistenceBuffer: new Map() // Tracks when a face was last seen to prevent UI flickering
+        };
+
+        const UI = {
+            show: id => document.getElementById(id)?.classList.remove('hidden'),
+            hide: id => document.getElementById(id)?.classList.add('hidden'),
+            text: (id, txt) => { if(document.getElementById(id)) document.getElementById(id).textContent = txt; },
+            toast: (msg, type = 'info') => {
+                const c = document.getElementById('toast-container');
+                const t = document.createElement('div');
+                const colors = type === 'error' ? 'bg-rose-600' : (type === 'success' ? 'bg-brand-600' : 'bg-slate-800');
+                t.className = `${colors} text-white px-5 py-3 rounded-xl shadow-xl shadow-black/10 text-sm font-medium flex items-center gap-3 transform transition-all duration-300 translate-y-full opacity-0 z-50`;
+                const icon = type === 'error' ? 'ph-warning-circle' : 'ph-check-circle';
+                t.innerHTML = `<i class="ph ${icon} text-lg"></i> ${msg}`;
+                c.appendChild(t);
+                
+                requestAnimationFrame(() => t.classList.remove('translate-y-full', 'opacity-0'));
+                setTimeout(() => {
+                    t.classList.add('translate-y-full', 'opacity-0');
+                    setTimeout(() => t.remove(), 300);
+                }, 4500);
+            }
+        };
+
+        const hashStr = async (str) => {
+            const buffer = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+        };
+
+        async function initFirebase() {
+            try {
+                const config = {
+                  apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+                  authDomain: "stuattnd.firebaseapp.com",
+                  projectId: "stuattnd",
+                  storageBucket: "stuattnd.firebasestorage.app",
+                  messagingSenderId: "511533506488",
+                  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+                  measurementId: "G-9PZZM5LFKX"
+                };
+                const app = initializeApp(config);
+                State.auth = getAuth(app);
+                State.db = getFirestore(app);
+
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try {
+                        await signInWithCustomToken(State.auth, __initial_auth_token);
+                    } catch (e) {
+                        await signInAnonymously(State.auth);
+                    }
+                } else {
+                    await signInAnonymously(State.auth);
+                }
+
+                State.user = State.auth.currentUser;
+                
+                onAuthStateChanged(State.auth, u => { 
+                    State.user = u; 
+                    if (u && !State.isSubscribed) subscribeData(); 
+                });
+
+                if (State.user && !State.isSubscribed) subscribeData();
+
+                return true;
+            } catch (err) {
+                console.error("DB Initialization Error:", err);
+                UI.toast("Failed to authenticate with security servers", "error");
+                return false;
+            }
         }
+
+        function subscribeData() {
+            if (!State.user || State.isSubscribed) return;
+            State.isSubscribed = true;
+            
+            const sRef = collection(State.db, 'artifacts', State.appId, 'public', 'data', 'students');
+            onSnapshot(sRef, snap => {
+                State.students = snap.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                if (State.currentStudent) {
+                    const myProfile = State.students.find(s => s.id === State.currentStudent.id);
+                    if (myProfile && myProfile.sessionToken && State.studentSessionToken) {
+                        if (myProfile.sessionToken !== State.studentSessionToken) {
+                            UI.toast('Session Terminated: Logged in securely from another device.', 'error');
+                            window.app.logout();
+                        }
+                    }
+                }
+                
+                const pending = State.students.filter(s => s.status === 'pending').length;
+                const approved = State.students.filter(s => s.status === 'approved').length;
+                UI.text('stat-pending', pending);
+                UI.text('stat-approved', approved);
+                
+                renderApprovals();
+                if(window.app.renderRoster) window.app.renderRoster();
+            });
+
+            const sessRef = collection(State.db, 'artifacts', State.appId, 'public', 'data', 'sessions');
+            onSnapshot(sessRef, snap => {
+                State.sessions = snap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => new Date(b.timestamp) - new Date(a.timestamp));
+                if(window.app.renderReports && !document.getElementById('tab-reports').classList.contains('hidden')) {
+                    window.app.renderReports();
+                }
+            });
+
+            const facRef = collection(State.db, 'artifacts', State.appId, 'public', 'data', 'faculty');
+            onSnapshot(facRef, snap => {
+                State.faculty = snap.docs.map(d => ({id: d.id, ...d.data()}));
+            });
+
+            const masterRef = doc(State.db, 'artifacts', State.appId, 'public', 'data', 'config', 'master_roster');
+            onSnapshot(masterRef, snap => {
+                if (snap.exists()) {
+                    State.masterStudents = snap.data().list || [];
+                } else {
+                    State.masterStudents = [];
+                }
+                if (window.app.renderMasterData) window.app.renderMasterData();
+            });
+        }
+
+        async function loadModels() {
+            try {
+                const URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1.7.12/model/';
+                await Promise.all([
+                    faceapi.nets.tinyFaceDetector.loadFromUri(URL),
+                    faceapi.nets.faceLandmark68Net.loadFromUri(URL),
+                    faceapi.nets.faceRecognitionNet.loadFromUri(URL)
+                ]);
+                return true;
+            } catch (err) {
+                console.error("AI Initialization Error:", err);
+                UI.toast("Unable to load AI recognition engine.", "error");
+                return false;
+            }
+        }
+
+        async function startWebcam(vidId, resolution = { width: 1280, height: 720 }, overrideMode = null) {
+            const vid = document.getElementById(vidId);
+            stopWebcam();
+            
+            if (overrideMode) State.cameraMode = overrideMode;
+            
+            if (State.cameraMode === 'user') {
+                vid.classList.add('mirrored');
+            } else {
+                vid.classList.remove('mirrored');
+            }
+
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: State.cameraMode, ...resolution } 
+                });
+                vid.srcObject = stream;
+                State.videoStream = stream;
+                return new Promise(r => { vid.onloadedmetadata = () => { vid.play(); r(); }; });
+            } catch (e) {
+                UI.toast("Ensure hardware camera permission is enabled.", "error");
+                throw e;
+            }
+        }
+
+        function stopWebcam() {
+            if (State.videoStream) {
+                State.videoStream.getTracks().forEach(t => t.stop());
+                State.videoStream = null;
+            }
+        }
+
+        function renderApprovals() {
+            const tbody = document.getElementById('approvals-tbody');
+            if(!tbody) return;
+            const pending = State.students.filter(s => s.status === 'pending');
+            
+            tbody.innerHTML = '';
+            
+            if (!pending.length) {
+                UI.show('approvals-empty'); return;
+            } else {
+                UI.hide('approvals-empty');
+            }
+
+            pending.forEach(s => {
+                const row = document.createElement('tr');
+                row.className = "hover:bg-slate-50 transition-colors";
+                row.innerHTML = `
+                    <td class="p-4 pl-6">
+                        <img src="${s.photoData}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 cursor-pointer shadow-sm hover:scale-105 transition-transform" onclick="window.app.openImageModal('${s.photoData}', '${s.name}', '${s.rollNo}', '${s.academicYear}', '${s.section}', '${s.studentMobile}', '${s.parentMobile}', '${s.status}')">
+                    </td>
+                    <td class="p-4">
+                        <div class="font-bold text-slate-800">${s.name}</div>
+                        <div class="text-[11px] text-slate-500 uppercase">${s.rollNo} &bull; ${s.academicYear} Yr (Sec ${s.section})</div>
+                    </td>
+                    <td class="p-4 font-mono text-xs text-slate-600">${s.studentMobile}</td>
+                    <td class="p-4 font-mono text-xs text-slate-600">${s.parentMobile}</td>
+                    <td class="p-4 pr-6 text-right space-x-2">
+                        <button onclick="window.app.updateStatus('${s.id}', 'approved')" class="p-2 bg-slate-900 text-white hover:bg-brand-500 rounded-lg transition-colors inline-flex items-center justify-center">
+                            <i class="ph ph-check font-bold"></i>
+                        </button>
+                        <button onclick="window.app.updateStatus('${s.id}', 'rejected')" class="p-2 bg-white border border-slate-200 text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors inline-flex items-center justify-center">
+                            <i class="ph ph-x font-bold"></i>
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        window.app = {
+            setRole: async role => {
+                UI.hide('view-role');
+                if (role === 'student-enroll') {
+                    UI.show('view-student');
+                    await startWebcam('student-video', { width: 640 }, 'user'); 
+                } else if (role === 'faculty') {
+                    window.app.openFacultyAuth();
+                }
+            },
+            logout: () => {
+                if(State.activeSessionId) window.app.endSession(true);
+                stopWebcam();
+                
+                if (State.currentStudent && State.studentSessionToken) {
+                    updateDoc(doc(State.db, 'artifacts', State.appId, 'public', 'data', 'students', State.currentStudent.id), { sessionToken: null }).catch(e => console.log('Silently ignored missing permissions'));
+                }
+
+                State.currentStudent = null;
+                State.studentSessionToken = null;
+                State.currentFaculty = null;
+                
+                if (State.tempEnrollment) {
+                    window.app.retakeFace();
+                }
+                State.tempEnrollment = null;
+                
+                UI.hide('view-student'); 
+                UI.hide('view-faculty');
+                UI.hide('view-student-dash');
+                UI.show('view-role');
+                
+                document.getElementById('reg-name').value = '';
+                document.getElementById('reg-roll').value = '';
+                document.getElementById('reg-st-mobile').value = '';
+                document.getElementById('reg-pt-mobile').value = '';
+                if (document.getElementById('report-filter-date')) document.getElementById('report-filter-date').value = '';
+                
+                UI.show('student-form-section'); UI.hide('student-status-section');
+            },
+            
+            switchCamera: async (vidId) => {
+                const newMode = State.cameraMode === 'user' ? 'environment' : 'user';
+                const res = vidId === 'student-video' ? { width: 640 } : { width: 1280, height: 720 };
+                UI.toast(`Switched to ${newMode === 'user' ? 'Front' : 'Rear'} Camera`, 'info');
+                await startWebcam(vidId, res, newMode);
+            },
+
+            captureFace: async () => {
+                const btn = document.getElementById('btn-capture-face');
+                btn.innerHTML = `<i class="ph ph-spinner-gap animate-spin text-xl"></i> Scanning...`;
+                btn.disabled = true;
+
+                try {
+                    const vid = document.getElementById('student-video');
+                    const detection = await faceapi.detectSingleFace(vid, new faceapi.TinyFaceDetectorOptions({ inputSize: 512, scoreThreshold: 0.3 }))
+                        .withFaceLandmarks()
+                        .withFaceDescriptor();
+
+                    if(!detection) {
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="ph ph-camera text-xl"></i> Take Snapshot`;
+                        return UI.toast('No face detected. Align head inside frame with solid lighting.', 'error');
+                    }
+
+                    const c = document.createElement('canvas');
+                    const currentWidth = vid.videoWidth || 640;
+                    const currentHeight = vid.videoHeight || 480;
+                    
+                    const scale = 300 / currentWidth;
+                    c.width = 300; 
+                    c.height = currentHeight * scale;
+                    c.getContext('2d').drawImage(vid, 0, 0, c.width, c.height);
+                    
+                    State.tempEnrollment = {
+                        descriptor: Array.from(detection.descriptor),
+                        photoData: c.toDataURL('image/jpeg', 0.85)
+                    };
+
+                    const preview = document.getElementById('student-captured-preview');
+                    preview.src = State.tempEnrollment.photoData;
+                    preview.classList.remove('hidden');
+                    
+                    UI.hide('btn-capture-face');
+                    UI.show('btn-retake-face');
+                    
+                    UI.toast('Face captured successfully!', 'success');
+                } catch(e) {
+                    btn.disabled = false;
+                    btn.innerHTML = `<i class="ph ph-camera text-xl"></i> Take Snapshot`;
+                    UI.toast('Failed to process facial features.', 'error');
+                }
+            },
+            
+            retakeFace: () => {
+                State.tempEnrollment = null;
+                const preview = document.getElementById('student-captured-preview');
+                preview.classList.add('hidden');
+                preview.src = '';
+                
+                UI.show('btn-capture-face');
+                UI.hide('btn-retake-face');
+                
+                const btn = document.getElementById('btn-capture-face');
+                btn.disabled = false;
+                btn.innerHTML = `<i class="ph ph-camera text-xl"></i> Take Snapshot`;
+            },
+            
+            openStudentLogin: () => {
+                const modal = document.getElementById('student-login-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                document.getElementById('login-roll-input').value = '';
+                document.getElementById('login-roll-input').focus();
+            },
+            closeStudentLogin: () => {
+                const modal = document.getElementById('student-login-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            },
+            processStudentLogin: async () => {
+                const rollInput = document.getElementById('login-roll-input').value.trim().toUpperCase();
+                if(!rollInput) return UI.toast('Please enter a Roll Number', 'error');
+
+                const st = State.students.find(s => s.rollNo.toUpperCase() === rollInput);
+                
+                if (st) {
+                    if (st.status === 'approved') {
+                        const token = Date.now().toString(36) + Math.random().toString(36).substring(2);
+                        State.studentSessionToken = token;
+                        await updateDoc(doc(State.db, 'artifacts', State.appId, 'public', 'data', 'students', st.id), { sessionToken: token });
+
+                        State.currentStudent = st;
+                        window.app.closeStudentLogin();
+                        UI.hide('view-role');
+                        UI.show('view-student-dash');
+                        window.app.renderStudentDash();
+                        UI.toast(`Welcome back, ${st.name}! Device locked to your session.`, 'success');
+                    } else {
+                        UI.toast('Your profile is currently pending faculty approval or was rejected.', 'info');
+                    }
+                } else {
+                    window.app.closeStudentLogin();
+                    UI.hide('view-role');
+                    UI.show('view-student');
+                    document.getElementById('reg-roll').value = rollInput; 
+                    UI.toast('Profile not found. Please complete initial setup.', 'info');
+                    await startWebcam('student-video', { width: 640 }, 'user'); 
+                }
+            },
+
+            openFacultyAuth: () => {
+                const savedId = localStorage.getItem('aura_faculty_id');
+                const savedName = localStorage.getItem('aura_faculty_name');
+                const modal = document.getElementById('faculty-auth-modal');
+                
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                
+                if (savedId && savedName) {
+                    UI.hide('fac-view-master');
+                    UI.hide('fac-view-setup-pin');
+                    UI.show('fac-view-pin-login');
+                    document.getElementById('fac-welcome-name').textContent = `Welcome Back`;
+                    document.getElementById('fac-login-pin').value = '';
+                    setTimeout(() => document.getElementById('fac-login-pin').focus(), 100);
+                } else {
+                    UI.show('fac-view-master');
+                    UI.hide('fac-view-pin-login');
+                    UI.hide('fac-view-setup-pin');
+                    document.getElementById('fac-master-name').value = '';
+                    document.getElementById('fac-master-code').value = '';
+                }
+            },
+            closeFacultyAuth: () => {
+                document.getElementById('faculty-auth-modal').classList.add('hidden');
+                document.getElementById('faculty-auth-modal').classList.remove('flex');
+                if(!State.currentFaculty) {
+                    UI.show('view-role');
+                }
+            },
+            
+            processMasterKey: async () => {
+                const name = document.getElementById('fac-master-name').value.trim();
+                const code = document.getElementById('fac-master-code').value.trim();
+                
+                if (!name || !code) return UI.toast('Enter your Name and Master Key.', 'error');
+                
+                const expectedCodes = [84, 101, 115, 116, 36, 54, 54, 57];
+                const masterPass = String.fromCharCode(...expectedCodes);
+
+                const hash1 = await hashStr(code);
+                const hash2 = await hashStr(masterPass);
+
+                if (hash1 !== hash2) return UI.toast('Invalid Master Access Key.', 'error');
+                
+                State.pendingFacultyName = name;
+                UI.hide('fac-view-master');
+                UI.show('fac-view-setup-pin');
+                document.getElementById('fac-setup-pin1').value = '';
+                document.getElementById('fac-setup-pin2').value = '';
+            },
+
+            setupFacultyPIN: async () => {
+                const p1 = document.getElementById('fac-setup-pin1').value.trim();
+                const p2 = document.getElementById('fac-setup-pin2').value.trim();
+                
+                if(!p1 || p1.length !== 6 || isNaN(p1)) return UI.toast('PIN must be exactly 6 digits.', 'error');
+                if(p1 !== p2) return UI.toast('PINs do not match.', 'error');
+
+                const hashedPin = await hashStr(p1);
+
+                try {
+                    const docRef = await addDoc(collection(State.db, 'artifacts', State.appId, 'public', 'data', 'faculty'), {
+                        name: State.pendingFacultyName,
+                        pinHash: hashedPin,
+                        timestamp: new Date().toISOString()
+                    });
+
+                    localStorage.setItem('aura_faculty_id', docRef.id);
+                    localStorage.setItem('aura_faculty_name', State.pendingFacultyName);
+                    
+                    State.currentFaculty = { id: docRef.id, name: State.pendingFacultyName };
+                    
+                    window.app.closeFacultyAuth();
+                    UI.hide('view-role');
+                    UI.show('view-faculty');
+                    window.app.switchTab('approvals');
+                    UI.toast(`PIN locked securely. Welcome to the Console!`, 'success');
+                } catch (e) {
+                    UI.toast('Failed to register security PIN.', 'error');
+                }
+            },
+
+            processPinLogin: async () => {
+                const pin = document.getElementById('fac-login-pin').value.trim();
+                if(!pin || pin.length !== 6) return UI.toast('Enter 6-digit PIN', 'error');
+
+                const savedId = localStorage.getItem('aura_faculty_id');
+                const facDoc = State.faculty.find(f => f.id === savedId);
+                
+                if(!facDoc) {
+                    window.app.resetFacultyDevice();
+                    return UI.toast('Device profile desynchronized. Use Master Key to restore.', 'error');
+                }
+
+                const inputHash = await hashStr(pin);
+                
+                if (inputHash === facDoc.pinHash) {
+                    State.currentFaculty = facDoc;
+                    window.app.closeFacultyAuth();
+                    UI.hide('view-role');
+                    UI.show('view-faculty');
+                    window.app.switchTab('approvals');
+                    UI.toast(`Access Granted.`, 'success');
+                } else {
+                    document.getElementById('fac-login-pin').value = '';
+                    UI.toast('Incorrect PIN.', 'error');
+                }
+            },
+
+            resetFacultyDevice: () => {
+                localStorage.removeItem('aura_faculty_id');
+                localStorage.removeItem('aura_faculty_name');
+                UI.hide('fac-view-pin-login');
+                UI.show('fac-view-master');
+                document.getElementById('fac-master-name').value = '';
+                document.getElementById('fac-master-code').value = '';
+            },
+
+            renderStudentDash: () => {
+                const st = State.currentStudent;
+                if(!st) return;
+                
+                document.getElementById('dash-photo').src = st.photoData;
+                UI.text('dash-name', st.name);
+                UI.text('dash-roll', st.rollNo.toUpperCase());
+                UI.text('dash-year', `${st.academicYear} Year`);
+                UI.text('dash-sec', `Section ${st.section}`);
+                UI.text('dash-phone', st.studentMobile);
+
+                const oneWeekAgo = new Date();
+                oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+                const recentSessions = State.sessions.filter(s => {
+                    const sessDate = new Date(s.timestamp || new Date());
+                    return sessDate >= oneWeekAgo && String(s.year) === String(st.academicYear) && String(s.section) === String(st.section);
+                });
+
+                const tbody = document.getElementById('dash-sessions-tbody');
+                tbody.innerHTML = '';
+                let presentCount = 0;
+
+                if (!recentSessions.length) {
+                    UI.show('dash-empty'); 
+                    UI.text('dash-percentage', 'N/A');
+                } else {
+                    UI.hide('dash-empty');
+                    recentSessions.forEach(s => {
+                        const isPresent = (s.attendees || []).includes(st.id);
+                        if(isPresent) presentCount++;
+                        
+                        const badgeClasses = isPresent 
+                            ? 'bg-brand-50 text-brand-600 border-brand-200' 
+                            : 'bg-rose-50 text-rose-600 border-rose-200';
+                        const icon = isPresent ? 'ph-check-circle' : 'ph-x-circle';
+                        const txt = isPresent ? 'Present' : 'Absent';
+
+                        const tr = document.createElement('tr');
+                        tr.innerHTML = `
+                            <td class="p-3 pl-4 font-mono text-slate-500">${s.date}</td>
+                            <td class="p-3 font-bold text-slate-800">${s.subject}</td>
+                            <td class="p-3 text-slate-600">Hour ${s.hour}</td>
+                            <td class="p-3 text-right pr-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-bold border ${badgeClasses}">
+                                    <i class="ph ${icon} text-sm"></i> ${txt}
+                                </span>
+                            </td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    
+                    const pct = ((presentCount / recentSessions.length) * 100).toFixed(0);
+                    UI.text('dash-percentage', `${pct}%`);
+                }
+            },
+
+            toggleSidebar: () => {
+                const panel = document.getElementById('sidebar-nav');
+                const scrim = document.getElementById('sidebar-overlay');
+                panel.classList.toggle('sidebar-open');
+                scrim.classList.toggle('hidden');
+            },
+            switchTab: tab => {
+                ['approvals', 'roster', 'session', 'reports', 'master'].forEach(t => {
+                    UI.hide(`tab-${t}`);
+                    const nav = document.getElementById(`nav-${t}`);
+                    if(nav) nav.className = 'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-slate-500 hover:bg-slate-50 font-medium transition-all';
+                });
+                
+                UI.show(`tab-${tab}`);
+                const activeNav = document.getElementById(`nav-${tab}`);
+                if(activeNav) activeNav.className = 'w-full flex items-center gap-3 px-4 py-3 rounded-xl text-brand-600 bg-brand-50 font-semibold transition-all shadow-sm';
+                
+                let headTitle = 'Pending Approvals';
+                if (tab === 'roster') {
+                    headTitle = 'Biometric Directory';
+                    window.app.renderRoster();
+                } else if (tab === 'session') {
+                    headTitle = 'Spatial Sweep Engine';
+                    const d = new Date();
+                    const dtInput = document.getElementById('session-date');
+                    if(dtInput && !dtInput.value) dtInput.value = d.toISOString().split('T')[0];
+                } else if (tab === 'reports') {
+                    headTitle = 'Reports & Analytics';
+                    window.app.renderReports();
+                } else if (tab === 'master') {
+                    headTitle = 'Master Student Data';
+                    window.app.renderMasterData();
+                }
+                UI.text('header-title', headTitle);
+
+                const panel = document.getElementById('sidebar-nav');
+                const scrim = document.getElementById('sidebar-overlay');
+                panel.classList.remove('sidebar-open');
+                scrim.classList.add('hidden');
+            },
+            
+            uploadMasterData: (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = async (e) => {
+                    try {
+                        const data = new Uint8Array(e.target.result);
+                        const workbook = XLSX.read(data, {type: 'array'});
+                        const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                        const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+                        const masterList = [];
+                        
+                        for (let i = 1; i < jsonData.length; i++) {
+                            const row = jsonData[i];
+                            if (row[0] && row[1]) {
+                                masterList.push({ 
+                                    roll: String(row[0]).trim().toUpperCase(), 
+                                    name: String(row[1]).trim() 
+                                });
+                            }
+                        }
+
+                        if (masterList.length === 0) {
+                            return UI.toast('No valid records found. Ensure Column 1 is Roll No and Column 2 is Name.', 'error');
+                        }
+
+                        await setDoc(doc(State.db, 'artifacts', State.appId, 'public', 'data', 'config', 'master_roster'), {
+                            list: masterList,
+                            updatedAt: new Date().toISOString()
+                        });
+                        
+                        UI.toast(`Master Data Uploaded successfully. ${masterList.length} records active.`, 'success');
+                        document.getElementById('master-file').value = ""; 
+                    } catch (err) {
+                        console.error(err);
+                        UI.toast('Failed to parse and upload Master Data.', 'error');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            },
+
+            renderMasterData: () => {
+                const tbody = document.getElementById('master-tbody');
+                if(!tbody) return;
+
+                tbody.innerHTML = '';
+
+                if(!State.masterStudents || State.masterStudents.length === 0) {
+                    UI.show('master-empty');
+                    UI.text('master-count', '0 Loaded');
+                    return;
+                } else {
+                    UI.hide('master-empty');
+                    UI.text('master-count', `${State.masterStudents.length} Verified Records Loaded`);
+                }
+
+                State.masterStudents.forEach(m => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="p-4 pl-6 font-mono font-bold text-slate-700">${m.roll}</td>
+                        <td class="p-4 font-medium text-slate-800">${m.name}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            renderReports: () => {
+                const tbody = document.getElementById('reports-tbody');
+                if(!tbody) return;
+
+                const searchSub = document.getElementById('report-search-sub').value.toLowerCase().trim();
+                const filterDate = document.getElementById('report-filter-date').value;
+                const filterYr = document.getElementById('report-filter-year').value;
+                const filterSec = document.getElementById('report-filter-section').value;
+
+                tbody.innerHTML = '';
+                
+                let filtered = State.sessions;
+                
+                if(searchSub) filtered = filtered.filter(s => s.subject.toLowerCase().includes(searchSub));
+                if(filterDate) filtered = filtered.filter(s => s.date === filterDate);
+                if(filterYr !== 'all') filtered = filtered.filter(s => String(s.year) === String(filterYr));
+                if(filterSec !== 'all') filtered = filtered.filter(s => String(s.section) === String(filterSec));
+
+                if(!filtered.length) {
+                    UI.show('reports-empty');
+                    return;
+                } else {
+                    UI.hide('reports-empty');
+                }
+
+                filtered.forEach(s => {
+                    const totalReg = State.students.filter(st => st.status === 'approved' && String(st.academicYear) === String(s.year) && String(st.section) === String(s.section)).length;
+                    const present = (s.attendees || []).length;
+                    const pct = totalReg > 0 ? ((present / totalReg) * 100).toFixed(1) : 0;
+                    const pctColor = pct > 75 ? 'text-teal-600' : (pct > 50 ? 'text-amber-500' : 'text-rose-500');
+                    
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="p-4 pl-6">
+                            <div class="font-bold text-slate-800">${s.subject}</div>
+                            <div class="text-[11px] text-slate-500 font-mono">Date: ${s.date} &bull; Hr: ${s.hour}</div>
+                        </td>
+                        <td class="p-4">
+                            <span class="px-2.5 py-1 bg-slate-100 text-slate-700 font-semibold rounded-md text-xs">
+                                Year ${s.year} (Sec ${s.section})
+                            </span>
+                        </td>
+                        <td class="p-4 text-center">
+                            <span class="font-bold text-slate-700">${present}</span>
+                            <span class="text-slate-400 text-xs">/ ${totalReg}</span>
+                        </td>
+                        <td class="p-4 text-center font-bold ${pctColor}">${pct}%</td>
+                        <td class="p-4 pr-6 flex justify-end gap-2 items-center">
+                            <button onclick="window.app.viewSessionReport('${s.id}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-colors">
+                                View
+                            </button>
+                            <button onclick="window.app.downloadCSV('${s.id}')" class="px-3 py-1.5 bg-brand-50 hover:bg-brand-500 hover:text-white text-brand-600 rounded-lg text-[10px] font-bold transition-colors">
+                                CSV
+                            </button>
+                            <button onclick="window.app.downloadExcel('${s.id}')" class="px-3 py-1.5 bg-emerald-50 hover:bg-emerald-500 hover:text-white text-emerald-600 rounded-lg text-[10px] font-bold transition-colors">
+                                XLSX
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            viewSessionReport: (sessionId) => {
+                const session = State.sessions.find(s => s.id === sessionId);
+                if(!session) return UI.toast('Session data lost.', 'error');
+                
+                const targets = State.students.filter(st => st.status === 'approved' && String(st.academicYear) === String(session.year) && String(st.section) === String(session.section));
+                targets.sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric: true, sensitivity: 'base'}));
+                
+                document.getElementById('rv-subject').textContent = session.subject;
+                document.getElementById('rv-meta').textContent = `Date: ${session.date} | Hour: ${session.hour} | Target: Year ${session.year} (Sec ${session.section})`;
+                
+                const tbody = document.getElementById('rv-tbody');
+                tbody.innerHTML = '';
+                
+                let presentCount = 0;
+
+                targets.forEach(s => {
+                    const isPresent = (session.attendees || []).includes(s.id);
+                    if (isPresent) presentCount++;
+                    
+                    const statusUI = isPresent 
+                        ? `<span class="px-2 py-1 bg-brand-50 text-brand-600 rounded text-xs font-bold border border-brand-200"><i class="ph ph-check"></i> Present</span>`
+                        : `<span class="px-2 py-1 bg-rose-50 text-rose-600 rounded text-xs font-bold border border-rose-200"><i class="ph ph-x"></i> Absent</span>`;
+
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td class="p-3 pl-6 font-mono font-bold text-slate-700">${s.rollNo}</td>
+                        <td class="p-3 font-medium text-slate-800">${s.name}</td>
+                        <td class="p-3 pr-6 text-right">${statusUI}</td>
+                    `;
+                    tbody.appendChild(row);
+                });
+
+                document.getElementById('rv-summary').textContent = `Present: ${presentCount} / ${targets.length}`;
+                
+                const modal = document.getElementById('report-view-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            },
+
+            closeReportView: () => {
+                const modal = document.getElementById('report-view-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            },
+            
+            downloadCSV: (sessionId) => {
+                const session = State.sessions.find(s => s.id === sessionId);
+                if(!session) return UI.toast('Session data lost.', 'error');
+                
+                const targets = State.students.filter(st => st.status === 'approved' && String(st.academicYear) === String(session.year) && String(st.section) === String(session.section));
+                targets.sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric: true, sensitivity: 'base'}));
+                
+                let csv = 'Roll No,Student Name,Subject,Date,Status\n';
+                
+                targets.forEach(s => {
+                    const isPresent = (session.attendees || []).includes(s.id);
+                    csv += `${s.rollNo},${s.name},${session.subject},${session.date},${isPresent ? 'Present' : 'Absent'}\n`;
+                });
+
+                const totalReg = targets.length;
+                const totalPres = (session.attendees || []).length;
+                const percent = totalReg > 0 ? ((totalPres / totalReg) * 100).toFixed(2) : 0;
+
+                csv += `\n,,,\nReport Summary,,,\n`;
+                csv += `Subject,${session.subject},,\n`;
+                csv += `Date,${session.date},,\n`;
+                csv += `Hour,${session.hour},,\n`;
+                csv += `Target Year/Sec,Year ${session.year} - Sec ${session.section},,\n`;
+                csv += `Total Registered,${totalReg},,\n`;
+                csv += `Total Present,${totalPres},,\n`;
+                csv += `Total Absent,${totalReg - totalPres},,\n`;
+                csv += `Attendance %,${percent}%,,\n`;
+
+                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.setAttribute('download', `Attendance_${session.subject}_${session.date}.csv`);
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            },
+
+            downloadExcel: (sessionId) => {
+                const session = State.sessions.find(s => s.id === sessionId);
+                if(!session) return UI.toast('Session data lost.', 'error');
+                
+                if (typeof XLSX === 'undefined') return UI.toast('Excel library loading, please try again in a moment.', 'error');
+
+                const targets = State.students.filter(st => st.status === 'approved' && String(st.academicYear) === String(session.year) && String(st.section) === String(session.section));
+                targets.sort((a,b) => a.rollNo.localeCompare(b.rollNo, undefined, {numeric: true, sensitivity: 'base'}));
+                
+                const totalReg = targets.length;
+                const totalPres = (session.attendees || []).length;
+                const percent = totalReg > 0 ? ((totalPres / totalReg) * 100).toFixed(2) : 0;
+
+                const ws_data = [
+                    ['Aura AI Attendance Report'],
+                    [],
+                    ['Subject', session.subject],
+                    ['Date', session.date],
+                    ['Hour', session.hour],
+                    ['Target Class', `Year ${session.year} (Sec ${session.section})`],
+                    ['Attendance %', `${percent}% (${totalPres}/${totalReg})`],
+                    [],
+                    ['Roll No', 'Student Name', 'Status']
+                ];
+
+                targets.forEach(s => {
+                    const isPresent = (session.attendees || []).includes(s.id);
+                    ws_data.push([s.rollNo, s.name, isPresent ? 'Present' : 'Absent']);
+                });
+
+                const ws = XLSX.utils.aoa_to_sheet(ws_data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Attendance Sheet");
+                XLSX.writeFile(wb, `Attendance_${session.subject}_${session.date}.xlsx`);
+            },
+
+            updateStatus: async (id, stat) => {
+                try {
+                    await updateDoc(doc(State.db, 'artifacts', State.appId, 'public', 'data', 'students', id), { status: stat });
+                    UI.toast(`Student identity ${stat}`, 'success');
+                } catch(e) { UI.toast('Transaction failed', 'error'); }
+            },
+            bulkUpdate: async stat => {
+                const pend = State.students.filter(s => s.status === 'pending');
+                if(!pend.length) return;
+                UI.toast(`Syncing database queue...`, 'info');
+                for(const s of pend) await window.app.updateStatus(s.id, stat);
+            },
+            
+            openImageModal: (src, name, roll, year, sec, stPh, ptPh, status) => {
+                document.getElementById('modal-img').src = src;
+                UI.text('modal-name', name);
+                UI.text('modal-roll', roll);
+                UI.text('modal-yr-sec', `${year} Year (Sec ${sec})`);
+                UI.text('modal-st-phone', stPh || '-');
+                UI.text('modal-pt-phone', ptPh || '-');
+                UI.text('modal-status', status === 'approved' ? 'Active / Approved' : 'Authorization Required');
+                
+                const container = document.getElementById('image-modal');
+                container.classList.remove('hidden');
+                container.classList.add('flex');
+            },
+            closeImageModal: () => {
+                const container = document.getElementById('image-modal');
+                container.classList.add('hidden');
+                container.classList.remove('flex');
+            },
+
+            openDeleteModal: (id, name) => {
+                State.pendingDeleteId = id;
+                UI.text('delete-student-name', name);
+                const modal = document.getElementById('delete-confirm-modal');
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            },
+            closeDeleteModal: () => {
+                State.pendingDeleteId = null;
+                const modal = document.getElementById('delete-confirm-modal');
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            },
+            processDelete: async () => {
+                if (!State.pendingDeleteId) return;
+                try {
+                    await deleteDoc(doc(State.db, 'artifacts', State.appId, 'public', 'data', 'students', State.pendingDeleteId));
+                    UI.toast('Student profile securely deleted.', 'success');
+                    window.app.closeDeleteModal();
+                } catch (e) {
+                    UI.toast('Failed to delete student.', 'error');
+                }
+            },
+
+            renderRoster: () => {
+                const tbody = document.getElementById('roster-tbody');
+                if (!tbody) return;
+                
+                const searchQ = document.getElementById('roster-search').value.toLowerCase().trim();
+                const filterYr = document.getElementById('roster-filter-year').value;
+                const filterSec = document.getElementById('roster-filter-section').value;
+
+                tbody.innerHTML = '';
+                let filtered = State.students.filter(s => s.status === 'approved');
+
+                if (searchQ) {
+                    filtered = filtered.filter(s => 
+                        s.name.toLowerCase().includes(searchQ) || 
+                        s.rollNo.toLowerCase().includes(searchQ)
+                    );
+                }
+                if (filterYr !== 'all') filtered = filtered.filter(s => String(s.academicYear) === filterYr);
+                if (filterSec !== 'all') filtered = filtered.filter(s => String(s.section) === filterSec);
+
+                filtered.sort((a, b) => a.rollNo.localeCompare(b.rollNo, undefined, { numeric: true, sensitivity: 'base' }));
+
+                if (!filtered.length) {
+                    UI.show('roster-empty'); return;
+                } else {
+                    UI.hide('roster-empty');
+                }
+
+                filtered.forEach(s => {
+                    const row = document.createElement('tr');
+                    row.className = "hover:bg-slate-50 transition-colors";
+                    row.innerHTML = `
+                        <td class="p-4 pl-6">
+                            <img src="${s.photoData}" class="w-10 h-10 rounded-lg object-cover border border-slate-200 cursor-pointer hover:scale-105 transition-transform" onclick="window.app.openImageModal('${s.photoData}', '${s.name}', '${s.rollNo}', '${s.academicYear}', '${s.section}', '${s.studentMobile}', '${s.parentMobile}', '${s.status}')">
+                        </td>
+                        <td class="p-4 font-mono font-bold text-slate-700">${s.rollNo}</td>
+                        <td class="p-4 font-medium text-slate-800">${s.name}</td>
+                        <td class="p-4">
+                            <span class="px-2 py-1 text-xs font-semibold bg-slate-100 text-slate-700 rounded-md">
+                                ${s.academicYear} Yr &bull; Sec ${s.section}
+                            </span>
+                        </td>
+                        <td class="p-4 pr-6 text-right flex justify-end gap-2 items-center">
+                            <button onclick="window.app.openImageModal('${s.photoData}', '${s.name}', '${s.rollNo}', '${s.academicYear}', '${s.section}', '${s.studentMobile}', '${s.parentMobile}', '${s.status}')" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-colors">
+                                View Profile
+                            </button>
+                            <button onclick="window.app.openDeleteModal('${s.id}', '${s.name}')" class="px-3 py-1.5 bg-rose-50 hover:bg-rose-500 hover:text-white text-rose-600 rounded-lg text-[10px] font-bold transition-colors">
+                                Delete
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            },
+
+            buildSessionMatcher: (targetYear, targetSection) => {
+                const cohort = State.students.filter(s => 
+                    s.status === 'approved' && 
+                    String(s.academicYear) === String(targetYear) && 
+                    String(s.section) === String(targetSection)
+                );
+
+                if (!cohort.length) { 
+                    State.faceMatcher = null; 
+                    return; 
+                }
+
+                const Labeled = cohort.map(s => {
+                    const desc = s.descriptor ? new Float32Array(s.descriptor) : new Float32Array(128);
+                    return new faceapi.LabeledFaceDescriptors(s.id, [desc]);
+                });
+                
+                // Widened threshold handles angles and lighting much better
+                State.faceMatcher = new faceapi.FaceMatcher(Labeled, 0.55); 
+            },
+
+            startSession: async () => {
+                const subject = document.getElementById('session-subject').value.trim();
+                const year = document.getElementById('session-year').value;
+                const section = document.getElementById('session-section').value;
+                const hour = document.getElementById('session-hour').value;
+                const date = document.getElementById('session-date').value.trim();
+
+                if(!subject || !date) return UI.toast('Please set the subject and date', 'error');
+
+                window.app.buildSessionMatcher(year, section);
+
+                if(!State.faceMatcher) return UI.toast(`No approved students found for Year ${year} (Sec ${section}).`, 'error');
+
+                State.activeSessionId = Date.now().toString();
+                State.presentIds.clear();
+                State.sessionData = { subject, year, section, hour, date };
+                
+                UI.hide('session-setup');
+                UI.show('session-active');
+                UI.text('active-course-name', subject);
+                UI.text('active-session-meta', `${date} | ${year} Yr - Sec ${section} | Hr ${hour}`);
+
+                document.getElementById('present-list').innerHTML = `
+                    <div class="h-full flex flex-col items-center justify-center text-slate-400 text-xs text-center p-4">
+                        <i class="ph ph-radar text-3xl mb-2 text-slate-200"></i>
+                        Ready to process scanning Sweep
+                    </div>
+                `;
+                UI.text('present-count', '0');
+                
+                // UI Reset
+                document.getElementById('sweep-status').classList.add('hidden');
+                document.getElementById('btn-sweep').classList.remove('hidden');
+                document.getElementById('btn-pause').classList.add('hidden');
+                document.getElementById('sweep-msg').textContent = 'Sweeping Desk Blocks...';
+                document.getElementById('sweep-timer').textContent = '10s';
+                
+                await startWebcam('faculty-video', { width: 1280, height: 720 }, 'environment'); 
+            },
+            
+            toggleSweep: () => {
+                State.isSweeping = !State.isSweeping;
+                const btnPause = document.getElementById('btn-pause');
+                const uiStat = document.getElementById('sweep-msg');
+                
+                if (State.isSweeping) {
+                    uiStat.textContent = 'Sweeping Desk Blocks...';
+                    btnPause.innerHTML = '<i class="ph ph-pause text-lg"></i>';
+                    window.app.runSweep(true); // resume
+                } else {
+                    uiStat.textContent = 'Sweep Paused';
+                    btnPause.innerHTML = '<i class="ph ph-play text-lg"></i>';
+                }
+            },
+
+            endSession: async (skipSave = false) => {
+                if(!State.activeSessionId) return;
+                
+                State.isSweeping = false;
+                if (State.timerInterval) clearInterval(State.timerInterval);
+                if (State.sweepTimeout) clearTimeout(State.sweepTimeout);
+                State.timerInterval = null;
+                State.sweepTimeout = null;
+
+                if (!skipSave) {
+                    try {
+                        const data = {
+                            ...State.sessionData,
+                            facultyAdmin: State.currentFaculty?.name || 'System Auto',
+                            timestamp: new Date().toISOString(),
+                            attendees: Array.from(State.presentIds)
+                        };
+                        await addDoc(collection(State.db, 'artifacts', State.appId, 'public', 'data', 'sessions'), data);
+                        UI.toast(`Session archived. ${data.attendees.length} attendance counts captured.`, 'success');
+                    } catch(e) {
+                        UI.toast('Failed to record session log', 'error');
+                    }
+                }
+
+                stopWebcam();
+                State.activeSessionId = null;
+                State.sessionData = null;
+                
+                UI.hide('session-active'); UI.show('session-setup');
+                document.getElementById('session-subject').value = '';
+                
+                const can = document.getElementById('faculty-canvas');
+                if(can) {
+                    const ctx = can.getContext('2d');
+                    ctx.clearRect(0,0,can.width,can.height);
+                }
+                
+                const box = document.getElementById('video-box');
+                if(box) box.classList.remove('is-scanning');
+            },
+
+            runSweep: async (isResume = false) => {
+                if (!State.videoStream || !State.faceMatcher) return;
+                if (State.isSweeping && !isResume) return;
+                
+                const vid = document.getElementById('faculty-video');
+                const can = document.getElementById('faculty-canvas');
+                const box = document.getElementById('video-box');
+                const uiStat = document.getElementById('sweep-status');
+                const btnSweep = document.getElementById('btn-sweep');
+                const btnPause = document.getElementById('btn-pause');
+                const timerText = document.getElementById('sweep-timer');
+
+                State.isSweeping = true;
+                box.classList.add('is-scanning');
+                btnSweep.classList.add('hidden');
+                btnPause.classList.remove('hidden');
+                uiStat.classList.remove('hidden');
+                uiStat.classList.add('flex');
+
+                let currentSize = { width: vid.videoWidth || 640, height: vid.videoHeight || 480 };
+                faceapi.matchDimensions(can, currentSize);
+
+                // Optimal resolution and threshold for distance scanning
+                const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 608, scoreThreshold: 0.3 });
+                let timeLeft = isResume ? parseInt(timerText.textContent) : 10; 
+                
+                const sweepFrame = async () => {
+                    if (!State.isSweeping) return; // Paused
+
+                    if (timeLeft <= 0) {
+                        finishSweep();
+                        return;
+                    }
+
+                    try {
+                        const newSize = { width: vid.videoWidth || 640, height: vid.videoHeight || 480 };
+                        if (newSize.width !== currentSize.width || newSize.height !== currentSize.height) {
+                            currentSize = newSize;
+                            faceapi.matchDimensions(can, currentSize);
+                        }
+
+                        const detections = await faceapi.detectAllFaces(vid, options)
+                            .withFaceLandmarks()
+                            .withFaceDescriptors();
+                        
+                        const resized = faceapi.resizeResults(detections, currentSize);
+                        const ctx = can.getContext('2d');
+                        ctx.clearRect(0, 0, can.width, can.height);
+                        
+                        let newMatch = false;
+                        const isMirrored = State.cameraMode === 'user'; 
+
+                        resized.forEach(d => {
+                            const match = State.faceMatcher.findBestMatch(d.descriptor);
+                            const isKnown = match.label !== 'unknown';
+                            
+                            const boxCoordinates = d.detection.box;
+                            let drawX = boxCoordinates.x;
+                            if (isMirrored) {
+                                drawX = can.width - boxCoordinates.x - boxCoordinates.width;
+                            }
+                            
+                            const color = isKnown ? '#14b8a6' : '#f43f5e';
+                            const label = isKnown ? 'Verified Match' : 'Unrecognized';
+                            
+                            ctx.strokeStyle = color;
+                            ctx.lineWidth = 3;
+                            ctx.strokeRect(drawX, boxCoordinates.y, boxCoordinates.width, boxCoordinates.height);
+                            
+                            ctx.fillStyle = color;
+                            const tWidth = ctx.measureText(label).width + 10;
+                            const textPlateWidth = Math.max(tWidth, boxCoordinates.width);
+                            ctx.fillRect(drawX, boxCoordinates.y - 25, textPlateWidth, 25);
+                            
+                            ctx.fillStyle = '#ffffff';
+                            ctx.font = '13px "Plus Jakarta Sans", sans-serif';
+                            ctx.fontWeight = 'bold';
+                            ctx.fillText(label, drawX + 5, boxCoordinates.y - 7);
+
+                            if (isKnown && !State.presentIds.has(match.label)) {
+                                State.presentIds.add(match.label);
+                                newMatch = true;
+                            }
+                        });
+
+                        if (newMatch) {
+                            const list = document.getElementById('present-list');
+                            UI.text('present-count', State.presentIds.size);
+                            list.innerHTML = '';
+                            
+                            Array.from(State.presentIds).reverse().forEach(id => {
+                                const s = State.students.find(x => x.id === id);
+                                if(s) {
+                                    list.innerHTML += `
+                                        <div class="flex items-center gap-2.5 p-2 bg-white border border-slate-100 rounded-xl shadow-sm">
+                                            <img src="${s.photoData}" class="w-7 h-7 rounded-full object-cover">
+                                            <div class="min-w-0 flex-1">
+                                                <div class="text-xs font-bold text-slate-800 truncate">${s.name}</div>
+                                                <div class="text-[9px] text-slate-500 uppercase tracking-tight">${s.rollNo}</div>
+                                            </div>
+                                            <i class="ph ph-check-circle text-brand-500 text-base"></i>
+                                        </div>
+                                    `;
+                                }
+                            });
+                        }
+
+                    } catch (e) {
+                        console.error("Frame analysis process exception: ", e);
+                    }
+
+                    if (State.isSweeping && timeLeft > 0) {
+                        State.sweepTimeout = setTimeout(sweepFrame, 100);
+                    }
+                };
+
+                if (!State.timerInterval) {
+                    State.timerInterval = setInterval(() => {
+                        if (State.isSweeping) {
+                            timeLeft--;
+                            timerText.textContent = `${timeLeft}s`;
+                            if (timeLeft <= 0) {
+                                clearInterval(State.timerInterval);
+                                State.timerInterval = null;
+                            }
+                        }
+                    }, 1000);
+                }
+
+                sweepFrame();
+
+                function finishSweep() {
+                    State.isSweeping = false;
+                    box.classList.remove('is-scanning');
+                    btnSweep.classList.remove('hidden');
+                    btnPause.classList.add('hidden');
+                    uiStat.classList.add('hidden');
+                    uiStat.classList.remove('flex');
+                    setTimeout(() => can.getContext('2d').clearRect(0, 0, can.width, can.height), 2000);
+                    UI.toast('Sweep complete. Attendance synced with session cache.', 'info');
+                }
+            }
+        };
+
+        document.getElementById('btn-register-face').addEventListener('click', async () => {
+            const name = document.getElementById('reg-name').value.trim();
+            const roll = document.getElementById('reg-roll').value.trim().toUpperCase();
+            const year = document.getElementById('reg-year').value;
+            const section = document.getElementById('reg-section').value;
+            const studentMobile = document.getElementById('reg-st-mobile').value.trim();
+            const parentMobile = document.getElementById('reg-pt-mobile').value.trim();
+
+            if(!name || !roll || !studentMobile || !parentMobile) {
+                return UI.toast('Please populate all student form coordinates.', 'error');
+            }
+
+            if(studentMobile === parentMobile) {
+                return UI.toast('Student Mobile and Parent Mobile cannot be identical.', 'error');
+            }
+
+            if (State.masterStudents && State.masterStudents.length > 0) {
+                const isAuthorized = State.masterStudents.find(m => m.roll === roll);
+                if (!isAuthorized) {
+                    return UI.toast('Invalid Roll Number. Not found in Faculty Master Roster.', 'error');
+                }
+            } else {
+                return UI.toast('Registration Locked: Faculty has not uploaded the Master Roster yet.', 'error');
+            }
+
+            const existingRoll = State.students.find(s => s.rollNo.toUpperCase() === roll);
+            if (existingRoll) {
+                return UI.toast('This Roll Number is already registered in the system.', 'error');
+            }
+
+            if(!State.tempEnrollment || !State.tempEnrollment.descriptor) {
+                return UI.toast('Please capture your face using the camera button first.', 'error');
+            }
+
+            // DUPLICATE FACE CHECK
+            if (State.students.length > 0) {
+                const Labeled = State.students.map(s => {
+                    return new faceapi.LabeledFaceDescriptors(s.rollNo, [new Float32Array(s.descriptor)]);
+                });
+                const duplicateMatcher = new faceapi.FaceMatcher(Labeled, 0.45); 
+                const match = duplicateMatcher.findBestMatch(new Float32Array(State.tempEnrollment.descriptor));
+                
+                if (match.label !== 'unknown') {
+                    return UI.toast(`Registration Blocked: Face is already registered to Roll No: ${match.label}`, 'error');
+                }
+            }
+
+            const btn = document.getElementById('btn-register-face');
+            btn.innerHTML = `<i class="ph ph-spinner-gap animate-spin text-xl"></i> Finalizing Profile...`;
+            btn.disabled = true;
+
+            try {
+                await addDoc(collection(State.db, 'artifacts', State.appId, 'public', 'data', 'students'), {
+                    name, 
+                    rollNo: roll,
+                    academicYear: year,
+                    section: section,
+                    studentMobile,
+                    parentMobile,
+                    photoData: State.tempEnrollment.photoData, 
+                    descriptor: State.tempEnrollment.descriptor,
+                    status: 'pending',
+                    timestamp: new Date().toISOString()
+                });
+
+                stopWebcam();
+                State.tempEnrollment = null;
+                UI.hide('student-form-section'); 
+                UI.show('student-status-section');
+                UI.toast('Biometric credentials locked.', 'success');
+            } catch(e) {
+                btn.disabled = false;
+                btn.innerHTML = `<i class="ph ph-check-circle text-xl"></i> Complete Enrollment`;
+                UI.toast('Failed to save biometric profile.', 'error');
+            }
+        });
+
+        async function runBootSequence() {
+            const dbReady = await initFirebase();
+            if(!dbReady) return UI.text('loading-text', 'Database Node Connection Error');
+            
+            const aiReady = await loadModels();
+            if(!aiReady) return UI.text('loading-text', 'Neural Library Handshake Error');
+
+            UI.show('view-role');
+            UI.hide('view-loading');
+        }
+
+        runBootSequence();
     </script>
 </body>
 </html>
