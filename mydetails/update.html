@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Edit User Record - RGM AI Campus</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<style>
+html, body {
+  width: 100%;
+  height: 100%;
+  background-color: #08080e;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  overflow-x: hidden;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+</style>
+</head>
+<body class="flex items-center justify-center min-h-screen p-3 sm:p-6">
+
+<!-- Responsive Container -->
+<div class="relative w-full max-w-md bg-[#121218] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-2xl flex flex-col overflow-hidden">
+<!-- Ambient Radial Glows -->
+<div class="absolute -top-24 -left-24 w-52 h-52 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none"></div>
+<div class="absolute -bottom-24 -right-24 w-52 h-52 bg-purple-500/20 rounded-full blur-3xl pointer-events-none"></div>
+
+<!-- Top Header -->
+<div class="flex items-center justify-between border-b border-white/10 pb-4 mb-6 relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 shrink-0">
+<i data-lucide="user-pen" class="w-6 h-6 text-white"></i>
+</div>
+<div>
+<h1 class="text-xl font-black text-white tracking-tight leading-tight">Profile Manager</h1>
+<span class="text-[10px] text-indigo-400 font-bold uppercase tracking-widest">Single-Record Preinput</span>
+</div>
+</div>
+<a href="javascript:history.back()" class="p-2 bg-white/5 hover:bg-white/10 rounded-xl text-white/60 hover:text-white transition">
+<i data-lucide="arrow-left" class="w-5 h-5"></i>
+</a>
+</div>
+
+<!-- Stage 1: Auto-Detect Account Key & Fetch Action -->
+<div id="unlock-stage" class="flex flex-col gap-4 relative z-10">
+<div class="bg-white/5 border border-white/10 rounded-2xl p-4 flex flex-col gap-2">
+<span class="text-[10px] font-extrabold text-indigo-300 uppercase tracking-widest">Target Account Phone (Key)</span>
+<div class="flex items-center justify-between">
+<span id="detected-mobile-display" class="text-lg font-mono font-black text-white tracking-wide">Reading Key...</span>
+<span id="status-pill" class="px-2.5 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 text-[10px] font-bold uppercase">Preloaded</span>
+</div>
+</div>
+
+<button id="btn-fetch-record" class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-extrabold py-4 px-5 rounded-2xl transition flex items-center justify-center gap-2 shadow-lg shadow-indigo-500/25 active:scale-95">
+<i data-lucide="folder-open" class="w-5 h-5"></i>
+<span>Load & Open Details</span>
+</button>
+<div id="fetch-error" class="hidden text-xs text-center font-bold text-red-400"></div>
+</div>
+
+<!-- Stage 2: Direct Edit Form (Revealed Once Loaded) -->
+<form id="edit-form" class="hidden flex-col gap-4 relative z-10">
+<div class="flex items-center justify-between border-b border-white/10 pb-2 mb-1">
+<span class="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+<i data-lucide="badge-check" class="w-4 h-4 text-emerald-400"></i> Cloud Record Linked
+</span>
+<span id="badge-role" class="text-[10px] uppercase font-mono px-2.5 py-0.5 rounded-full bg-white/10 text-white/80 font-bold">Role</span>
+</div>
+
+<!-- Full Name -->
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Full Name</label>
+<input required id="field-name" name="name" type="text" placeholder="Full Name" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition" />
+</div>
+
+<!-- Email -->
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Email Address</label>
+<input required id="field-email" name="email" type="email" placeholder="Email" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition" />
+</div>
+
+<!-- Department & Gender -->
+<div class="grid grid-cols-2 gap-3">
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Department</label>
+<select id="field-dept" name="dept" class="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition appearance-none">
+<option value="CSE" class="text-white">CSE</option>
+<option value="CSE-AIML" class="text-white">CSE (AI & ML)</option>
+<option value="ECE" class="text-white">ECE</option>
+<option value="EEE" class="text-white">EEE</option>
+<option value="MECH" class="text-white">Mechanical</option>
+<option value="CIVIL" class="text-white">Civil</option>
+<option value="H&S" class="text-white">H&S</option>
+<option value="ADMIN" class="text-white">Administration</option>
+</select>
+</div>
+
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Gender</label>
+<select id="field-gender" name="gender" class="w-full bg-[#1c1c24] border border-white/10 rounded-xl px-3 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition appearance-none">
+<option value="male" class="text-white">Male</option>
+<option value="female" class="text-white">Female</option>
+<option value="other" class="text-white">Other</option>
+</select>
+</div>
+</div>
+
+<!-- Roll Number -->
+<div id="roll-container" class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Roll Number</label>
+<input id="field-roll" name="rollNo" type="text" placeholder="Roll No" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm uppercase focus:outline-none focus:border-indigo-500 transition" />
+</div>
+
+<!-- Date of Birth -->
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Date of Birth</label>
+<input id="field-dob" name="dob" type="date" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm [color-scheme:dark] focus:outline-none focus:border-indigo-500 transition" />
+</div>
+
+<!-- Save Action Button -->
+<button type="submit" id="btn-save" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold py-4 rounded-xl transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 active:scale-[0.98] mt-2">
+<i data-lucide="save" class="w-5 h-5"></i>
+<span>Save Profile Changes</span>
+</button>
+<div id="save-status" class="hidden text-xs text-center font-bold mt-1"></div>
+</form>
+
+</div>
+
+<!-- Firebase SDK Logic -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+lucide.createIcons();
+
+// Firebase Credentials
+const firebaseConfig = {
+  apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d"
+};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'rgm-app-id';  
+
+signInAnonymously(auth).catch(err => console.error("Auth init:", err));  
+
+// 1. Resolve Preinput Mobile Target
+let targetMobile = 9281409828;
+
+// Check A: URL Parameter (?mobile=9876543210)
+const urlParams = new URLSearchParams(window.location.search);
+const paramMobile = urlParams.get('mobile');
+
+// Check B: localStorage login session from main app
+const storedUser = localStorage.getItem('campus_pulse_user');
+let cachedUser = null;
+if (storedUser) {
+  try { cachedUser = JSON.parse(storedUser); } catch(e) {}
+}  
+
+if (paramMobile && String(paramMobile).trim()) {
+  targetMobile = String(paramMobile).trim();
+} else if (cachedUser && cachedUser.mobile) {
+  targetMobile = String(cachedUser.mobile).trim();
+}  
+
+const detectedMobileDisplay = document.getElementById('detected-mobile-display');
+const unlockStage = document.getElementById('unlock-stage');
+const btnFetch = document.getElementById('btn-fetch-record');
+const fetchError = document.getElementById('fetch-error');
+
+const editForm = document.getElementById('edit-form');
+const badgeRole = document.getElementById('badge-role');
+const fieldName = document.getElementById('field-name');
+const fieldEmail = document.getElementById('field-email');
+const fieldDept = document.getElementById('field-dept');
+const fieldGender = document.getElementById('field-gender');
+const fieldRoll = document.getElementById('field-roll');
+const fieldDob = document.getElementById('field-dob');
+const rollContainer = document.getElementById('roll-container');
+const btnSave = document.getElementById('btn-save');
+const saveStatus = document.getElementById('save-status');
+
+if (targetMobile) {
+  detectedMobileDisplay.textContent = `+91 ${targetMobile}`;
+} else {
+  detectedMobileDisplay.textContent = "No Account Identified";
+  btnFetch.disabled = true;
+  btnFetch.classList.add('opacity-50', 'pointer-events-none');
+  fetchError.textContent = "Missing ?mobile= parameter or active browser login session.";
+  fetchError.classList.remove('hidden');
+}
+
+// 2. Click to Fetch and Populate Record
+btnFetch.addEventListener('click', async () => {
+  if (!targetMobile) return;
+
+  btnFetch.disabled = true;
+  btnFetch.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Reading Data...';
+  lucide.createIcons();
+
+  try {
+    // Explicit single string path casting guarantees string types for Firestore doc()
+    const userDocPath = `artifacts/${String(appId)}/public/data/users/${String(targetMobile)}`;
+    const userDocRef = doc(db, userDocPath);
+    const snap = await getDoc(userDocRef);  
+
+    if (!snap.exists()) {
+      throw new Error(`Record for mobile ${targetMobile} was not found.`);
+    }
+
+    const data = snap.data();  
+
+    // Prepopulate inputs
+    fieldName.value = data.name || '';
+    fieldEmail.value = data.email || '';
+    fieldDept.value = data.dept || 'CSE';
+    fieldGender.value = data.gender || 'male';
+    fieldDob.value = data.dob || '';
+    badgeRole.textContent = (data.role || 'student').replace('_', ' ');  
+
+    if (data.role === 'student') {
+      rollContainer.classList.remove('hidden');
+      fieldRoll.value = data.rollNo || '';
+    } else {
+      rollContainer.classList.add('hidden');
+    }  
+
+    // Transition stages
+    unlockStage.classList.add('hidden');
+    editForm.classList.remove('hidden');
+    editForm.classList.add('flex');
+    lucide.createIcons();
+
+  } catch (err) {
+    console.error(err);
+    fetchError.textContent = err.message || "Failed to load record.";
+    fetchError.classList.remove('hidden');
+    btnFetch.disabled = false;
+    btnFetch.innerHTML = '<i data-lucide="folder-open" class="w-5 h-5"></i> Load & Open Details';
+    lucide.createIcons();
+  }
+});
+
+// 3. Save Changes
+editForm.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  btnSave.disabled = true;
+  btnSave.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Saving...';
+  lucide.createIcons();
+
+  try {
+    const userDocPath = `artifacts/${String(appId)}/public/data/users/${String(targetMobile)}`;
+    const userDocRef = doc(db, userDocPath);  
+
+    const updatedFields = {
+      name: fieldName.value.trim(),
+      email: fieldEmail.value.trim(),
+      dept: fieldDept.value,
+      gender: fieldGender.value,
+      rollNo: fieldRoll.value.trim().toUpperCase(),
+      dob: fieldDob.value,
+      updatedAt: Date.now()
+    };
+
+    await updateDoc(userDocRef, updatedFields);
+
+    // Sync localStorage cache if editing current session
+    if (cachedUser && String(cachedUser.mobile) === String(targetMobile)) {
+      const merged = { ...cachedUser, ...updatedFields };
+      localStorage.setItem('campus_pulse_user', JSON.stringify(merged));
+    }  
+
+    saveStatus.textContent = "✅ Record saved successfully!";
+    saveStatus.className = "text-xs text-center font-bold text-emerald-400 block mt-2";
+    saveStatus.classList.remove('hidden');
+
+    setTimeout(() => {
+      saveStatus.classList.add('hidden');
+    }, 3500);
+
+  } catch (err) {
+    console.error(err);
+    saveStatus.textContent = "❌ Failed to save. Check your connection.";
+    saveStatus.className = "text-xs text-center font-bold text-red-400 block mt-2";
+    saveStatus.classList.remove('hidden');
+  } finally {
+    btnSave.disabled = false;
+    btnSave.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Save Profile Changes';
+    lucide.createIcons();
+  }
+});
+</script>
+</body>
+</html>
