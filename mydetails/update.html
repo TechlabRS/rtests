@@ -112,10 +112,17 @@ html, body {
 </div>
 </div>
 
-<!-- Roll Number -->
+<!-- Roll Number & Security PIN -->
+<div class="grid grid-cols-2 gap-3">
 <div id="roll-container" class="flex flex-col gap-1">
 <label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Roll Number</label>
 <input id="field-roll" name="rollNo" type="text" placeholder="Roll No" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm uppercase focus:outline-none focus:border-indigo-500 transition" />
+</div>
+
+<div class="flex flex-col gap-1">
+<label class="text-[10px] font-bold text-white/60 uppercase tracking-wider">Security PIN</label>
+<input id="field-pin" name="pin" type="password" placeholder="PIN" maxlength="6" inputmode="numeric" class="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white text-sm focus:outline-none focus:border-indigo-500 transition font-mono tracking-widest" />
+</div>
 </div>
 
 <!-- Date of Birth -->
@@ -159,13 +166,12 @@ const appId = typeof __app_id !== 'undefined' ? __app_id : 'rgm-app-id';
 signInAnonymously(auth).catch(err => console.error("Auth init:", err));  
 
 // 1. Resolve Preinput Mobile Target
-let targetMobile = 9281409828;
+let targetMobile = null;
+let isUpdateLocked = false;
 
-// Check A: URL Parameter (?mobile=9876543210)
 const urlParams = new URLSearchParams(window.location.search);
 const paramMobile = urlParams.get('mobile');
 
-// Check B: localStorage login session from main app
 const storedUser = localStorage.getItem('campus_pulse_user');
 let cachedUser = null;
 if (storedUser) {
@@ -190,6 +196,7 @@ const fieldEmail = document.getElementById('field-email');
 const fieldDept = document.getElementById('field-dept');
 const fieldGender = document.getElementById('field-gender');
 const fieldRoll = document.getElementById('field-roll');
+const fieldPin = document.getElementById('field-pin');
 const fieldDob = document.getElementById('field-dob');
 const rollContainer = document.getElementById('roll-container');
 const btnSave = document.getElementById('btn-save');
@@ -214,7 +221,6 @@ btnFetch.addEventListener('click', async () => {
   lucide.createIcons();
 
   try {
-    // Explicit single string path casting guarantees string types for Firestore doc()
     const userDocPath = `artifacts/${String(appId)}/public/data/users/${String(targetMobile)}`;
     const userDocRef = doc(db, userDocPath);
     const snap = await getDoc(userDocRef);  
@@ -225,12 +231,12 @@ btnFetch.addEventListener('click', async () => {
 
     const data = snap.data();  
 
-    // Prepopulate inputs
     fieldName.value = data.name || '';
     fieldEmail.value = data.email || '';
     fieldDept.value = data.dept || 'CSE';
     fieldGender.value = data.gender || 'male';
     fieldDob.value = data.dob || '';
+    fieldPin.value = data.pin || '';
     badgeRole.textContent = (data.role || 'student').replace('_', ' ');  
 
     if (data.role === 'student') {
@@ -240,7 +246,6 @@ btnFetch.addEventListener('click', async () => {
       rollContainer.classList.add('hidden');
     }  
 
-    // Transition stages
     unlockStage.classList.add('hidden');
     editForm.classList.remove('hidden');
     editForm.classList.add('flex');
@@ -256,9 +261,11 @@ btnFetch.addEventListener('click', async () => {
   }
 });
 
-// 3. Save Changes
+// 3. Save Changes and Lock Form Permanently
 editForm.addEventListener('submit', async (e) => {
   e.preventDefault();
+
+  if (isUpdateLocked) return;
 
   btnSave.disabled = true;
   btnSave.innerHTML = '<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Saving...';
@@ -274,32 +281,44 @@ editForm.addEventListener('submit', async (e) => {
       dept: fieldDept.value,
       gender: fieldGender.value,
       rollNo: fieldRoll.value.trim().toUpperCase(),
+      pin: fieldPin.value.trim(),
       dob: fieldDob.value,
       updatedAt: Date.now()
     };
 
     await updateDoc(userDocRef, updatedFields);
 
-    // Sync localStorage cache if editing current session
     if (cachedUser && String(cachedUser.mobile) === String(targetMobile)) {
       const merged = { ...cachedUser, ...updatedFields };
       localStorage.setItem('campus_pulse_user', JSON.stringify(merged));
     }  
 
-    saveStatus.textContent = "✅ Record saved successfully!";
-    saveStatus.className = "text-xs text-center font-bold text-emerald-400 block mt-2";
-    saveStatus.classList.remove('hidden');
+    // Lock update capability permanently after successful edit
+    isUpdateLocked = true;
 
-    setTimeout(() => {
-      saveStatus.classList.add('hidden');
-    }, 3500);
+    // Disable all input fields and selections
+    const inputs = editForm.querySelectorAll('input, select');
+    inputs.forEach(input => {
+      input.disabled = true;
+      input.classList.add('opacity-50', 'cursor-not-allowed');
+    });
+
+    // Permanent lock styling on Save Button
+    btnSave.disabled = true;
+    btnSave.className = "w-full bg-gray-700 text-white/50 font-extrabold py-4 rounded-xl transition flex items-center justify-center gap-2 cursor-not-allowed mt-2";
+    btnSave.innerHTML = '<i data-lucide="lock" class="w-5 h-5"></i><span>Profile Locked (Updates Disabled)</span>';
+    lucide.createIcons();
+
+    saveStatus.textContent = "🔒 Update completed. Further edits for this record are denied.";
+    saveStatus.className = "text-xs text-center font-bold text-amber-400 block mt-2";
+    saveStatus.classList.remove('hidden');
 
   } catch (err) {
     console.error(err);
     saveStatus.textContent = "❌ Failed to save. Check your connection.";
     saveStatus.className = "text-xs text-center font-bold text-red-400 block mt-2";
     saveStatus.classList.remove('hidden');
-  } finally {
+
     btnSave.disabled = false;
     btnSave.innerHTML = '<i data-lucide="save" class="w-5 h-5"></i> Save Profile Changes';
     lucide.createIcons();
