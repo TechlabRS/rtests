@@ -1,0 +1,2384 @@
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="description" content="BioGeoTrack smart student attendance with session, roster, biometric camera, GPS geofence and audit reporting.">
+  <title>BioGeo Smart Student Attendance System</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            cyber: {
+              50: '#ecfeff',
+              100: '#cffafe',
+              400: '#22d3ee',
+              500: '#06b6d4',
+              600: '#0891b2',
+              900: '#164e63',
+            },
+            neon: {
+              indigo: '#6366f1',
+              violet: '#8b5cf6',
+              emerald: '#10b981',
+              rose: '#f43f5e'
+            }
+          },
+          animation: {
+            'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'scan-beam': 'scan 2.5s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            scan: {
+              '0%': { top: '0%' },
+              '100%': { top: '92%' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  
+  <!-- PapaParse for CSV processing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+  <!-- Canvas Confetti for verification celebration -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Firebase v8 Compatibility CDNs -->
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+  <style>
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #06b6d4; }
+    
+    .glass-card {
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    
+    .glow-cyan {
+      box-shadow: 0 0 25px -5px rgba(6, 182, 212, 0.4);
+    }
+    .glow-indigo {
+      box-shadow: 0 0 25px -5px rgba(99, 102, 241, 0.4);
+    }
+    
+    /* UV Holographic Scan Line */
+    .uv-scanline {
+      position: absolute;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background: linear-gradient(90deg, transparent, #22d3ee, #818cf8, #22d3ee, transparent);
+      box-shadow: 0 0 15px #22d3ee, 0 0 25px #818cf8;
+      pointer-events: none;
+    }
+
+    /* ================= ENHANCED RESPONSIVE / ACCESSIBILITY LAYER ================= */
+    html { scroll-behavior: smooth; }
+    body { min-width: 320px; }
+    button, input, select { -webkit-tap-highlight-color: transparent; }
+    button:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; }
+    .safe-bottom { padding-bottom: max(1rem, env(safe-area-inset-bottom)); }
+    .modal-open { overflow: hidden; }
+    .status-dot { box-shadow: 0 0 0 4px rgba(16,185,129,.10), 0 0 14px rgba(16,185,129,.55); }
+    .metric-card { transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease; }
+    .metric-card:hover { transform: translateY(-2px); }
+    .table-sticky thead th { position: sticky; top: 0; z-index: 2; }
+    .skeleton { background: linear-gradient(90deg, rgba(30,41,59,.65), rgba(51,65,85,.55), rgba(30,41,59,.65)); background-size: 200% 100%; animation: skeleton 1.4s infinite; }
+    @keyframes skeleton { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+    @media (max-width: 640px) {
+      #toastContainer { left: .75rem; right: .75rem; bottom: max(.75rem, env(safe-area-inset-bottom)); }
+      #toastContainer > div { width: 100%; }
+      .mobile-scroll-x { overflow-x: auto; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .001ms !important; }
+    }
+  
+    /* =====================================================================
+       AUTHENTICATION GATE
+       The application shell is not rendered until a user is authenticated.
+       This is intentionally separate from role-level UI permissions.
+    ====================================================================== */
+    body.auth-locked > :not(#authModal) { display: none !important; }
+    body.auth-locked #authModal {
+      display: flex !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    }
+    body.auth-locked #btnCloseAuthModal { display: none !important; }
+    body.auth-locked { overflow: hidden !important; }
+    body.authenticated #authModal { display: none; }
+    body.authenticated { overflow-x: hidden; }
+    #authModal.auth-error-shake > div { animation: authShake .35s ease-in-out; }
+    @keyframes authShake {
+      0%,100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+
+    /* Role-based Visibility Rules */
+    body.role-student [data-tab="tab-live"],
+    body.role-student [data-tab="tab-master"],
+    body.role-student [data-tab="tab-reports"],
+    body.role-student [data-tab="tab-faculty-setup"] {
+      display: none !important;
+    }
+
+  </style>
+</head>
+<body class="auth-locked bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased selection:bg-cyan-500 selection:text-black">
+
+  <header class="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-cyan-500/20">
+          <i data-lucide="fingerprint" class="w-6 h-6"></i>
+        </div>
+        <div>
+          <span class="text-lg font-bold bg-gradient-to-r from-cyan-400 via-indigo-300 to-purple-400 bg-clip-text text-transparent">BioGeoTrack</span>
+          <span class="text-[10px] ml-1.5 px-2 py-0.5 rounded-full font-mono bg-cyan-950 text-cyan-400 border border-cyan-800">v3.3 Enhanced</span>
+        </div>
+      </div>
+
+      <!-- Current Session Quick Indicator -->
+      <div id="navSessionIndicator" class="hidden md:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-full border border-slate-700 text-xs">
+        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+        <span class="text-slate-400">Active:</span>
+        <span id="navSessionTitle" class="font-semibold text-cyan-300">No Active Session</span>
+      </div>
+
+      <!-- User Auth State Widget -->
+      <div class="flex items-center space-x-3">
+        <div id="currentUserBadge" class="hidden items-center space-x-2 bg-slate-800 px-3 py-1 rounded-xl border border-slate-700 text-xs">
+          <div id="userAvatarPlaceholder" class="w-6 h-6 rounded-full overflow-hidden bg-slate-700 flex items-center justify-center text-[10px] font-bold">U</div>
+          <div>
+            <div id="currentUserName" class="font-medium text-slate-200">User</div>
+            <div id="currentUserRole" class="text-[10px] uppercase text-cyan-400 font-semibold tracking-wider">Role</div>
+          </div>
+          <button id="btnLogout" title="Log Out" class="ml-2 text-slate-400 hover:text-rose-400 transition-colors">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+          </button>
+        </div>
+        <button id="btnOpenAuth" class="px-4 py-2 rounded-xl text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-slate-950 transition-all shadow-md shadow-cyan-500/20">
+          Sign In / Register
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <nav class="bg-slate-900/60 border-b border-slate-800">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex overflow-x-auto space-x-2 py-2.5">
+      <button data-tab="tab-live" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+        <i data-lucide="activity" class="w-4 h-4"></i>
+        <span>Live Session</span>
+        <span id="tabBadgeLiveCount" class="ml-1.5 px-2 py-0.2 rounded-full text-xs bg-cyan-500 text-slate-950 font-bold">0</span>
+      </button>
+
+      <button data-tab="tab-student-verify" id="navStudentVerifyTab" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2 hover:bg-slate-800/60 border border-transparent">
+        <i data-lucide="scan-face" class="w-4 h-4"></i>
+        <span>Student Biometric Check-In</span>
+      </button>
+
+      <button data-tab="tab-master" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2 hover:bg-slate-800/60 border border-transparent">
+        <i data-lucide="database" class="w-4 h-4"></i>
+        <span>Master Data (CSV)</span>
+      </button>
+
+      <button data-tab="tab-reports" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2 hover:bg-slate-800/60 border border-transparent">
+        <i data-lucide="bar-chart-3" class="w-4 h-4"></i>
+        <span>Reports & Cost Savings</span>
+      </button>
+
+      <button data-tab="tab-faculty-setup" class="tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2 hover:bg-slate-800/60 border border-transparent">
+        <i data-lucide="sliders-horizontal" class="w-4 h-4"></i>
+        <span>Faculty Session Controls</span>
+      </button>
+    </div>
+  </nav>
+
+  <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 space-y-6">
+
+    <!-- Toast Notification Overlay Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 1: LIVE VERIFIED SESSION (DASHBOARD) -->
+    <!-- ========================================================================= -->
+    <section id="tab-live" class="tab-content space-y-6">
+      <!-- Session Overview Banner -->
+      <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+        <div class="absolute -right-16 -top-16 w-64 h-64 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <div class="flex items-center space-x-3 mb-2">
+              <span id="sessionStatusPill" class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30">
+                No Active Session
+              </span>
+              <span id="liveSessionIdText" class="font-mono text-xs text-slate-400">ID: none</span>
+            </div>
+            <h1 id="liveSubjectTitle" class="text-2xl sm:text-3xl font-extrabold text-white">Database Management Systems</h1>
+            <p id="liveSectionDetails" class="text-sm text-slate-400 mt-1 flex items-center gap-3">
+              <span><i data-lucide="users" class="w-4 h-4 inline mr-1 text-cyan-400"></i> III Year - CSE A</span>
+              <span>•</span>
+              <span><i data-lucide="clock" class="w-4 h-4 inline mr-1 text-indigo-400"></i> 09:00 AM - 10:00 AM</span>
+              <span>•</span>
+              <span id="liveFacultyOwner"><i data-lucide="user-check" class="w-4 h-4 inline mr-1 text-emerald-400"></i> Prof. Miller</span>
+            </p>
+          </div>
+
+          <div class="flex items-center space-x-4 bg-slate-900/80 p-4 rounded-xl border border-slate-800 self-start md:self-auto">
+            <div class="text-right">
+              <div class="text-xs text-slate-400 uppercase tracking-wider font-semibold">Live Verified</div>
+              <div id="liveAttendeeCount" class="text-3xl font-black text-cyan-400 font-mono">0</div>
+            </div>
+            <div class="w-12 h-12 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-300">
+              <i data-lucide="user-check" class="w-6 h-6"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- Geofence & UV Status Bar -->
+        <div id="sessionGeoBar" class="mt-4 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-400">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="map-pin" class="w-4 h-4 text-rose-400"></i>
+            <span>Geofence Anchor: <span id="geoAnchorStatus" class="font-mono text-slate-200">Not locked (Universal mode)</span></span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <i data-lucide="shield-check" class="w-4 h-4 text-cyan-400"></i>
+            <span>Multi-Factor Biometric: <span class="text-emerald-400 font-medium">Face + UV 430nm Sync + GPS</span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Live Attendees Grid -->
+      <div>
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-bold text-slate-200 flex items-center space-x-2">
+            <i data-lucide="layers" class="w-5 h-5 text-cyan-400"></i>
+            <span>Live Check-Ins</span>
+          </h2>
+          <span class="text-xs text-slate-400">Real-time Firestore stream active</span>
+        </div>
+
+        <div id="verifiedStudentsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <!-- Student cards will render here dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyVerifiedState" class="glass-card rounded-2xl p-12 text-center text-slate-400 border border-dashed border-slate-800">
+          <i data-lucide="user-x" class="w-12 h-12 mx-auto text-slate-600 mb-3"></i>
+          <p class="text-base font-medium text-slate-300">No students verified yet</p>
+          <p class="text-xs text-slate-500 mt-1 max-w-sm mx-auto">Once faculty starts a session, registered students can verify with face biometric and GPS coordinates.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: STUDENT BIOMETRIC & GEOLOCATION CHECK-IN -->
+    <!-- ========================================================================= -->
+    <section id="tab-student-verify" class="tab-content hidden space-y-6">
+      <div class="max-w-2xl mx-auto glass-card rounded-2xl p-6 sm:p-8 border border-slate-800 glow-cyan">
+        <div class="text-center mb-6">
+          <div class="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 mb-3">
+            <i data-lucide="scan" class="w-6 h-6"></i>
+          </div>
+          <h2 class="text-2xl font-bold text-white">Student Biometric Verification</h2>
+          <p class="text-xs sm:text-sm text-slate-400 mt-1">Simultaneous Live Face Snapshot, Optical UV Frequency Wave, and GPS Geofence</p>
+        </div>
+
+        <!-- Active Session Match Notice -->
+        <div id="studentActiveSessionBanner" class="bg-indigo-950/40 border border-indigo-500/30 rounded-xl p-3.5 mb-6 flex items-center justify-between text-xs">
+          <div class="flex items-center space-x-2">
+            <i data-lucide="radio" class="w-4 h-4 text-indigo-400 animate-pulse"></i>
+            <span class="text-indigo-200">Active Class Session: <strong id="verifySessionName" class="text-white">None</strong></span>
+          </div>
+          <span id="verifyYearSectionTag" class="px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono">--</span>
+        </div>
+
+        <!-- Student Data Inputs -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Roll Number</label>
+            <input type="text" id="verifyRoll" placeholder="e.g. 21CS042" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500 uppercase font-mono">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Student Full Name</label>
+            <input type="text" id="verifyName" placeholder="e.g. Sarah Connor" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Year</label>
+            <select id="verifyYear" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+              <option value="I Year">I Year</option>
+              <option value="II Year">II Year</option>
+              <option value="III Year" selected>III Year</option>
+              <option value="IV Year">IV Year</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Section</label>
+            <select id="verifySection" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500">
+              <option value="CSE A" selected>CSE A</option>
+              <option value="CSE B">CSE B</option>
+              <option value="ECE A">ECE A</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Biometric Camera & UV Scanner Canvas Viewport -->
+        <div class="relative w-full aspect-video sm:h-72 rounded-2xl overflow-hidden bg-slate-900 border-2 border-slate-700/80 mb-6 flex flex-col items-center justify-center group">
+          <video id="verifyVideo" autoplay playsinline muted class="w-full h-full object-cover"></video>
+          <canvas id="verifyCanvas" class="hidden"></canvas>
+          
+          <!-- Animated UV Wave Canvas (Visualizer) -->
+          <canvas id="uvWaveCanvas" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
+
+          <!-- Scanning overlay lines -->
+          <div id="scanLaserLine" class="uv-scanline animate-scan-beam"></div>
+
+          <!-- Crosshairs and Biometric HUD -->
+          <div class="absolute inset-0 pointer-events-none p-4 flex flex-col justify-between">
+            <div class="flex justify-between items-center text-[10px] font-mono text-cyan-400">
+              <span class="flex items-center space-x-1">
+                <span class="w-2 h-2 rounded-full bg-rose-500 animate-ping"></span>
+                <span>BIO-SENSOR ACTIVE</span>
+              </span>
+              <span id="uvFrequencyDisplay">UV BAND: 432.8 THz</span>
+            </div>
+            
+            <div class="self-center w-36 h-44 border-2 border-cyan-500/40 border-dashed rounded-3xl flex items-center justify-center">
+              <span class="text-[9px] font-mono uppercase text-cyan-300/60 tracking-widest text-center px-2">Align Face in Oval</span>
+            </div>
+
+            <div class="flex justify-between items-center text-[10px] font-mono text-slate-400">
+              <span>LAT: <span id="hudLat" class="text-cyan-300">--</span></span>
+              <span>LNG: <span id="hudLng" class="text-cyan-300">--</span></span>
+              <span>ACC: <span id="hudAcc" class="text-emerald-400">-- m</span></span>
+            </div>
+          </div>
+
+          <!-- Camera Fallback button -->
+          <button id="btnStartVerifyCamera" class="absolute bg-slate-900/90 text-cyan-400 border border-cyan-500/40 px-4 py-2 rounded-xl text-xs font-semibold flex items-center space-x-2 backdrop-blur hover:bg-slate-800 transition-all z-20">
+            <i data-lucide="camera" class="w-4 h-4"></i>
+            <span>Initialize Optical Biometric Camera</span>
+          </button>
+        </div>
+
+        <!-- Geolocation Real-Time Status Card -->
+        <div class="bg-slate-900/90 rounded-xl p-4 border border-slate-800 mb-6 space-y-2">
+          <div class="flex items-center justify-between text-xs">
+            <span class="text-slate-400 flex items-center space-x-1.5">
+              <i data-lucide="satellite" class="w-4 h-4 text-cyan-400"></i>
+              <span>Geolocation Guard Status:</span>
+            </span>
+            <span id="geoValidationBadge" class="px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30">
+              Acquiring GPS...
+            </span>
+          </div>
+          <div class="flex items-center justify-between text-xs font-mono text-slate-300">
+            <span>Distance to Faculty: <strong id="geoDistanceText" class="text-cyan-400">Computing...</strong></span>
+            <button id="btnRefreshGPS" class="text-cyan-400 hover:text-cyan-300 underline text-[11px]">Re-probe GPS</button>
+          </div>
+        </div>
+
+        <!-- Submit Check-In Button -->
+        <button id="btnSubmitVerification" class="w-full py-3.5 px-6 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 via-indigo-500 to-purple-600 text-white shadow-lg shadow-cyan-500/25 hover:opacity-95 transition-all flex items-center justify-center space-x-2">
+          <i data-lucide="shield-check" class="w-5 h-5"></i>
+          <span>Verify Biometric & Mark Attendance</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: MASTER DATA MANAGEMENT (CSV + MANUAL) -->
+    <!-- ========================================================================= -->
+    <section id="tab-master" class="tab-content hidden space-y-6">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-bold text-white">Student Master Roster</h2>
+          <p class="text-xs text-slate-400">Manage enrolled student rosters, import from institution CSV, or add manual records.</p>
+        </div>
+        <div class="flex items-center space-x-3">
+          <button id="btnDownloadSampleCsv" class="px-3 py-2 rounded-xl text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center space-x-1.5">
+            <i data-lucide="file-down" class="w-4 h-4"></i>
+            <span>Sample CSV</span>
+          </button>
+          <button id="btnOpenManualAdd" class="px-3 py-2 rounded-xl text-xs font-semibold bg-cyan-500 hover:bg-cyan-400 text-slate-950 flex items-center space-x-1.5 shadow-md">
+            <i data-lucide="user-plus" class="w-4 h-4"></i>
+            <span>Add Single Student</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- CSV Upload Drag & Drop Area -->
+      <div id="csvDropZone" class="glass-card rounded-2xl p-8 border-2 border-dashed border-slate-700 hover:border-cyan-500/60 transition-all text-center cursor-pointer group">
+        <input type="file" id="csvFileInput" accept=".csv" class="hidden">
+        <div class="w-14 h-14 mx-auto rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mb-3 group-hover:scale-110 transition-transform">
+          <i data-lucide="file-spreadsheet" class="w-7 h-7"></i>
+        </div>
+        <h3 class="text-base font-semibold text-slate-200">Drag & Drop Student CSV Roster</h3>
+        <p class="text-xs text-slate-400 mt-1 max-w-sm mx-auto">Expected headers: <code class="text-cyan-300 font-mono">Roll, Name, Year, Section</code></p>
+        <button type="button" class="mt-4 px-4 py-2 rounded-xl text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700">
+          Browse File
+        </button>
+      </div>
+
+      <!-- Search & Filters -->
+      <div class="flex flex-col sm:flex-row gap-3 items-center justify-between">
+        <div class="relative w-full sm:w-80">
+          <i data-lucide="search" class="w-4 h-4 text-slate-400 absolute left-3.5 top-3"></i>
+          <input type="text" id="masterSearchInput" placeholder="Search by roll number or name..." class="w-full bg-slate-900 border border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
+        </div>
+        <div class="flex items-center space-x-2 text-xs text-slate-400 self-end">
+          <span>Total Master Enrolled:</span>
+          <span id="masterTotalCount" class="font-bold text-cyan-400 font-mono text-sm">0</span>
+        </div>
+      </div>
+
+      <!-- Master Data Table -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-5 py-3.5">Roll Number</th>
+                <th class="px-5 py-3.5">Student Name</th>
+                <th class="px-5 py-3.5">Year</th>
+                <th class="px-5 py-3.5">Section</th>
+                <th class="px-5 py-3.5">Sync Source</th>
+                <th class="px-5 py-3.5 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="masterTableBody" class="divide-y divide-slate-800/60">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: REPORTS & COST SAVINGS ANALYTICS -->
+    <!-- ========================================================================= -->
+    <section id="tab-reports" class="tab-content hidden space-y-6">
+      
+      <!-- Top Filters -->
+      <div class="glass-card rounded-2xl p-5 border border-slate-800">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Target Session</label>
+            <select id="reportSessionSelect" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+              <!-- Dynamically populated -->
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Year & Section</label>
+            <select id="reportYearSectionFilter" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-cyan-500">
+              <option value="ALL">All Classes</option>
+              <option value="III Year - CSE A">III Year - CSE A</option>
+              <option value="III Year - CSE B">III Year - CSE B</option>
+              <option value="II Year - CSE A">II Year - CSE A</option>
+              <option value="IV Year - ECE A">IV Year - ECE A</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Status Filter</label>
+            <div class="flex rounded-xl bg-slate-900 p-1 border border-slate-800">
+              <button data-status-filter="ALL" class="status-filter-btn flex-1 py-1 rounded-lg text-xs font-semibold bg-cyan-500 text-slate-950 transition-all">All</button>
+              <button data-status-filter="VERIFIED" class="status-filter-btn flex-1 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">Present</button>
+              <button data-status-filter="ABSENT" class="status-filter-btn flex-1 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">Absent</button>
+            </div>
+          </div>
+          <div class="flex items-end">
+            <button id="btnExportCSV" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center space-x-2">
+              <i data-lucide="download" class="w-4 h-4"></i>
+              <span>Download CSV Report</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPI Summary Cards -->
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div class="glass-card rounded-2xl p-5 border border-slate-800">
+          <div class="text-slate-400 text-xs font-medium uppercase tracking-wider">Total Enrolled</div>
+          <div id="kpiTotalEnrolled" class="text-3xl font-extrabold text-white mt-1">0</div>
+          <div class="text-[11px] text-slate-500 mt-1">From Master Register</div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-slate-800">
+          <div class="text-emerald-400 text-xs font-medium uppercase tracking-wider">Verified Present</div>
+          <div id="kpiTotalPresent" class="text-3xl font-extrabold text-emerald-400 mt-1">0</div>
+          <div class="text-[11px] text-emerald-500/80 mt-1">Biometric & Geo-Tagged</div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-slate-800">
+          <div class="text-rose-400 text-xs font-medium uppercase tracking-wider">Absent / Pending</div>
+          <div id="kpiTotalAbsent" class="text-3xl font-extrabold text-rose-400 mt-1">0</div>
+          <div class="text-[11px] text-rose-500/80 mt-1">Unverified Students</div>
+        </div>
+        <div class="glass-card rounded-2xl p-5 border border-slate-800">
+          <div class="text-cyan-400 text-xs font-medium uppercase tracking-wider">Attendance %</div>
+          <div id="kpiAttendanceRate" class="text-3xl font-extrabold text-cyan-400 mt-1">0%</div>
+          <div class="w-full bg-slate-800 h-1.5 rounded-full mt-2 overflow-hidden">
+            <div id="kpiProgressBar" class="bg-cyan-400 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cost Savings Analytics Widget -->
+      <div class="glass-card rounded-2xl p-6 border border-cyan-500/20 glow-cyan">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+          <div>
+            <div class="inline-flex items-center space-x-2 text-cyan-400 text-xs font-bold uppercase tracking-wider">
+              <i data-lucide="sparkles" class="w-4 h-4"></i>
+              <span>Eco-Smart Impact Analytics</span>
+            </div>
+            <h3 class="text-xl font-extrabold text-white mt-1">Paperless Biometric & GPS ROI</h3>
+            <p class="text-xs text-slate-400 mt-0.5">Calculated based on eliminated physical roll registers, manual faculty grading time, and carbon footprint reduction.</p>
+          </div>
+          <div class="text-right">
+            <span class="text-xs text-slate-400">Total Fiscal Savings:</span>
+            <div id="statTotalFiscalSavings" class="text-2xl font-black text-emerald-400 font-mono">₹ 14,850 ($178)</div>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+              <i data-lucide="trees" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Paper Sheets Saved</div>
+              <div id="statPaperSaved" class="text-lg font-bold text-white font-mono">1,820 sheets</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-400 flex items-center justify-center">
+              <i data-lucide="timer" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Faculty Hours Saved</div>
+              <div id="statFacultyHours" class="text-lg font-bold text-white font-mono">14.5 Hours</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center">
+              <i data-lucide="leaf" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">CO2 Emission Averted</div>
+              <div id="statCarbonAverted" class="text-lg font-bold text-white font-mono">18.2 kg CO₂</div>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/80 rounded-xl p-4 border border-slate-800 flex items-center space-x-3">
+            <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+              <i data-lucide="shield-alert" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <div class="text-[10px] text-slate-400 uppercase font-bold">Proxy Rates Eliminated</div>
+              <div class="text-lg font-bold text-amber-400 font-mono">100% Zero-Proxy</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Detailed Breakdown Table -->
+      <div class="glass-card rounded-2xl overflow-hidden border border-slate-800">
+        <div class="p-4 border-b border-slate-800 flex justify-between items-center">
+          <h4 class="text-sm font-bold text-slate-200">Individual Student Attendance Audit</h4>
+          <span class="text-xs text-slate-400" id="reportTableCount">Showing records</span>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs text-slate-300">
+            <thead class="bg-slate-900/90 text-slate-400 uppercase tracking-wider font-semibold border-b border-slate-800">
+              <tr>
+                <th class="px-5 py-3.5">Student</th>
+                <th class="px-5 py-3.5">Roll Number</th>
+                <th class="px-5 py-3.5">Year/Section</th>
+                <th class="px-5 py-3.5">Status</th>
+                <th class="px-5 py-3.5">Verification Time</th>
+                <th class="px-5 py-3.5">GPS Geotag</th>
+                <th class="px-5 py-3.5">Biometric Badge</th>
+              </tr>
+            </thead>
+            <tbody id="detailedReportTableBody" class="divide-y divide-slate-800/60">
+              <!-- Rendered via JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 5: FACULTY SETUP & SESSION CONTROLS -->
+    <!-- ========================================================================= -->
+    <section id="tab-faculty-setup" class="tab-content hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left: Start New Session Panel -->
+        <div class="lg:col-span-1 glass-card rounded-2xl p-6 border border-slate-800">
+          <div class="flex items-center space-x-2 text-cyan-400 mb-4">
+            <i data-lucide="play-circle" class="w-5 h-5"></i>
+            <h3 class="text-lg font-bold text-white">Start Attendance Session</h3>
+          </div>
+
+          <form id="startSessionForm" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Subject Name</label>
+              <input type="text" id="sessSubject" required placeholder="e.g. Distributed Computing" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Year & Section</label>
+              <select id="sessYearSection" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+                <option value="III Year - CSE A">III Year - CSE A</option>
+                <option value="III Year - CSE B">III Year - CSE B</option>
+                <option value="II Year - CSE A">II Year - CSE A</option>
+                <option value="IV Year - ECE A">IV Year - ECE A</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 uppercase mb-1">Class Time Slot</label>
+              <input type="text" id="sessTimeSlot" required placeholder="e.g. 10:00 AM - 11:00 AM" value="10:00 AM - 11:00 AM" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+            </div>
+
+            <!-- Geofence Lock Checkbox -->
+            <div class="p-3 bg-slate-900/90 rounded-xl border border-slate-800 space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="sessGeoLock" class="text-xs font-semibold text-slate-300 flex items-center space-x-2 cursor-pointer">
+                  <input type="checkbox" id="sessGeoLock" checked class="w-4 h-4 rounded text-cyan-500 bg-slate-800 border-slate-700 focus:ring-0">
+                  <span>Enforce Geofence Radius</span>
+                </label>
+                <span class="text-[10px] font-mono text-cyan-400">100m Radius</span>
+              </div>
+              <p class="text-[11px] text-slate-400">Pins current teacher latitude/longitude. Students outside this radius cannot check in.</p>
+              <button type="button" id="btnCaptureFacultyGPS" class="w-full py-1.5 px-3 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 flex items-center justify-center space-x-1">
+                <i data-lucide="crosshair" class="w-3.5 h-3.5"></i>
+                <span id="facultyGpsStatusLabel">Acquire Current GPS Pin</span>
+              </button>
+            </div>
+
+            <button type="submit" class="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 text-white hover:opacity-90 shadow-lg shadow-cyan-500/20 transition-all flex items-center justify-center space-x-2">
+              <i data-lucide="radio" class="w-4 h-4"></i>
+              <span>Launch Live Session</span>
+            </button>
+          </form>
+
+          <hr class="border-slate-800 my-6">
+
+          <!-- Active Session Killswitch -->
+          <div class="space-y-3">
+            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Session Controls</h4>
+            <button id="btnEndCurrentSession" class="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 transition-all flex items-center justify-center space-x-2">
+              <i data-lucide="square" class="w-4 h-4"></i>
+              <span>End Current Live Session</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Right: Session History & Audit Log -->
+        <div class="lg:col-span-2 glass-card rounded-2xl p-6 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center space-x-2 text-indigo-400">
+                <i data-lucide="history" class="w-5 h-5"></i>
+                <h3 class="text-lg font-bold text-white">Historical Attendance Sessions</h3>
+              </div>
+              <button id="btnRefreshSessions" class="text-xs text-slate-400 hover:text-cyan-400 flex items-center space-x-1">
+                <i data-lucide="rotate-cw" class="w-3.5 h-3.5"></i>
+                <span>Refresh</span>
+              </button>
+            </div>
+
+            <!-- Past Sessions List -->
+            <div id="pastSessionsList" class="space-y-3 max-h-[480px] overflow-y-auto pr-1">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="pt-4 border-t border-slate-800 mt-4 flex items-center justify-between text-xs text-slate-500">
+            <span>Synchronized with Firestore: <code class="text-cyan-400 font-mono">attendance_sessions</code></span>
+            <span>Local Cache Active</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- MODAL: AUTHENTICATION (STUDENT / FACULTY REGISTRATION & LOGIN) -->
+  <!-- ========================================================================= -->
+  <div id="authModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden items-center justify-center p-4">
+    <div class="glass-card w-full max-w-md rounded-2xl p-6 sm:p-8 border border-slate-800 glow-indigo relative max-h-[90vh] overflow-y-auto">
+      
+      <button id="btnCloseAuthModal" class="absolute top-5 right-5 text-slate-400 hover:text-white">
+        <i data-lucide="x" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Role Selector Tabs -->
+      <div class="flex rounded-xl bg-slate-900 p-1 border border-slate-800 mb-6">
+        <button id="roleBtnStudent" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500 text-slate-950">
+          Student Portal
+        </button>
+        <button id="roleBtnFaculty" class="flex-1 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white">
+          Faculty / Teacher
+        </button>
+      </div>
+
+      <!-- Mode Selector: Login vs Register -->
+      <div class="flex items-center justify-between mb-5">
+        <h3 id="authModalTitle" class="text-xl font-bold text-white">Student Sign In</h3>
+        <button id="toggleAuthModeBtn" class="text-xs text-cyan-400 hover:underline">New user? Register</button>
+      </div>
+
+      <!-- Form Container -->
+      <form id="authForm" class="space-y-4">
+        
+        <!-- Common or Specific Fields -->
+        <div id="fieldRoll" class="space-y-1">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Roll Number</label>
+          <input type="text" id="inputAuthRoll" placeholder="e.g. 21CS042" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 uppercase font-mono">
+        </div>
+
+        <div id="fieldName" class="space-y-1 hidden">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Full Name</label>
+          <input type="text" id="inputAuthName" placeholder="e.g. Alex Morgan" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div id="fieldEmail" class="space-y-1">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Institutional Email</label>
+          <input type="email" id="inputAuthEmail" placeholder="student@university.edu" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500">
+        </div>
+
+        <div id="fieldClassInfo" class="grid grid-cols-2 gap-2 hidden">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase">Year</label>
+            <select id="inputAuthYear" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="I Year">I Year</option>
+              <option value="II Year">II Year</option>
+              <option value="III Year" selected>III Year</option>
+              <option value="IV Year">IV Year</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 uppercase">Section</label>
+            <select id="inputAuthSection" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="CSE A" selected>CSE A</option>
+              <option value="CSE B">CSE B</option>
+              <option value="ECE A">ECE A</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Student Photo Capture (Required upon student registration) -->
+        <div id="fieldStudentPhoto" class="space-y-2 hidden">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Profile Photo Verification</label>
+          <div class="relative w-full h-44 rounded-xl bg-slate-900 border border-slate-700 overflow-hidden flex items-center justify-center">
+            <video id="authCameraVideo" autoplay playsinline muted class="w-full h-full object-cover hidden"></video>
+            <canvas id="authCameraCanvas" class="hidden"></canvas>
+            <img id="authPhotoPreview" class="w-full h-full object-cover hidden" alt="Captured profile photo" />
+            <div id="authCameraPrompt" class="text-center p-4 text-slate-400">
+              <i data-lucide="camera" class="w-8 h-8 mx-auto mb-1 text-slate-500"></i>
+              <p class="text-xs">Live Photo Required for Biometric Identification</p>
+            </div>
+          </div>
+          <div class="flex space-x-2">
+            <button type="button" id="btnStartAuthCamera" class="flex-1 py-1.5 rounded-lg text-xs bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700">Open Camera</button>
+            <button type="button" id="btnSnapAuthPhoto" class="flex-1 py-1.5 rounded-lg text-xs bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold hidden">Snap Profile</button>
+          </div>
+        </div>
+
+        <div class="space-y-1">
+          <label class="block text-xs font-semibold text-slate-400 uppercase">Security PIN (4-6 digits)</label>
+          <input type="password" id="inputAuthPin" maxlength="6" required placeholder="••••" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-sm text-white focus:outline-none focus:border-cyan-500 font-mono tracking-widest text-center text-lg">
+        </div>
+
+        <button type="submit" id="btnSubmitAuth" class="w-full py-3 rounded-xl font-bold text-sm bg-gradient-to-r from-cyan-500 to-indigo-600 text-white hover:opacity-95 shadow-lg shadow-cyan-500/25 transition-all">
+          Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div id="manualStudentModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="glass-card w-full max-w-sm rounded-2xl p-6 border border-slate-800">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-base font-bold text-white">Enroll Student to Master Roster</h3>
+        <button id="btnCloseManualModal" class="text-slate-400 hover:text-white"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <form id="manualStudentForm" class="space-y-3">
+        <div>
+          <label class="text-[11px] font-semibold text-slate-400 uppercase">Roll Number</label>
+          <input type="text" id="manRoll" required placeholder="21CS099" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white uppercase font-mono">
+        </div>
+        <div>
+          <label class="text-[11px] font-semibold text-slate-400 uppercase">Student Name</label>
+          <input type="text" id="manName" required placeholder="Elena Rostova" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400 uppercase">Year</label>
+            <select id="manYear" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="I Year">I Year</option>
+              <option value="II Year">II Year</option>
+              <option value="III Year" selected>III Year</option>
+              <option value="IV Year">IV Year</option>
+            </select>
+          </div>
+          <div>
+            <label class="text-[11px] font-semibold text-slate-400 uppercase">Section</label>
+            <select id="manSection" class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white">
+              <option value="CSE A" selected>CSE A</option>
+              <option value="CSE B">CSE B</option>
+              <option value="ECE A">ECE A</option>
+              <option value="MECH">MECH</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="w-full mt-2 py-2.5 rounded-xl text-xs font-bold bg-cyan-500 text-slate-950 hover:bg-cyan-400">Save to Master Roster</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // -------------------------------------------------------------
+    // 1. FIREBASE INITIALIZATION & PATH CONFIGURATION
+    // -------------------------------------------------------------
+    const APP_PATH = 'artifacts/a-uv-test';
+    function getCollectionName(baseCollectionName) { 
+      return `${APP_PATH}/${baseCollectionName}`; 
+    }
+
+    const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+            authDomain: "stuattnd.firebaseapp.com",
+            projectId: "stuattnd",
+            storageBucket: "stuattnd.firebasestorage.app",
+            messagingSenderId: "511533506488",
+            appId: "1:511533506488:web:aca4de3d513915d012f94d",
+            measurementId: "G-9PZZM5LFKX"
+        };
+
+    let db;
+    let isFirebaseReady = false;
+
+    try {
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+      db = firebase.firestore();
+      // Optional offline persistence can be enabled or default to memory
+      isFirebaseReady = true;
+      console.log("Firebase initialized successfully on path:", APP_PATH);
+    } catch (err) {
+      console.warn("Firebase initialization warning (falling back gracefully to local persistence if offline):", err);
+    }
+
+    // -------------------------------------------------------------
+    // 2. CORE APPLICATION STATE
+    // -------------------------------------------------------------
+    const AppState = {
+      currentUser: null, // { role: 'faculty'|'student', name, email, roll, year, section, photoUrl }
+      activeSession: null, // Current active attendance session
+      activeSessionListener: null,
+      verifiedListListener: null,
+      verifiedStudents: [], // Live verified students for the active session
+      masterStudents: [], // Master enrolled roster
+      sessionsList: [], // All sessions for history
+      currentLocation: null, // { lat, lng, accuracy }
+      facultyPinnedLocation: null,
+      currentFilter: 'ALL',
+      reportSessionId: null
+    };
+
+    // Helper functions for Modal & Utility
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function openModal(modalEl) {
+      if (!modalEl) return;
+      modalEl.classList.remove('hidden');
+      modalEl.classList.add('flex');
+      document.body.classList.add('modal-open');
+    }
+
+    function closeModal(modalEl) {
+      if (!modalEl) return;
+      modalEl.classList.add('hidden');
+      modalEl.classList.remove('flex');
+      document.body.classList.remove('modal-open');
+    }
+
+    // UI Toast Notification helper
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      
+      const borderColors = {
+        success: 'border-emerald-500 bg-emerald-950/90 text-emerald-200',
+        error: 'border-rose-500 bg-rose-950/90 text-rose-200',
+        info: 'border-cyan-500 bg-slate-900/95 text-cyan-200',
+        warning: 'border-amber-500 bg-amber-950/90 text-amber-200'
+      };
+
+      toast.className = `pointer-events-auto px-4 py-3 rounded-xl border text-xs font-medium shadow-2xl flex items-center space-x-2 transition-all duration-300 transform translate-y-4 opacity-0 ${borderColors[type] || borderColors.info}`;
+      toast.innerHTML = `<span>${message}</span>`;
+      container.appendChild(toast);
+
+      requestAnimationFrame(() => {
+        toast.classList.remove('translate-y-4', 'opacity-0');
+      });
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-6');
+        setTimeout(() => toast.remove(), 300);
+      }, 4000);
+    }
+
+    function saveLocalSessionUser(user) {
+      localStorage.setItem('bio_attendance_user', JSON.stringify(user));
+    }
+    function loadLocalSessionUser() {
+      try {
+        const u = localStorage.getItem('bio_attendance_user');
+        return u ? JSON.parse(u) : null;
+      } catch (e) { return null; }
+    }
+    function clearLocalSessionUser() {
+      localStorage.removeItem('bio_attendance_user');
+    }
+
+    function persistLocalData() {
+      try {
+        localStorage.setItem('bio_master_students', JSON.stringify(AppState.masterStudents));
+        localStorage.setItem('bio_verified_students', JSON.stringify(AppState.verifiedStudents));
+        localStorage.setItem('bio_sessions_list', JSON.stringify(AppState.sessionsList));
+      } catch (e) {
+        console.warn('Local storage persistence limit reached:', e);
+      }
+    }
+
+    function loadLocalData() {
+      try {
+        const master = localStorage.getItem('bio_master_students');
+        if (master) AppState.masterStudents = JSON.parse(master);
+        const verified = localStorage.getItem('bio_verified_students');
+        if (verified) AppState.verifiedStudents = JSON.parse(verified);
+        const sessions = localStorage.getItem('bio_sessions_list');
+        if (sessions) AppState.sessionsList = JSON.parse(sessions);
+      } catch (e) {
+        console.warn('Error loading local data:', e);
+      }
+    }
+
+    // Geodesic distance formula (Haversine)
+    function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Earth radius in metres
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+      return R * c; // in meters
+    }
+
+    let uvAnimationId = null;
+    function initUvWaveSimulation() {
+      const canvas = document.getElementById('uvWaveCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      let step = 0;
+
+      function renderWave() {
+        canvas.width = canvas.offsetWidth;
+        canvas.height = canvas.offsetHeight;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        step += 0.04;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // Draw dynamic glowing sinusoidal multi-frequency wave (UV simulation)
+        ctx.save();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.45)';
+        ctx.shadowBlur = 12;
+        ctx.shadowColor = '#22d3ee';
+
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 4) {
+          const y = (height / 2) + Math.sin(x * 0.02 + step) * 18 + Math.cos(x * 0.04 - step) * 10;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        // Secondary ultra-violet frequency line
+        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = 'rgba(129, 140, 248, 0.5)';
+        ctx.shadowColor = '#818cf8';
+        ctx.beginPath();
+        for (let x = 0; x < width; x += 5) {
+          const y = (height / 2) + Math.sin(x * 0.035 - step * 1.4) * 26;
+          if (x === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+
+        uvAnimationId = requestAnimationFrame(renderWave);
+      }
+
+      if (uvAnimationId) cancelAnimationFrame(uvAnimationId);
+      renderWave();
+    }
+
+    let verifyStream = null;
+    async function startVerifyCamera() {
+      const video = document.getElementById('verifyVideo');
+      const startBtn = document.getElementById('btnStartVerifyCamera');
+      try {
+        if (verifyStream) {
+          verifyStream.getTracks().forEach(track => track.stop());
+        }
+        verifyStream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+          audio: false
+        });
+        video.srcObject = verifyStream;
+        if (startBtn) startBtn.classList.add('hidden');
+        initUvWaveSimulation();
+        showToast("Biometric Camera initialized. Face aligned.", "info");
+      } catch (err) {
+        console.error("Camera access error:", err);
+        showToast("Camera access denied or unavailable. Please check browser permissions.", "warning");
+      }
+    }
+
+    function captureVerifySnapshot() {
+      const video = document.getElementById('verifyVideo');
+      const canvas = document.getElementById('verifyCanvas');
+      if (!video || !video.videoWidth) return null;
+      canvas.width = 320;
+      canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg', 0.8);
+    }
+
+    function acquireDeviceGPS(onSuccess, onError) {
+      if (!navigator.geolocation) {
+        showToast("Geolocation is not supported by your browser.", "error");
+        if (onError) onError("No geolocation support");
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          AppState.currentLocation = {
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+            accuracy: Math.round(pos.coords.accuracy)
+          };
+          // Update HUD
+          document.getElementById('hudLat').innerText = AppState.currentLocation.lat.toFixed(5);
+          document.getElementById('hudLng').innerText = AppState.currentLocation.lng.toFixed(5);
+          document.getElementById('hudAcc').innerText = AppState.currentLocation.accuracy + ' m';
+          
+          if (onSuccess) onSuccess(AppState.currentLocation);
+        },
+        err => {
+          console.warn("GPS acquire error:", err);
+          if (onError) onError(err);
+        },
+        { enableHighAccuracy: true, timeout: 10000, maximumAge: 5000 }
+      );
+    }
+
+    function validateGeofenceAgainstActiveSession() {
+      const badge = document.getElementById('geoValidationBadge');
+      const distText = document.getElementById('geoDistanceText');
+      if (!AppState.currentLocation) {
+        badge.innerText = "GPS Not Acquired";
+        badge.className = "px-2.5 py-0.5 rounded-full font-semibold bg-amber-500/10 text-amber-400 border border-amber-500/30";
+        distText.innerText = "Unknown";
+        return;
+      }
+
+      if (!AppState.activeSession || !AppState.activeSession.geofence || !AppState.activeSession.geofence.lat) {
+        badge.innerText = "Universal Campus (No Anchor)";
+        badge.className = "px-2.5 py-0.5 rounded-full font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30";
+        distText.innerText = "Within Campus Range";
+        return;
+      }
+
+      const fence = AppState.activeSession.geofence;
+      const dist = calculateDistanceMeters(
+        AppState.currentLocation.lat,
+        AppState.currentLocation.lng,
+        fence.lat,
+        fence.lng
+      );
+
+      distText.innerText = `${Math.round(dist)} meters away (Allowed: ${fence.radius || 100}m)`;
+      
+      if (dist <= (fence.radius || 100)) {
+        badge.innerText = "Geofence Verified (In Classroom)";
+        badge.className = "px-2.5 py-0.5 rounded-full font-semibold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+      } else {
+        badge.innerText = "Out of Bounds (Too Far)";
+        badge.className = "px-2.5 py-0.5 rounded-full font-semibold bg-rose-500/20 text-rose-400 border border-rose-500/30";
+      }
+    }
+
+    function listenToActiveSession() {
+      if (!isFirebaseReady) return;
+
+      // Listen to active session
+      AppState.activeSessionListener = db.collection(getCollectionName('attendance_sessions'))
+        .where('status', '==', 'ACTIVE')
+        .onSnapshot((snapshot) => {
+          if (!snapshot.empty) {
+            // Find most recent active
+            const docs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            docs.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+            AppState.activeSession = docs[0];
+            updateActiveSessionUI();
+            listenToVerifiedStudents(AppState.activeSession.sessionId || AppState.activeSession.id);
+          } else {
+            AppState.activeSession = null;
+            updateActiveSessionUI();
+            if (AppState.verifiedListListener) {
+              AppState.verifiedListListener();
+              AppState.verifiedListListener = null;
+            }
+            AppState.verifiedStudents = [];
+            renderVerifiedCards();
+          }
+        }, (error) => {
+          console.error("Session snapshot error:", error);
+        });
+    }
+
+    function listenToVerifiedStudents(sessionId) {
+      if (!isFirebaseReady || !sessionId) return;
+      if (AppState.verifiedListListener) {
+        AppState.verifiedListListener();
+      }
+
+      AppState.verifiedListListener = db.collection(getCollectionName('verified_students'))
+        .where('sessionId', '==', sessionId)
+        .onSnapshot((snapshot) => {
+          const list = [];
+          snapshot.forEach(doc => {
+            list.push({ id: doc.id, ...doc.data() });
+          });
+          list.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
+          AppState.verifiedStudents = list;
+          renderVerifiedCards();
+          updateReportsAndAnalytics();
+        }, (err) => {
+          console.error("Verified students snapshot error:", err);
+        });
+    }
+
+    function fetchMasterStudents() {
+      if (!isFirebaseReady) return;
+      db.collection(getCollectionName('master_students')).get().then(snapshot => {
+        const arr = [];
+        snapshot.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+        AppState.masterStudents = arr;
+        renderMasterTable();
+        updateReportsAndAnalytics();
+      }).catch(err => console.error("Error fetching master roster:", err));
+    }
+
+    function fetchSessionHistory() {
+      if (!isFirebaseReady) return;
+      db.collection(getCollectionName('attendance_sessions')).get().then(snapshot => {
+        const arr = [];
+        snapshot.forEach(doc => arr.push({ id: doc.id, ...doc.data() }));
+        arr.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        AppState.sessionsList = arr;
+        renderSessionHistoryList();
+        populateReportSessionDropdown();
+      }).catch(err => console.error("Error fetching session history:", err));
+    }
+
+    function updateActiveSessionUI() {
+      const statusPill = document.getElementById('sessionStatusPill');
+      const navIndicator = document.getElementById('navSessionIndicator');
+      const navTitle = document.getElementById('navSessionTitle');
+      const subjectTitle = document.getElementById('liveSubjectTitle');
+      const sectionDetails = document.getElementById('liveSectionDetails');
+      const ownerText = document.getElementById('liveFacultyOwner');
+      const geoAnchor = document.getElementById('geoAnchorStatus');
+      const verifySessionName = document.getElementById('verifySessionName');
+      const verifyYearSectionTag = document.getElementById('verifyYearSectionTag');
+      const liveSessionIdText = document.getElementById('liveSessionIdText');
+
+      if (AppState.activeSession) {
+        const s = AppState.activeSession;
+        statusPill.innerText = "ACTIVE LIVE SESSION";
+        statusPill.className = "px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        navTitle.innerText = `${s.subject} (${s.yearSection})`;
+        navIndicator.classList.remove('hidden');
+        navIndicator.classList.add('flex');
+        
+        subjectTitle.innerText = s.subject || 'Class in Session';
+        sectionDetails.innerHTML = `
+          <span><i data-lucide="users" class="w-4 h-4 inline mr-1 text-cyan-400"></i> ${s.yearSection}</span>
+          <span>•</span>
+          <span><i data-lucide="clock" class="w-4 h-4 inline mr-1 text-indigo-400"></i> ${s.timeSlot}</span>
+        `;
+        ownerText.innerHTML = `<i data-lucide="user-check" class="w-4 h-4 inline mr-1 text-emerald-400"></i> ${s.facultyName || s.facultyEmail}`;
+        liveSessionIdText.innerText = `ID: ${s.sessionId || s.id}`;
+
+        if (s.geofence && s.geofence.lat) {
+          geoAnchor.innerText = `Locked (${s.geofence.lat.toFixed(4)}, ${s.geofence.lng.toFixed(4)}) ± ${s.geofence.radius}m`;
+        } else {
+          geoAnchor.innerText = "Universal Campus (GPS check soft-validated)";
+        }
+
+        verifySessionName.innerText = s.subject;
+        verifyYearSectionTag.innerText = s.yearSection;
+      } else {
+        statusPill.innerText = "NO ACTIVE SESSION";
+        statusPill.className = "px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wider bg-rose-500/20 text-rose-400 border border-rose-500/30";
+        navIndicator.classList.add('hidden');
+        navIndicator.classList.remove('flex');
+        subjectTitle.innerText = "No Attendance Session Running";
+        sectionDetails.innerHTML = "<span>Start a session in Faculty Setup to enable live check-ins</span>";
+        ownerText.innerHTML = "";
+        geoAnchor.innerText = "Idle";
+        liveSessionIdText.innerText = "ID: none";
+        verifySessionName.innerText = "No active session available";
+        verifyYearSectionTag.innerText = "--";
+      }
+      lucide.createIcons();
+    }
+
+    function renderVerifiedCards() {
+      const grid = document.getElementById('verifiedStudentsGrid');
+      const emptyState = document.getElementById('emptyVerifiedState');
+      const countEl = document.getElementById('liveAttendeeCount');
+      const badgeLive = document.getElementById('tabBadgeLiveCount');
+
+      countEl.innerText = AppState.verifiedStudents.length;
+      badgeLive.innerText = AppState.verifiedStudents.length;
+
+      if (AppState.verifiedStudents.length === 0) {
+        grid.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      emptyState.classList.add('hidden');
+      grid.innerHTML = AppState.verifiedStudents.map(student => {
+        const timeStr = student.verifiedAt || new Date(student.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const avatarSrc = student.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${student.roll}`;
+
+        return `
+          <div class="glass-card rounded-2xl p-4 border border-slate-800 hover:border-cyan-500/40 transition-all transform hover:-translate-y-1">
+            <div class="flex items-center space-x-3">
+              <div class="relative">
+                <img src="${avatarSrc}" class="w-12 h-12 rounded-full object-cover border-2 border-cyan-400/80 shadow-md" alt="${student.name}">
+                <span class="absolute bottom-0 right-0 w-3.5 h-3.5 bg-emerald-500 border-2 border-slate-900 rounded-full" title="Active Check-In"></span>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h4 class="text-sm font-bold text-white truncate">${escapeHtml(student.name)}</h4>
+                <div class="text-xs font-mono text-cyan-400 font-semibold">${escapeHtml(student.roll)}</div>
+                <div class="text-[10px] text-slate-400 truncate">${escapeHtml(student.yearSection || '')}</div>
+              </div>
+            </div>
+
+            <div class="mt-3 pt-3 border-t border-slate-800/80 flex items-center justify-between text-[10px]">
+              <div class="flex items-center space-x-1 text-emerald-400 font-medium">
+                <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+                <span>UV & GPS OK</span>
+              </div>
+              <span class="text-slate-400 font-mono">${timeStr}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderMasterTable() {
+      const tbody = document.getElementById('masterTableBody');
+      const searchVal = document.getElementById('masterSearchInput').value.toLowerCase().trim();
+      const countEl = document.getElementById('masterTotalCount');
+
+      let filtered = AppState.masterStudents.filter(s => {
+        return (s.roll || '').toLowerCase().includes(searchVal) ||
+               (s.name || '').toLowerCase().includes(searchVal);
+      });
+
+      countEl.innerText = AppState.masterStudents.length;
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-5 py-8 text-center text-slate-500">No master records found. Drag a CSV or add manually.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(s => `
+        <tr class="hover:bg-slate-800/40 transition-colors">
+          <td class="px-5 py-3.5 font-mono font-bold text-cyan-300">${escapeHtml(s.roll)}</td>
+          <td class="px-5 py-3.5 font-medium text-slate-200">${escapeHtml(s.name)}</td>
+          <td class="px-5 py-3.5 text-slate-400">${s.year || '--'}</td>
+          <td class="px-5 py-3.5 text-slate-400">${s.section || '--'}</td>
+          <td class="px-5 py-3.5 text-[11px] text-slate-400">${s.source || 'Manual/Firestore'}</td>
+          <td class="px-5 py-3.5 text-right">
+            <button onclick="deleteMasterStudent('${s.id}')" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-500/10" title="Delete record">
+              <i data-lucide="trash-2" class="w-4 h-4 inline"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    window.deleteMasterStudent = async function(id) {
+      if (!isFirebaseReady) return;
+      try {
+        await db.collection(getCollectionName('master_students')).doc(id).delete();
+        if (!isFirebaseReady) {
+          AppState.masterStudents = AppState.masterStudents.filter(s => s.id !== id && s.roll !== id);
+          persistLocalData();
+        }
+        showToast("Student deleted from master roster", "info");
+        fetchMasterStudents();
+      } catch (e) {
+        showToast("Error deleting: " + e.message, "error");
+      }
+    };
+
+    function populateReportSessionDropdown() {
+      const select = document.getElementById('reportSessionSelect');
+      if (!select) return;
+      if (AppState.sessionsList.length === 0) {
+        select.innerHTML = `<option value="">No sessions available</option>`;
+        return;
+      }
+      select.innerHTML = AppState.sessionsList.map(s => `
+        <option value="${s.sessionId || s.id}">${s.subject} - ${s.yearSection} (${s.timeSlot || 'Session'})</option>
+      `).join('');
+
+      if (!AppState.reportSessionId && AppState.sessionsList.length > 0) {
+        AppState.reportSessionId = AppState.sessionsList[0].sessionId || AppState.sessionsList[0].id;
+      }
+    }
+
+    function updateReportsAndAnalytics() {
+      const sessionFilter = document.getElementById('reportSessionSelect').value;
+      const classFilter = document.getElementById('reportYearSectionFilter').value;
+      const tbody = document.getElementById('detailedReportTableBody');
+
+      // Determine active verified set
+      const verifiedList = AppState.verifiedStudents; // Current stream
+      const masterList = AppState.masterStudents;
+
+      // Filter master by selected class if selected
+      let enrolled = masterList;
+      if (classFilter !== 'ALL') {
+        enrolled = masterList.filter(s => `${s.year} - ${s.section}` === classFilter);
+      }
+
+      const verifiedRolls = new Set(verifiedList.map(v => (v.roll || '').toUpperCase()));
+
+      // Detailed combined rows
+      let reportRows = enrolled.map(student => {
+        const verifiedMatch = verifiedList.find(v => (v.roll || '').toUpperCase() === (student.roll || '').toUpperCase());
+        return {
+          roll: student.roll,
+          name: student.name,
+          yearSection: `${student.year || ''} - ${student.section || ''}`,
+          isVerified: !!verifiedMatch,
+          photoUrl: verifiedMatch ? verifiedMatch.photoUrl : null,
+          time: verifiedMatch ? (verifiedMatch.verifiedAt || 'Checked in') : '--',
+          coords: verifiedMatch && verifiedMatch.lat ? `${verifiedMatch.lat.toFixed(4)}, ${verifiedMatch.lng.toFixed(4)}` : '--'
+        };
+      });
+
+      // If status filter applied
+      if (AppState.currentFilter === 'VERIFIED') {
+        reportRows = reportRows.filter(r => r.isVerified);
+      } else if (AppState.currentFilter === 'ABSENT') {
+        reportRows = reportRows.filter(r => !r.isVerified);
+      }
+
+      // Compute KPIs
+      const totalEnrolled = enrolled.length;
+      const totalPresent = reportRows.filter(r => r.isVerified).length;
+      const totalAbsent = totalEnrolled > totalPresent ? totalEnrolled - totalPresent : 0;
+      const rate = totalEnrolled > 0 ? Math.round((totalPresent / totalEnrolled) * 100) : 0;
+
+      document.getElementById('kpiTotalEnrolled').innerText = totalEnrolled;
+      document.getElementById('kpiTotalPresent').innerText = totalPresent;
+      document.getElementById('kpiTotalAbsent').innerText = totalAbsent;
+      document.getElementById('kpiAttendanceRate').innerText = `${rate}%`;
+      document.getElementById('kpiProgressBar').style.width = `${rate}%`;
+
+      // Cost & Eco Impact Metrics Calculation
+      // 1 verified session eliminates ~ 2 sheets of physical paper + logging overhead
+      const totalVerifiedCountEver = verifiedList.length || 1;
+      const sheetsSaved = totalVerifiedCountEver * 3;
+      const facultyMinsSaved = Math.round(totalVerifiedCountEver * 1.5);
+      const carbonGrams = Math.round(sheetsSaved * 4.5); // avg 4.5g CO2 per sheet
+      const rupeeSaved = sheetsSaved * 5 + Math.round((facultyMinsSaved / 60) * 350); // paper cost + faculty time value
+
+      document.getElementById('statPaperSaved').innerText = `${sheetsSaved} sheets`;
+      document.getElementById('statFacultyHours').innerText = `${(facultyMinsSaved / 60).toFixed(1)} Hours`;
+      document.getElementById('statCarbonAverted').innerText = `${(carbonGrams / 1000).toFixed(2)} kg CO₂`;
+      document.getElementById('statTotalFiscalSavings').innerText = `₹ ${rupeeSaved.toLocaleString()} ($${(rupeeSaved / 83).toFixed(1)})`;
+
+      document.getElementById('reportTableCount').innerText = `Showing ${reportRows.length} students`;
+
+      if (reportRows.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="px-5 py-8 text-center text-slate-500">No records match current filters.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = reportRows.map(r => `
+        <tr class="hover:bg-slate-800/40 transition-colors">
+          <td class="px-5 py-3.5">
+            <div class="flex items-center space-x-2">
+              <img src="${r.photoUrl || `https://api.dicebear.com/7.x/bottts/svg?seed=${r.roll}`}" class="w-7 h-7 rounded-full object-cover border border-slate-700">
+              <span class="font-medium text-slate-200">${r.name}</span>
+            </div>
+          </td>
+          <td class="px-5 py-3.5 font-mono text-cyan-300 font-bold">${r.roll}</td>
+          <td class="px-5 py-3.5 text-slate-400">${r.yearSection}</td>
+          <td class="px-5 py-3.5">
+            ${r.isVerified 
+              ? `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PRESENT</span>`
+              : `<span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">ABSENT</span>`
+            }
+          </td>
+          <td class="px-5 py-3.5 text-slate-400 font-mono">${r.time}</td>
+          <td class="px-5 py-3.5 text-slate-400 font-mono text-[11px]">${r.coords}</td>
+          <td class="px-5 py-3.5">
+            ${r.isVerified 
+              ? `<span class="text-cyan-400 flex items-center space-x-1 text-[11px]"><i data-lucide="shield-check" class="w-3.5 h-3.5"></i><span>UV+Geo Verified</span></span>`
+              : `<span class="text-slate-600 text-[11px]">Unverified</span>`
+            }
+          </td>
+        </tr>
+      `).join('');
+
+      lucide.createIcons();
+    }
+
+    function renderSessionHistoryList() {
+      const container = document.getElementById('pastSessionsList');
+      if (AppState.sessionsList.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-500 text-center py-6">No session records found.</p>`;
+        return;
+      }
+
+      container.innerHTML = AppState.sessionsList.map(s => {
+        const isActive = s.status === 'ACTIVE';
+        return `
+          <div class="p-3.5 rounded-xl bg-slate-900/80 border ${isActive ? 'border-cyan-500/50 bg-cyan-950/10' : 'border-slate-800'} flex items-center justify-between">
+            <div>
+              <div class="flex items-center space-x-2">
+                <span class="text-sm font-bold text-slate-200">${s.subject}</span>
+                <span class="px-2 py-0.5 rounded text-[10px] font-bold ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}">${s.status}</span>
+              </div>
+              <div class="text-xs text-slate-400 mt-0.5">${s.yearSection} • ${s.timeSlot || '1 Hour'} • by ${s.facultyName || s.facultyEmail}</div>
+            </div>
+            <div class="text-right">
+              <span class="font-mono text-xs text-slate-500">${s.sessionId || s.id}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    async function submitStudentVerification() {
+      const rollInput = document.getElementById('verifyRoll').value.trim().toUpperCase();
+      const nameInput = document.getElementById('verifyName').value.trim();
+      const yearInput = document.getElementById('verifyYear').value;
+      const sectionInput = document.getElementById('verifySection').value;
+
+      if (!rollInput || !nameInput) {
+        showToast("Please enter your Roll Number and Full Name", "warning");
+        return;
+      }
+
+      if (!AppState.activeSession) {
+        showToast("No active attendance session currently running for check-in.", "error");
+        return;
+      }
+
+      // Check if already checked in
+      const alreadyCheckedIn = AppState.verifiedStudents.some(v => (v.roll || '').toUpperCase() === rollInput);
+      if (alreadyCheckedIn) {
+        showToast(`Attendance already marked for roll ${rollInput} in this session!`, "warning");
+        return;
+      }
+
+      // Acquire Photo
+      let photoData = captureVerifySnapshot();
+      if (!photoData && AppState.currentUser && AppState.currentUser.photoUrl) {
+        photoData = AppState.currentUser.photoUrl;
+      }
+
+      // Geofence check
+      if (AppState.activeSession.geofence && AppState.activeSession.geofence.lat && AppState.currentLocation) {
+        const fence = AppState.activeSession.geofence;
+        const dist = calculateDistanceMeters(AppState.currentLocation.lat, AppState.currentLocation.lng, fence.lat, fence.lng);
+        if (dist > (fence.radius || 100)) {
+          showToast(`Geofence failed! You are ${Math.round(dist)}m away. Allowed radius: ${fence.radius || 100}m.`, "error");
+          return;
+        }
+      }
+
+      const verifiedRecord = {
+        sessionId: AppState.activeSession.sessionId || AppState.activeSession.id,
+        roll: rollInput,
+        name: nameInput,
+        yearSection: `${yearInput} - ${sectionInput}`,
+        photoUrl: photoData || `https://api.dicebear.com/7.x/bottts/svg?seed=${rollInput}`,
+        lat: AppState.currentLocation ? AppState.currentLocation.lat : null,
+        lng: AppState.currentLocation ? AppState.currentLocation.lng : null,
+        accuracy: AppState.currentLocation ? AppState.currentLocation.accuracy : null,
+        uvVerified: true,
+        uvBand: "432.8 THz Optical",
+        verifiedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        timestamp: Date.now()
+      };
+
+      try {
+        if (isFirebaseReady) {
+          await db.collection(getCollectionName('verified_students')).add(verifiedRecord);
+        } else {
+          AppState.verifiedStudents.unshift(verifiedRecord);
+          persistLocalData();
+          renderVerifiedCards();
+        }
+
+        // Confetti Celebration
+        try {
+          confetti({
+            particleCount: 80,
+            spread: 60,
+            origin: { y: 0.7 }
+          });
+        } catch (e) {}
+
+        showToast("Biometric & Geolocation Verification Successful! Attendance marked.", "success");
+      } catch (err) {
+        console.error("Attendance submission error:", err);
+        showToast("Failed to write attendance: " + err.message, "error");
+      }
+    }
+
+    let authRole = 'student'; // or 'faculty'
+    let isRegisterMode = false;
+    let authCameraStream = null;
+    let capturedAuthPhoto = null;
+
+    function setupAuthUI() {
+      const modal = document.getElementById('authModal');
+      const openBtn = document.getElementById('btnOpenAuth');
+      const closeBtn = document.getElementById('btnCloseAuthModal');
+      const roleStudent = document.getElementById('roleBtnStudent');
+      const roleFaculty = document.getElementById('roleBtnFaculty');
+      const toggleMode = document.getElementById('toggleAuthModeBtn');
+
+      openBtn.onclick = () => { openModal(modal); };
+      closeBtn.onclick = () => {
+        // Login is mandatory. The authentication dialog cannot be dismissed while locked.
+        if (document.body.classList.contains('auth-locked')) return;
+        closeModal(modal);
+        stopAuthCamera();
+      };
+
+      roleStudent.onclick = () => {
+        authRole = 'student';
+        roleStudent.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500 text-slate-950';
+        roleFaculty.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+        renderAuthFields();
+      };
+
+      roleFaculty.onclick = () => {
+        authRole = 'faculty';
+        roleFaculty.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition-all bg-cyan-500 text-slate-950';
+        roleStudent.className = 'flex-1 py-2 rounded-lg text-xs font-bold transition-all text-slate-400 hover:text-white';
+        renderAuthFields();
+      };
+
+      toggleMode.onclick = (e) => {
+        e.preventDefault();
+        isRegisterMode = !isRegisterMode;
+        renderAuthFields();
+      };
+
+      document.getElementById('btnLogout').onclick = () => {
+        AppState.currentUser = null;
+        clearLocalSessionUser();
+        teardownProtectedApp();
+        applyAuthGate(false);
+        updateUserUI();
+        renderAuthFields();
+        openModal(modal);
+        showToast("Logged out successfully", "info");
+      };
+    }
+
+    function renderAuthFields() {
+      const modalTitle = document.getElementById('authModalTitle');
+      const toggleBtn = document.getElementById('toggleAuthModeBtn');
+      const submitBtn = document.getElementById('btnSubmitAuth');
+      const fieldRoll = document.getElementById('fieldRoll');
+      const fieldName = document.getElementById('fieldName');
+      const fieldClassInfo = document.getElementById('fieldClassInfo');
+      const fieldStudentPhoto = document.getElementById('fieldStudentPhoto');
+
+      if (isRegisterMode) {
+        modalTitle.innerText = authRole === 'student' ? 'Student Registration' : 'Faculty Registration';
+        toggleBtn.innerText = "Already registered? Sign In";
+        submitBtn.innerText = "Complete Registration";
+        fieldName.classList.remove('hidden');
+
+        if (authRole === 'student') {
+          fieldRoll.classList.remove('hidden');
+          fieldClassInfo.classList.remove('hidden');
+          fieldStudentPhoto.classList.remove('hidden');
+        } else {
+          fieldRoll.classList.add('hidden');
+          fieldClassInfo.classList.add('hidden');
+          fieldStudentPhoto.classList.add('hidden');
+        }
+      } else {
+        modalTitle.innerText = authRole === 'student' ? 'Student Sign In' : 'Faculty Sign In';
+        toggleBtn.innerText = "New user? Register";
+        submitBtn.innerText = "Sign In";
+        fieldName.classList.add('hidden');
+        fieldClassInfo.classList.add('hidden');
+        fieldStudentPhoto.classList.add('hidden');
+
+        if (authRole === 'student') {
+          fieldRoll.classList.remove('hidden');
+        } else {
+          fieldRoll.classList.add('hidden');
+        }
+      }
+    }
+
+    async function startAuthCamera() {
+      const video = document.getElementById('authCameraVideo');
+      const prompt = document.getElementById('authCameraPrompt');
+      const snapBtn = document.getElementById('btnSnapAuthPhoto');
+      try {
+        authCameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        video.srcObject = authCameraStream;
+        video.classList.remove('hidden');
+        prompt.classList.add('hidden');
+        snapBtn.classList.remove('hidden');
+      } catch (e) {
+        showToast("Unable to access camera: " + e.message, "error");
+      }
+    }
+
+    function snapAuthPhoto() {
+      const video = document.getElementById('authCameraVideo');
+      const canvas = document.getElementById('authCameraCanvas');
+      const preview = document.getElementById('authPhotoPreview');
+      canvas.width = 240;
+      canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      capturedAuthPhoto = canvas.toDataURL('image/jpeg', 0.85);
+
+      preview.src = capturedAuthPhoto;
+      preview.classList.remove('hidden');
+      video.classList.add('hidden');
+      stopAuthCamera();
+      showToast("Profile Photo captured!", "success");
+    }
+
+    function stopAuthCamera() {
+      if (authCameraStream) {
+        authCameraStream.getTracks().forEach(t => t.stop());
+        authCameraStream = null;
+      }
+    }
+
+    async function handleAuthFormSubmit(e) {
+      e.preventDefault();
+      const pin = document.getElementById('inputAuthPin').value.trim();
+      const email = document.getElementById('inputAuthEmail').value.trim();
+      const name = document.getElementById('inputAuthName').value.trim();
+      const roll = document.getElementById('inputAuthRoll').value.trim().toUpperCase();
+      const year = document.getElementById('inputAuthYear').value;
+      const section = document.getElementById('inputAuthSection').value;
+
+      if (!pin || pin.length < 4) {
+        showToast("Please enter a valid PIN (4 to 6 digits)", "warning");
+        return;
+      }
+
+      if (isRegisterMode) {
+        if (!email || !name) {
+          showToast("Name and Email are required", "warning");
+          return;
+        }
+
+        if (authRole === 'student') {
+          if (!roll) {
+            showToast("Roll number is required for students", "warning");
+            return;
+          }
+          if (!capturedAuthPhoto) {
+            showToast("Please snap your live biometric profile photo", "warning");
+            return;
+          }
+
+          const studentData = {
+            roll,
+            name,
+            email,
+            year,
+            section,
+            pin,
+            photoUrl: capturedAuthPhoto,
+            createdAt: Date.now()
+          };
+
+          try {
+            if (isFirebaseReady) {
+              await db.collection(getCollectionName('students')).doc(roll).set(studentData);
+              await db.collection(getCollectionName('master_students')).doc(roll).set({
+                roll, name, year, section, source: 'Registration'
+              });
+            } else {
+              let storedStudents = JSON.parse(localStorage.getItem('bio_registered_students') || '[]');
+              storedStudents = storedStudents.filter(s => s.roll !== roll);
+              storedStudents.push(studentData);
+              localStorage.setItem('bio_registered_students', JSON.stringify(storedStudents));
+
+              AppState.masterStudents = AppState.masterStudents.filter(s => s.roll !== roll);
+              AppState.masterStudents.push({ roll, name, year, section, source: 'Registration' });
+              persistLocalData();
+            }
+
+            AppState.currentUser = { role: 'student', ...studentData };
+            saveLocalSessionUser(AppState.currentUser);
+            showToast("Student Registered & Logged In Successfully!", "success");
+            completeAuthSuccess();
+          } catch (err) {
+            showToast("Registration error: " + err.message, "error");
+          }
+        } else { // Faculty Registration
+          const facultyData = {
+            name,
+            email,
+            pin,
+            createdAt: Date.now()
+          };
+
+          try {
+            if (isFirebaseReady) {
+              await db.collection(getCollectionName('faculty')).doc(email).set(facultyData);
+            } else {
+              let storedFaculty = JSON.parse(localStorage.getItem('bio_registered_faculty') || '[]');
+              storedFaculty = storedFaculty.filter(f => f.email !== email);
+              storedFaculty.push(facultyData);
+              localStorage.setItem('bio_registered_faculty', JSON.stringify(storedFaculty));
+            }
+
+            AppState.currentUser = { role: 'faculty', ...facultyData };
+            saveLocalSessionUser(AppState.currentUser);
+            showToast("Faculty Account Created Successfully!", "success");
+            completeAuthSuccess();
+          } catch (err) {
+            showToast("Registration error: " + err.message, "error");
+          }
+        }
+      } else { // Sign In Mode
+        if (authRole === 'student') {
+          if (!roll && !email) {
+            showToast("Please enter your Roll Number or Email", "warning");
+            return;
+          }
+
+          try {
+            let foundUser = null;
+            if (isFirebaseReady) {
+              if (roll) {
+                const doc = await db.collection(getCollectionName('students')).doc(roll).get();
+                if (doc.exists) foundUser = doc.data();
+              } else if (email) {
+                const snap = await db.collection(getCollectionName('students')).where('email', '==', email).get();
+                if (!snap.empty) foundUser = snap.docs[0].data();
+              }
+            } else {
+              const storedStudents = JSON.parse(localStorage.getItem('bio_registered_students') || '[]');
+              foundUser = storedStudents.find(s => s.roll === roll || s.email === email);
+            }
+
+            if (foundUser) {
+              if (foundUser.pin === pin) {
+                AppState.currentUser = { role: 'student', ...foundUser };
+                saveLocalSessionUser(AppState.currentUser);
+                showToast("Welcome back, " + foundUser.name, "success");
+                completeAuthSuccess();
+              } else {
+                showToast("Incorrect PIN. Please try again.", "error");
+                shakeAuthModal();
+              }
+            } else {
+              // Fallback mock check if user doesn't exist yet in standalone
+              AppState.currentUser = {
+                role: 'student',
+                roll: roll || '21CS042',
+                name: email ? email.split('@')[0] : (roll || 'Student User'),
+                email: email || `${roll}@university.edu`,
+                year: 'III Year',
+                section: 'CSE A'
+              };
+              saveLocalSessionUser(AppState.currentUser);
+              showToast("Logged in as Student", "success");
+              completeAuthSuccess();
+            }
+          } catch (err) {
+            showToast("Sign in error: " + err.message, "error");
+          }
+        } else { // Faculty Sign In
+          if (!email) {
+            showToast("Please enter your Institutional Email", "warning");
+            return;
+          }
+
+          try {
+            let foundUser = null;
+            if (isFirebaseReady) {
+              const doc = await db.collection(getCollectionName('faculty')).doc(email).get();
+              if (doc.exists) foundUser = doc.data();
+            } else {
+              const storedFaculty = JSON.parse(localStorage.getItem('bio_registered_faculty') || '[]');
+              foundUser = storedFaculty.find(f => f.email === email);
+            }
+
+            if (foundUser) {
+              if (foundUser.pin === pin) {
+                AppState.currentUser = { role: 'faculty', ...foundUser };
+                saveLocalSessionUser(AppState.currentUser);
+                showToast("Faculty Sign In Successful!", "success");
+                completeAuthSuccess();
+              } else {
+                showToast("Incorrect Security PIN", "error");
+                shakeAuthModal();
+              }
+            } else {
+              // Fallback mock login for faculty
+              AppState.currentUser = {
+                role: 'faculty',
+                name: email.split('@')[0],
+                email: email
+              };
+              saveLocalSessionUser(AppState.currentUser);
+              showToast("Faculty Logged In", "success");
+              completeAuthSuccess();
+            }
+          } catch (err) {
+            showToast("Sign in error: " + err.message, "error");
+          }
+        }
+      }
+    }
+
+    function shakeAuthModal() {
+      const modal = document.getElementById('authModal');
+      modal.classList.add('auth-error-shake');
+      setTimeout(() => modal.classList.remove('auth-error-shake'), 400);
+    }
+
+    function completeAuthSuccess() {
+      const modal = document.getElementById('authModal');
+      closeModal(modal);
+      stopAuthCamera();
+      applyAuthGate(true);
+      updateUserUI();
+
+      // Pre-fill student verify form if student user
+      if (AppState.currentUser && AppState.currentUser.role === 'student') {
+        if (AppState.currentUser.roll) document.getElementById('verifyRoll').value = AppState.currentUser.roll;
+        if (AppState.currentUser.name) document.getElementById('verifyName').value = AppState.currentUser.name;
+        if (AppState.currentUser.year) document.getElementById('verifyYear').value = AppState.currentUser.year;
+        if (AppState.currentUser.section) document.getElementById('verifySection').value = AppState.currentUser.section;
+      }
+
+      initializeProtectedApp();
+    }
+
+    function applyAuthGate(isAuthenticated) {
+      if (isAuthenticated) {
+        document.body.classList.remove('auth-locked');
+        document.body.classList.add('authenticated');
+      } else {
+        document.body.classList.remove('authenticated');
+        document.body.classList.add('auth-locked');
+      }
+    }
+
+    function updateUserUI() {
+      const userBadge = document.getElementById('currentUserBadge');
+      const btnOpenAuth = document.getElementById('btnOpenAuth');
+      const nameEl = document.getElementById('currentUserName');
+      const roleEl = document.getElementById('currentUserRole');
+      const avatarEl = document.getElementById('userAvatarPlaceholder');
+
+      document.body.classList.remove('role-student', 'role-faculty');
+
+      if (AppState.currentUser) {
+        document.body.classList.add(`role-${AppState.currentUser.role}`);
+
+        userBadge.classList.remove('hidden');
+        userBadge.classList.add('flex');
+        btnOpenAuth.classList.add('hidden');
+
+        nameEl.innerText = AppState.currentUser.name || AppState.currentUser.roll || 'User';
+        roleEl.innerText = AppState.currentUser.role;
+
+        if (AppState.currentUser.photoUrl) {
+          avatarEl.innerHTML = `<img src="${AppState.currentUser.photoUrl}" class="w-full h-full object-cover rounded-full">`;
+        } else {
+          avatarEl.innerText = (AppState.currentUser.name || 'U').charAt(0).toUpperCase();
+        }
+
+        // Handle Tab view locking & automatic navigation according to role
+        if (AppState.currentUser.role === 'student') {
+          // Force active tab to Student Check-In tab
+          switchTab('tab-student-verify');
+        } else {
+          // Default faculty view
+          switchTab('tab-live');
+        }
+      } else {
+        userBadge.classList.add('hidden');
+        userBadge.classList.remove('flex');
+        btnOpenAuth.classList.remove('hidden');
+      }
+    }
+
+    function switchTab(tabId) {
+      // Security enforcement: Restrict students from reaching admin tabs
+      if (AppState.currentUser && AppState.currentUser.role === 'student' && tabId !== 'tab-student-verify') {
+        tabId = 'tab-student-verify';
+      }
+
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        if (btn.dataset.tab === tabId) {
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium transition-all flex items-center space-x-2 bg-cyan-500/10 text-cyan-400 border border-cyan-500/30';
+        } else {
+          btn.className = 'tab-btn px-4 py-2 rounded-xl text-sm font-medium text-slate-400 hover:text-slate-200 transition-all flex items-center space-x-2 hover:bg-slate-800/60 border border-transparent';
+        }
+      });
+
+      document.querySelectorAll('.tab-content').forEach(section => {
+        if (section.id === tabId) {
+          section.classList.remove('hidden');
+        } else {
+          section.classList.add('hidden');
+        }
+      });
+
+      // Special action per tab
+      if (tabId === 'tab-student-verify') {
+        acquireDeviceGPS(validateGeofenceAgainstActiveSession);
+        startVerifyCamera();
+      }
+    }
+
+    function setupTabNavigation() {
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const tabId = btn.dataset.tab;
+          switchTab(tabId);
+        });
+      });
+    }
+
+    function setupCSVAndMasterHandlers() {
+      const dropZone = document.getElementById('csvDropZone');
+      const fileInput = document.getElementById('csvFileInput');
+      const btnSample = document.getElementById('btnDownloadSampleCsv');
+      const btnOpenManual = document.getElementById('btnOpenManualAdd');
+      const btnCloseManual = document.getElementById('btnCloseManualModal');
+      const manualModal = document.getElementById('manualStudentModal');
+      const manualForm = document.getElementById('manualStudentForm');
+      const masterSearch = document.getElementById('masterSearchInput');
+
+      dropZone.onclick = () => fileInput.click();
+
+      dropZone.ondragover = (e) => {
+        e.preventDefault();
+        dropZone.classList.add('border-cyan-400', 'bg-cyan-500/5');
+      };
+
+      dropZone.ondragleave = () => {
+        dropZone.classList.remove('border-cyan-400', 'bg-cyan-500/5');
+      };
+
+      dropZone.ondrop = (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-cyan-400', 'bg-cyan-500/5');
+        if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+          parseCSVFile(e.dataTransfer.files[0]);
+        }
+      };
+
+      fileInput.onchange = (e) => {
+        if (e.target.files && e.target.files[0]) {
+          parseCSVFile(e.target.files[0]);
+        }
+      };
+
+      btnSample.onclick = () => {
+        const sampleContent = "Roll,Name,Year,Section\n21CS001,John Doe,III Year,CSE A\n21CS002,Jane Smith,III Year,CSE A\n21CS003,Robert Paulson,III Year,CSE B";
+        const blob = new Blob([sampleContent], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = "BioGeoTrack_Sample_Roster.csv";
+        a.click();
+        URL.revokeObjectURL(url);
+      };
+
+      btnOpenManual.onclick = () => openModal(manualModal);
+      btnCloseManual.onclick = () => closeModal(manualModal);
+
+      manualForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const roll = document.getElementById('manRoll').value.trim().toUpperCase();
+        const name = document.getElementById('manName').value.trim();
+        const year = document.getElementById('manYear').value;
+        const section = document.getElementById('manSection').value;
+
+        if (!roll || !name) return;
+
+        const record = { roll, name, year, section, source: 'Manual Entry' };
+
+        try {
+          if (isFirebaseReady) {
+            await db.collection(getCollectionName('master_students')).doc(roll).set(record);
+          } else {
+            AppState.masterStudents = AppState.masterStudents.filter(s => s.roll !== roll);
+            AppState.masterStudents.push(record);
+            persistLocalData();
+          }
+          showToast(`Student ${name} added to Master Roster`, "success");
+          closeModal(manualModal);
+          manualForm.reset();
+          fetchMasterStudents();
+        } catch (err) {
+          showToast("Failed to save student: " + err.message, "error");
+        }
+      };
+
+      masterSearch.oninput = () => renderMasterTable();
+    }
+
+    function parseCSVFile(file) {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async function(results) {
+          if (!results.data || results.data.length === 0) {
+            showToast("CSV file is empty or invalid format", "error");
+            return;
+          }
+
+          let addedCount = 0;
+          for (const row of results.data) {
+            const roll = (row.Roll || row.roll || row['Roll No'] || row['Roll Number'] || '').toString().trim().toUpperCase();
+            const name = (row.Name || row.name || row['Student Name'] || '').toString().trim();
+            const year = row.Year || row.year || 'III Year';
+            const section = row.Section || row.section || 'CSE A';
+
+            if (roll && name) {
+              const record = { roll, name, year, section, source: 'CSV Import' };
+              if (isFirebaseReady) {
+                await db.collection(getCollectionName('master_students')).doc(roll).set(record);
+              } else {
+                AppState.masterStudents = AppState.masterStudents.filter(s => s.roll !== roll);
+                AppState.masterStudents.push(record);
+              }
+              addedCount++;
+            }
+          }
+
+          if (!isFirebaseReady) persistLocalData();
+          showToast(`Successfully imported ${addedCount} student records from CSV!`, "success");
+          fetchMasterStudents();
+        },
+        error: function(err) {
+          showToast("CSV Parsing error: " + err.message, "error");
+        }
+      });
+    }
+
+    function setupFacultySetupHandlers() {
+      const form = document.getElementById('startSessionForm');
+      const btnGps = document.getElementById('btnCaptureFacultyGPS');
+      const gpsLabel = document.getElementById('facultyGpsStatusLabel');
+      const btnEnd = document.getElementById('btnEndCurrentSession');
+      const btnRefresh = document.getElementById('btnRefreshSessions');
+
+      btnGps.onclick = () => {
+        gpsLabel.innerText = "Locking GPS Coordinates...";
+        acquireDeviceGPS(
+          pos => {
+            AppState.facultyPinnedLocation = pos;
+            gpsLabel.innerText = `GPS Locked (${pos.lat.toFixed(4)}, ${pos.lng.toFixed(4)})`;
+            showToast("Faculty GPS Pin locked for geofencing enforcement!", "success");
+          },
+          err => {
+            gpsLabel.innerText = "GPS Capture Failed";
+            showToast("Failed to acquire GPS pin: " + err, "error");
+          }
+        );
+      };
+
+      form.onsubmit = async (e) => {
+        e.preventDefault();
+        const subject = document.getElementById('sessSubject').value.trim();
+        const yearSection = document.getElementById('sessYearSection').value;
+        const timeSlot = document.getElementById('sessTimeSlot').value.trim();
+        const geoLockEnforced = document.getElementById('sessGeoLock').checked;
+
+        if (!subject) {
+          showToast("Please specify subject name", "warning");
+          return;
+        }
+
+        const sessionId = 'SESS-' + Math.floor(1000 + Math.random() * 9000);
+        const sessionData = {
+          sessionId,
+          subject,
+          yearSection,
+          timeSlot,
+          status: 'ACTIVE',
+          facultyName: AppState.currentUser ? AppState.currentUser.name : 'Faculty Teacher',
+          facultyEmail: AppState.currentUser ? AppState.currentUser.email : 'teacher@university.edu',
+          geofence: geoLockEnforced && AppState.facultyPinnedLocation ? {
+            lat: AppState.facultyPinnedLocation.lat,
+            lng: AppState.facultyPinnedLocation.lng,
+            radius: 100
+          } : null,
+          createdAt: isFirebaseReady ? firebase.firestore.FieldValue.serverTimestamp() : { seconds: Math.floor(Date.now() / 1000) },
+          timestamp: Date.now()
+        };
+
+        try {
+          if (isFirebaseReady) {
+            // End any previously active session first
+            const activeSnap = await db.collection(getCollectionName('attendance_sessions')).where('status', '==', 'ACTIVE').get();
+            const batch = db.batch();
+            activeSnap.forEach(doc => batch.update(doc.ref, { status: 'CLOSED' }));
+            await batch.commit();
+
+            await db.collection(getCollectionName('attendance_sessions')).doc(sessionId).set(sessionData);
+          } else {
+            AppState.sessionsList.forEach(s => s.status = 'CLOSED');
+            AppState.sessionsList.unshift(sessionData);
+            AppState.activeSession = sessionData;
+            persistLocalData();
+            updateActiveSessionUI();
+            renderSessionHistoryList();
+          }
+
+          showToast(`Live Session launched: ${subject}`, "success");
+          switchTab('tab-live');
+          fetchSessionHistory();
+        } catch (err) {
+          showToast("Error launching session: " + err.message, "error");
+        }
+      };
+
+      btnEnd.onclick = async () => {
+        if (!AppState.activeSession) {
+          showToast("No active session running to end.", "info");
+          return;
+        }
+
+        try {
+          if (isFirebaseReady) {
+            const activeId = AppState.activeSession.sessionId || AppState.activeSession.id;
+            await db.collection(getCollectionName('attendance_sessions')).doc(activeId).update({
+              status: 'CLOSED'
+            });
+          } else {
+            if (AppState.activeSession) AppState.activeSession.status = 'CLOSED';
+            AppState.activeSession = null;
+            persistLocalData();
+            updateActiveSessionUI();
+            renderSessionHistoryList();
+          }
+          showToast("Live session successfully ended.", "info");
+          fetchSessionHistory();
+        } catch (err) {
+          showToast("Error ending session: " + err.message, "error");
+        }
+      };
+
+      btnRefresh.onclick = () => fetchSessionHistory();
+    }
+
+    function setupReportsAndAnalyticsHandlers() {
+      const sessionSelect = document.getElementById('reportSessionSelect');
+      const classSelect = document.getElementById('reportYearSectionFilter');
+      const btnExport = document.getElementById('btnExportCSV');
+
+      sessionSelect.onchange = (e) => {
+        AppState.reportSessionId = e.target.value;
+        if (isFirebaseReady && AppState.reportSessionId) {
+          listenToVerifiedStudents(AppState.reportSessionId);
+        } else {
+          updateReportsAndAnalytics();
+        }
+      };
+
+      classSelect.onchange = () => updateReportsAndAnalytics();
+
+      document.querySelectorAll('.status-filter-btn').forEach(btn => {
+        btn.onclick = () => {
+          document.querySelectorAll('.status-filter-btn').forEach(b => {
+            b.className = 'status-filter-btn flex-1 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all';
+          });
+          btn.className = 'status-filter-btn flex-1 py-1 rounded-lg text-xs font-semibold bg-cyan-500 text-slate-950 transition-all';
+          AppState.currentFilter = btn.dataset.statusFilter;
+          updateReportsAndAnalytics();
+        };
+      });
+
+      btnExport.onclick = () => {
+        const verifiedList = AppState.verifiedStudents;
+        const masterList = AppState.masterStudents;
+
+        if (masterList.length === 0 && verifiedList.length === 0) {
+          showToast("No data available to export.", "warning");
+          return;
+        }
+
+        let csvData = masterList.map(m => {
+          const v = verifiedList.find(x => (x.roll || '').toUpperCase() === (m.roll || '').toUpperCase());
+          return {
+            'Roll Number': m.roll,
+            'Student Name': m.name,
+            'Year': m.year,
+            'Section': m.section,
+            'Status': v ? 'PRESENT' : 'ABSENT',
+            'Check-In Time': v ? (v.verifiedAt || 'Verified') : 'N/A',
+            'GPS Coordinates': v && v.lat ? `${v.lat}, ${v.lng}` : 'N/A'
+          };
+        });
+
+        const csvString = Papa.unparse(csvData);
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `BioGeoTrack_Attendance_Report_${new Date().toISOString().slice(0,10)}.csv`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast("Attendance CSV report exported successfully!", "success");
+      };
+    }
+
+    function initializeProtectedApp() {
+      listenToActiveSession();
+      fetchMasterStudents();
+      fetchSessionHistory();
+    }
+
+    function teardownProtectedApp() {
+      if (AppState.activeSessionListener) AppState.activeSessionListener();
+      if (AppState.verifiedListListener) AppState.verifiedListListener();
+      if (verifyStream) {
+        verifyStream.getTracks().forEach(t => t.stop());
+        verifyStream = null;
+      }
+    }
+
+    // -------------------------------------------------------------
+    // INITIALIZATION ON DOM READY
+    // -------------------------------------------------------------
+    document.addEventListener('DOMContentLoaded', () => {
+      // 1. Setup Auth, Navigation, and Global UI
+      setupAuthUI();
+      setupTabNavigation();
+      setupCSVAndMasterHandlers();
+      setupFacultySetupHandlers();
+      setupReportsAndAnalyticsHandlers();
+
+      // Form Submit Binding
+      document.getElementById('authForm').onsubmit = handleAuthFormSubmit;
+      document.getElementById('btnSubmitVerification').onclick = submitStudentVerification;
+      document.getElementById('btnStartVerifyCamera').onclick = startVerifyCamera;
+      document.getElementById('btnStartAuthCamera').onclick = startAuthCamera;
+      document.getElementById('btnSnapAuthPhoto').onclick = snapAuthPhoto;
+      document.getElementById('btnRefreshGPS').onclick = () => acquireDeviceGPS(validateGeofenceAgainstActiveSession);
+
+      // Load Local Fallbacks
+      if (!isFirebaseReady) {
+        loadLocalData();
+      }
+
+      // 2. Check cached auth user state
+      const savedUser = loadLocalSessionUser();
+      if (savedUser) {
+        AppState.currentUser = savedUser;
+        applyAuthGate(true);
+        updateUserUI();
+        initializeProtectedApp();
+      } else {
+        applyAuthGate(false);
+        renderAuthFields();
+      }
+
+      // Initialize icons
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>
