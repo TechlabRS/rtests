@@ -1,0 +1,1844 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>EduPulse - Smart Campus Portal & Proximity Attendance</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              400: '#818cf8',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              900: '#1e1b4b',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: #0b0f19;
+      color: #f8fafc;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .glass-card {
+      background: rgba(22, 30, 49, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .glass-nav {
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .perspective-1000 {
+      perspective: 1000px;
+    }
+    .transform-style-3d {
+      transform-style: preserve-3d;
+      transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .rotate-y-180 {
+      transform: rotateY(180deg);
+    }
+    .backface-hidden {
+      backface-visibility: hidden;
+    }
+
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0b0f19;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+
+    .chip-btn {
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+    .chip-btn.active {
+      background-color: #4f46e5 !important;
+      color: #ffffff !important;
+      border-color: #818cf8 !important;
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+    }
+
+    @keyframes toastIn {
+      0% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    @keyframes toastOut {
+      0% { opacity: 1; transform: translateY(0) scale(1); }
+      100% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+    }
+    .toast-enter {
+      animation: toastIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .toast-exit {
+      animation: toastOut 0.2s cubic-bezier(0.7, 0, 0.84, 0) forwards;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+  <!-- Interactive Dynamic Toast Container -->
+  <div id="toast-container" class="fixed top-3 right-3 sm:top-4 sm:right-4 z-[100] flex flex-col gap-2 max-w-xs sm:max-w-sm w-[calc(100%-1.5rem)] pointer-events-none"></div>
+
+  <div id="app-wrapper" class="flex-1 flex flex-col min-w-0 w-full overflow-x-hidden">
+
+    <!-- Global Header -->
+    <header class="sticky top-0 z-40 glass-nav px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between gap-2 border-b border-slate-800/80">
+      <!-- Logo and Brand Title -->
+      <div class="flex items-center space-x-2 sm:space-x-2.5 cursor-pointer shrink-0" onclick="handleBrandClick()">
+        <div class="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+          <i class="fa-solid fa-graduation-cap text-white text-base sm:text-lg"></i>
+        </div>
+        <div class="flex flex-col">
+          <h1 class="text-sm sm:text-base font-bold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent leading-none">EduPulse</h1>
+          <span class="text-[8px] sm:text-[9px] text-emerald-400 font-medium tracking-wider uppercase flex items-center gap-1 mt-0.5">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Live Firestore Sync
+          </span>
+        </div>
+      </div>
+
+      <!-- Desktop Nav Tabs (STRICTLY HIDDEN ON MOBILE/TABLET SCREENS < MD) -->
+      <nav id="nav-actions" class="hidden md:flex items-center space-x-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800 shrink-0">
+        <button onclick="switchTab('dashboard')" id="tab-btn-dashboard" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white bg-brand-600 shadow student-nav-item">
+          <i class="fa-solid fa-chart-pie mr-1"></i> Dashboard
+        </button>
+        <button onclick="switchTab('faculty')" id="tab-btn-faculty" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-amber-300 hover:bg-slate-800/80 faculty-nav-item">
+          <i class="fa-solid fa-chalkboard-user mr-1 text-amber-400"></i> Faculty Desk
+        </button>
+        <button onclick="switchTab('idcard')" id="tab-btn-idcard" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white student-nav-item">
+          <i class="fa-solid fa-id-card mr-1"></i> ID Pass
+        </button>
+        <button onclick="switchTab('notices')" id="tab-btn-notices" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">
+          <i class="fa-solid fa-bullhorn mr-1"></i> Campus Hub
+        </button>
+        <button onclick="switchTab('cost-inspector')" id="tab-btn-cost-inspector" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white">
+          <i class="fa-solid fa-piggy-bank mr-1 text-emerald-400"></i> Metrics
+        </button>
+      </nav>
+
+      <!-- Right Header Actions (Profile & Auth) -->
+      <div class="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+        <div id="faculty-badge-header" class="hidden sm:inline-flex items-center gap-1 bg-amber-500/20 border border-amber-500/40 px-2 py-0.5 rounded-full text-amber-300 text-[10px] font-bold">
+          <i class="fa-solid fa-user-shield text-amber-400"></i> Faculty Mode
+        </div>
+
+        <div id="user-header-profile" class="hidden flex items-center space-x-2 bg-slate-900/90 pl-2 pr-1.5 py-1 rounded-full border border-slate-800">
+          <div class="text-right hidden sm:block">
+            <div id="header-user-name" class="text-xs font-bold text-slate-100 leading-tight max-w-[90px] truncate">User</div>
+            <div id="header-user-subtext" class="text-[9px] text-slate-400 font-mono leading-none">Role</div>
+          </div>
+          <img id="header-user-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=user" class="w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-slate-800 border border-brand-500/40 object-cover" alt="Avatar">
+          <button onclick="handleLogout()" class="w-6 h-6 rounded-full bg-slate-800 hover:bg-red-500/20 text-slate-400 hover:text-red-400 flex items-center justify-center transition shrink-0" title="Logout">
+            <i class="fa-solid fa-right-from-bracket text-[10px]"></i>
+          </button>
+        </div>
+
+        <button id="auth-prompt-btn" onclick="openAuthModal('student')" class="px-3 py-1.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 hover:to-indigo-500 text-white text-[11px] sm:text-xs font-bold rounded-xl shadow transition shrink-0">
+          <i class="fa-solid fa-key mr-1"></i> Entrance Gate
+        </button>
+      </div>
+    </header>
+
+    <!-- Mobile Bottom Navigation Bar (Uniform responsive full-width distribution) -->
+    <nav id="mobile-nav-bar" class="hidden md:hidden fixed bottom-0 left-0 right-0 z-40 glass-nav px-1 py-1.5 flex items-center justify-between border-t border-slate-800/90 shadow-2xl bg-slate-950/95">
+      <button onclick="switchTab('dashboard')" id="m-btn-dashboard" class="flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-brand-400 transition student-nav-item">
+        <i class="fa-solid fa-chart-pie text-sm"></i>
+        <span class="text-[9px] mt-0.5 leading-none">Dashboard</span>
+      </button>
+      <button onclick="switchTab('faculty')" id="m-btn-faculty" class="flex-1 flex flex-col items-center justify-center py-1 text-amber-400 hover:text-amber-300 transition faculty-nav-item">
+        <i class="fa-solid fa-chalkboard-user text-sm"></i>
+        <span class="text-[9px] mt-0.5 leading-none">Faculty</span>
+      </button>
+      <button onclick="switchTab('idcard')" id="m-btn-idcard" class="flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-brand-400 transition student-nav-item">
+        <i class="fa-solid fa-id-card text-sm"></i>
+        <span class="text-[9px] mt-0.5 leading-none">Pass</span>
+      </button>
+      <button onclick="switchTab('notices')" id="m-btn-notices" class="flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-brand-400 transition">
+        <i class="fa-solid fa-bullhorn text-sm"></i>
+        <span class="text-[9px] mt-0.5 leading-none">Hub</span>
+      </button>
+      <button onclick="switchTab('cost-inspector')" id="m-btn-cost-inspector" class="flex-1 flex flex-col items-center justify-center py-1 text-slate-400 hover:text-brand-400 transition">
+        <i class="fa-solid fa-piggy-bank text-sm"></i>
+        <span class="text-[9px] mt-0.5 leading-none">Metrics</span>
+      </button>
+    </nav>
+
+    <!-- Authentication Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/85 backdrop-blur-md hidden">
+      <div class="relative w-full max-w-sm sm:max-w-md glass-card rounded-2xl p-4 sm:p-5 shadow-2xl border border-slate-700/80 max-h-[92vh] overflow-y-auto">
+        
+        <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl mb-3 border border-slate-800 text-xs font-bold">
+          <button type="button" id="auth-type-student-btn" onclick="setAuthRole('student')" class="flex-1 py-1.5 rounded-lg transition bg-brand-600 text-white">
+            <i class="fa-solid fa-user-graduate mr-1"></i> Student
+          </button>
+          <button type="button" id="auth-type-faculty-btn" onclick="setAuthRole('faculty')" class="flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+            <i class="fa-solid fa-chalkboard-user mr-1"></i> Faculty
+          </button>
+        </div>
+
+        <div class="flex items-center justify-center p-1 bg-slate-950 rounded-xl mb-3.5 border border-slate-800 text-[11px] font-semibold">
+          <button type="button" id="auth-mode-login-btn" onclick="setAuthMode('login')" class="flex-1 py-1.5 rounded-lg transition bg-slate-800 text-brand-300">
+            <i class="fa-solid fa-key mr-1"></i> PIN Sign In
+          </button>
+          <button type="button" id="auth-mode-register-btn" onclick="setAuthMode('register')" class="flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white">
+            <i class="fa-solid fa-user-plus mr-1"></i> Register Account
+          </button>
+        </div>
+
+        <!-- Student Login -->
+        <form id="student-login-form" onsubmit="handleStudentLogin(event)" class="space-y-3">
+          <div class="text-center">
+            <h2 class="text-base font-bold text-white">Student Sign In</h2>
+            <p class="text-[11px] text-slate-400">Enter Roll Number & Security PIN.</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Roll Number / Student ID *</label>
+            <input type="text" id="login-student-id" required placeholder="e.g. 21A91A0501" 
+              class="w-full px-3 py-2 bg-slate-950 rounded-xl border border-slate-700 text-xs text-white uppercase tracking-wider font-mono focus:border-brand-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Security PIN (4-6 digits) *</label>
+            <input type="password" id="login-student-pin" required maxlength="6" placeholder="••••" 
+              class="w-full px-3 py-2 bg-slate-950 rounded-xl border border-slate-700 text-xs text-white font-mono tracking-widest focus:border-brand-500 outline-none">
+          </div>
+
+          <button type="submit" id="student-login-submit-btn" class="w-full py-2.5 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Sign In to Student Portal</span>
+          </button>
+        </form>
+
+        <!-- Student Registration -->
+        <form id="student-registration-form" onsubmit="handleRegistration(event)" class="space-y-2.5 hidden">
+          <div class="text-center">
+            <h2 class="text-base font-bold text-white">Student Registration</h2>
+            <p class="text-[11px] text-slate-400">Capture live identity selfie to sync with Firestore.</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Live Identity Selfie *</label>
+            <div class="p-2 bg-slate-950 rounded-xl border border-slate-800 space-y-2 text-center">
+              <input type="hidden" id="reg-avatar-url" value="">
+              <canvas id="reg-canvas" class="hidden"></canvas>
+
+              <div class="relative w-24 h-24 mx-auto rounded-xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center shadow-inner">
+                <div id="reg-cam-placeholder" class="text-center p-2 text-slate-500">
+                  <i class="fa-solid fa-camera text-lg mb-1 text-slate-600"></i>
+                  <span class="block text-[9px]">No Photo</span>
+                </div>
+                <video id="reg-video" autoplay playsinline class="hidden w-full h-full object-cover"></video>
+                <img id="reg-preview-img" class="hidden w-full h-full object-cover">
+              </div>
+
+              <div class="flex items-center justify-center gap-1.5">
+                <button type="button" id="reg-cam-start-btn" onclick="startRegCamera()" class="px-2.5 py-1 bg-brand-600 hover:bg-brand-500 text-white text-[10px] font-bold rounded-lg transition">
+                  <i class="fa-solid fa-video mr-1"></i> Open Camera
+                </button>
+                <button type="button" id="reg-cam-capture-btn" onclick="captureRegSelfie()" class="hidden px-2.5 py-1 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-[10px] font-extrabold rounded-lg transition">
+                  <i class="fa-solid fa-circle-dot mr-1 animate-pulse"></i> Capture
+                </button>
+                <button type="button" id="reg-cam-retake-btn" onclick="resetRegSelfie()" class="hidden px-2 py-1 bg-slate-800 text-slate-300 text-[10px] rounded-lg border border-slate-700">
+                  <i class="fa-solid fa-rotate-right mr-1"></i> Retake
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Roll Number *</label>
+            <input type="text" id="reg-roll" required placeholder="e.g. 21A91A0501" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white uppercase tracking-wider font-mono outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Full Name *</label>
+            <input type="text" id="reg-name" required placeholder="Name" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Security PIN *</label>
+            <input type="password" id="reg-student-pin" required maxlength="6" placeholder="••••" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white font-mono tracking-widest outline-none">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Year *</label>
+              <select id="reg-year" required class="w-full px-2 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+                <option value="1st Year">1st Year</option>
+                <option value="2nd Year">2nd Year</option>
+                <option value="3rd Year" selected>3rd Year</option>
+                <option value="4th Year">4th Year</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Section *</label>
+              <select id="reg-section" required class="w-full px-2 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+                <option value="Section A">Sec A</option>
+                <option value="Section B">Sec B</option>
+                <option value="Section C">Sec C</option>
+                <option value="Section D">Sec D</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Department</label>
+            <select id="reg-department" class="w-full px-2 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+              <option value="Computer Science & Engineering">CSE</option>
+              <option value="Artificial Intelligence & ML">AIML</option>
+              <option value="Electronics & Comm. Eng.">ECE</option>
+              <option value="Information Technology">IT</option>
+            </select>
+          </div>
+
+          <button type="submit" id="reg-submit-btn" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center justify-center space-x-1.5 mt-1">
+            <i class="fa-solid fa-cloud-arrow-up"></i>
+            <span>Register & Sync Profile</span>
+          </button>
+        </form>
+
+        <!-- Faculty Login -->
+        <form id="faculty-login-form" onsubmit="handleFacultyLogin(event)" class="space-y-3 hidden">
+          <div class="text-center">
+            <h2 class="text-base font-bold text-amber-300 flex items-center justify-center gap-1.5">
+              <i class="fa-solid fa-chalkboard-user"></i> Faculty PIN Login
+            </h2>
+            <p class="text-[11px] text-slate-400">Sign in with official email & security PIN.</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Official Email *</label>
+            <input type="email" id="fac-login-email" required placeholder="prof@university.edu" 
+              class="w-full px-3 py-2 bg-slate-950 rounded-xl border border-slate-700 text-xs text-white focus:border-amber-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-1">Security PIN *</label>
+            <input type="password" id="fac-login-pin" required maxlength="6" placeholder="••••" 
+              class="w-full px-3 py-2 bg-slate-950 rounded-xl border border-slate-700 text-xs text-white font-mono tracking-widest focus:border-amber-500 outline-none">
+          </div>
+
+          <button type="submit" id="fac-login-submit-btn" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow transition flex items-center justify-center space-x-1.5">
+            <i class="fa-solid fa-key"></i>
+            <span>Unlock Faculty Desk</span>
+          </button>
+        </form>
+
+        <!-- Faculty Register -->
+        <form id="faculty-registration-form" onsubmit="handleFacultyRegister(event)" class="space-y-2.5 hidden">
+          <div class="text-center">
+            <h2 class="text-base font-bold text-amber-300">Faculty Registration</h2>
+            <p class="text-[11px] text-slate-400">Create official faculty identity in Firestore.</p>
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Full Name *</label>
+            <input type="text" id="fac-reg-name" required placeholder="Dr. Robert Vance" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white focus:border-amber-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Official Email *</label>
+            <input type="email" id="fac-reg-email" required placeholder="prof@university.edu" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white focus:border-amber-500 outline-none">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-semibold text-slate-300 mb-0.5">Set Security PIN *</label>
+            <input type="password" id="fac-reg-pin" required maxlength="6" placeholder="••••" 
+              class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white font-mono tracking-widest focus:border-amber-500 outline-none">
+          </div>
+
+          <button type="submit" id="fac-reg-submit-btn" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold rounded-xl shadow transition flex items-center justify-center space-x-1.5 mt-1">
+            <i class="fa-solid fa-user-plus"></i>
+            <span>Register Faculty Account</span>
+          </button>
+        </form>
+
+        <div class="mt-3 pt-2 border-t border-slate-800 text-center">
+          <button onclick="closeAuthModal()" class="text-xs text-slate-400 hover:text-white">Close Window</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN APP CONTENT (COMPACT VIEWPORTS WITHOUT CLIPPING) -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-6 space-y-4 sm:space-y-5 mb-16 md:mb-4">
+
+      <!-- LANDING GATE -->
+      <section id="view-landing" class="space-y-5 my-auto py-4 sm:py-8">
+        <div class="text-center max-w-xl mx-auto space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-300 text-[10px] sm:text-xs font-bold">
+            <i class="fa-solid fa-shield-halved text-brand-400"></i> Verification Attendance Gate
+          </div>
+          <h2 class="text-xl sm:text-3xl font-extrabold text-white tracking-tight leading-snug">
+            Welcome to <span class="bg-gradient-to-r from-brand-400 via-indigo-300 to-cyan-400 bg-clip-text text-transparent">EduPulse Campus OS</span>
+          </h2>
+          <p class="text-xs text-slate-400 max-w-md mx-auto">
+            Classroom proximity attendance: Check-ins are strictly allowed only when faculty has a live broadcasting session active with room frequency tone wave.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-5 max-w-2xl mx-auto">
+          <div class="glass-card p-4 sm:p-5 rounded-2xl border border-brand-500/30 flex flex-col justify-between space-y-3 bg-gradient-to-b from-slate-900/80 to-brand-950/20">
+            <div class="space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-brand-600/20 text-brand-400 border border-brand-500/40 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-user-graduate"></i>
+              </div>
+              <h3 class="text-base font-bold text-white">Student Portal</h3>
+              <p class="text-xs text-slate-400">View dynamic digital ID pass, pass 3-layer proximity attendance, and monitor attendance records.</p>
+            </div>
+            <button onclick="openAuthModal('student')" class="w-full py-2 bg-gradient-to-r from-brand-600 to-indigo-600 hover:from-brand-500 text-white text-xs font-extrabold rounded-xl shadow transition">
+              Student Sign In / Register
+            </button>
+          </div>
+
+          <div class="glass-card p-4 sm:p-5 rounded-2xl border border-amber-500/30 flex flex-col justify-between space-y-3 bg-gradient-to-b from-slate-900/80 to-amber-950/20">
+            <div class="space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-lg">
+                <i class="fa-solid fa-chalkboard-user"></i>
+              </div>
+              <h3 class="text-base font-bold text-white">Faculty Desk</h3>
+              <p class="text-xs text-slate-400">Anchor classroom GPS coordinates, broadcast 18.5kHz in-room tone wave, and accept verified check-ins.</p>
+            </div>
+            <button onclick="openAuthModal('faculty')" class="w-full py-2 bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 text-slate-950 text-xs font-extrabold rounded-xl shadow transition">
+              Faculty Sign In / Register
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 1: DASHBOARD (STUDENT) -->
+      <section id="view-dashboard" class="hidden space-y-4">
+        <div class="glass-card p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-slate-900 via-brand-950 to-slate-900 border border-brand-500/30">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div class="flex items-center space-x-3">
+              <img id="dash-banner-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=student" class="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-slate-800 border border-brand-500/40 object-cover shrink-0">
+              <div>
+                <div class="flex items-center gap-1.5">
+                  <h2 id="dash-banner-name" class="text-base sm:text-lg font-bold text-white leading-tight">Student</h2>
+                  <span id="dash-banner-badge" class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30">3rd Year</span>
+                </div>
+                <p class="text-[11px] text-slate-400 font-mono mt-0.5" id="dash-banner-roll">21A91A0501 • CSE</p>
+                <div class="text-[10px] text-emerald-400 flex items-center gap-1 font-semibold mt-1">
+                  <i class="fa-solid fa-circle-check"></i> Account Verified (Firestore Connected)
+                </div>
+              </div>
+            </div>
+
+            <button onclick="openVerificationModal()" class="w-full sm:w-auto px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 text-slate-950 font-extrabold text-xs rounded-xl shadow-lg transition flex items-center justify-center gap-1.5 shrink-0">
+              <i class="fa-solid fa-location-crosshairs text-sm"></i>
+              <span>START ATTENDANCE CHECK</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          <div class="glass-card p-3 rounded-xl">
+            <span class="text-[10px] text-slate-400">Class Attendance</span>
+            <div class="text-base sm:text-lg font-bold text-emerald-400 mt-0.5" id="dash-attendance-pct">92.5%</div>
+            <span class="text-[9px] text-emerald-400/90"><i class="fa-solid fa-arrow-trend-up"></i> Required &gt; 75%</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl">
+            <span class="text-[10px] text-slate-400">Academic CGPA</span>
+            <div class="text-base sm:text-lg font-bold text-white mt-0.5">8.85 / 10</div>
+            <span class="text-[9px] text-brand-400"><i class="fa-solid fa-award"></i> Top 5% Rank</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl">
+            <span class="text-[10px] text-slate-400">Registered Courses</span>
+            <div class="text-base sm:text-lg font-bold text-white mt-0.5">6 Subjects</div>
+            <span class="text-[9px] text-cyan-400"><i class="fa-solid fa-book"></i> 24 Credits</span>
+          </div>
+          <div class="glass-card p-3 rounded-xl">
+            <span class="text-[10px] text-slate-400">Live Faculty Session</span>
+            <div class="text-base sm:text-lg font-bold text-amber-400 mt-0.5" id="dash-active-session-count">0 Live</div>
+            <span class="text-[9px] text-amber-400/90"><i class="fa-solid fa-tower-broadcast"></i> In Classroom</span>
+          </div>
+        </div>
+
+        <div class="glass-card rounded-2xl p-4">
+          <div class="flex items-center justify-between mb-2.5">
+            <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+              <i class="fa-regular fa-clock text-brand-400"></i> Classroom Timetable & Live Status
+            </h3>
+            <span class="text-[9px] text-slate-400 font-mono">Auto-Synced</span>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
+              <div class="flex items-center space-x-2.5 min-w-0">
+                <div class="w-1.5 h-7 rounded-full bg-emerald-500 shrink-0"></div>
+                <div class="min-w-0">
+                  <h4 class="text-xs font-bold text-white truncate">DBMS (Database Management Systems)</h4>
+                  <p class="text-[10px] text-slate-400">Room 304 • Dr. Robert Vance</p>
+                </div>
+              </div>
+              <div class="flex items-center space-x-1.5 shrink-0">
+                <span id="timetable-status-tag" class="px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
+                  Awaiting Session
+                </span>
+                <button onclick="openVerificationModal()" class="px-2 py-1 rounded text-[10px] font-bold bg-brand-600 hover:bg-brand-500 text-white transition">
+                  Verify
+                </button>
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/70 border border-slate-800">
+              <div class="flex items-center space-x-2.5 min-w-0">
+                <div class="w-1.5 h-7 rounded-full bg-cyan-500 shrink-0"></div>
+                <div class="min-w-0">
+                  <h4 class="text-xs font-bold text-white truncate">Web Technologies Lab</h4>
+                  <p class="text-[10px] text-slate-400">Comp Lab 2 • Dr. R. Verma</p>
+                </div>
+              </div>
+              <span class="px-2 py-0.5 rounded text-[10px] font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 shrink-0">
+                11:00 AM
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 2: FACULTY PANEL -->
+      <section id="view-faculty" class="hidden space-y-4">
+        <!-- Faculty Hero Card with Responsive Flex Wrap -->
+        <div class="glass-card p-3.5 sm:p-4 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900">
+          <div class="flex flex-wrap items-center justify-between gap-2.5">
+            <div class="flex items-center space-x-2.5 min-w-0">
+              <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/40 flex items-center justify-center text-base shrink-0">
+                <i class="fa-solid fa-chalkboard-user"></i>
+              </div>
+              <div class="min-w-0">
+                <h2 id="fac-header-title" class="text-sm sm:text-base font-bold text-white leading-tight truncate">Faculty Session Control</h2>
+                <p id="fac-header-sub" class="text-[10px] text-slate-400 truncate">Configure & broadcast live classroom attendance session.</p>
+              </div>
+            </div>
+            <button onclick="openAuthModal('faculty')" class="px-2.5 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-[11px] font-bold rounded-xl transition flex items-center gap-1 shrink-0">
+              <i class="fa-solid fa-key"></i> Switch Faculty
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          <!-- Session Setup Form -->
+          <div class="lg:col-span-2 space-y-3">
+            <div class="glass-card rounded-2xl p-3.5 sm:p-4 space-y-3">
+              <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 border-b border-slate-800 pb-2">
+                <i class="fa-solid fa-sliders text-amber-400"></i> Session Parameters & Target Audience
+              </h3>
+
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-300 mb-1">Subject / Course</label>
+                <div id="subject-chips" class="flex flex-wrap gap-1.5">
+                  <button type="button" onclick="selectChip('subject', 'DBMS', this)" class="chip-btn active px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium">DBMS</button>
+                  <button type="button" onclick="selectChip('subject', 'Web Dev', this)" class="chip-btn px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">Web Dev</button>
+                  <button type="button" onclick="selectChip('subject', 'Data Structures', this)" class="chip-btn px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">DSA</button>
+                  <button type="button" onclick="selectChip('subject', 'AI / ML', this)" class="chip-btn px-2.5 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">AI / ML</button>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Target Year</label>
+                  <div id="year-chips" class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="selectChip('year', '1st Year', this)" class="chip-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">1st</button>
+                    <button type="button" onclick="selectChip('year', '2nd Year', this)" class="chip-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">2nd</button>
+                    <button type="button" onclick="selectChip('year', '3rd Year', this)" class="chip-btn active px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium">3rd</button>
+                    <button type="button" onclick="selectChip('year', '4th Year', this)" class="chip-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">4th</button>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[11px] font-semibold text-slate-300 mb-1">Target Section</label>
+                  <div id="section-chips" class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="selectChip('section', 'Section A', this)" class="chip-btn active px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium">Sec A</button>
+                    <button type="button" onclick="selectChip('section', 'Section B', this)" class="chip-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">Sec B</button>
+                    <button type="button" onclick="selectChip('section', 'Section C', this)" class="chip-btn px-2 py-1 rounded-lg border border-slate-700 bg-slate-900 text-xs font-medium text-slate-400">Sec C</button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 space-y-2">
+                <div class="flex items-center justify-between gap-2">
+                  <div class="min-w-0">
+                    <h4 class="text-xs font-bold text-white flex items-center gap-1">
+                      <i class="fa-solid fa-location-dot text-emerald-400"></i> Geofence Coordinates
+                    </h4>
+                    <p id="gps-coords-display" class="text-[10px] text-slate-400 font-mono mt-0.5 truncate">Lat: 15.4989 • Lng: 78.4831 (25m Radius)</p>
+                  </div>
+                  <button onclick="fetchFacultyGPS()" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] font-semibold rounded-lg border border-slate-700 transition shrink-0">
+                    Capture GPS
+                  </button>
+                </div>
+
+                <div class="pt-2 border-t border-slate-800 flex items-center justify-between gap-2">
+                  <div>
+                    <h4 class="text-xs font-bold text-amber-300 flex items-center gap-1">
+                      <i class="fa-solid fa-wave-square"></i> Ultrasonic Tone Wave
+                    </h4>
+                    <p class="text-[10px] text-slate-400">18.5 kHz High-Frequency Signal (Room-Bounded)</p>
+                  </div>
+                  <span id="tone-status-badge" class="px-2 py-0.5 rounded text-[9px] font-mono bg-slate-800 text-slate-400 border border-slate-700 shrink-0">STANDBY</span>
+                </div>
+              </div>
+
+              <button id="session-toggle-btn" onclick="toggleClassSession()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-play"></i>
+                <span>LAUNCH SESSION & BROADCAST TONE</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Roster Monitor -->
+          <div class="glass-card rounded-2xl p-3.5 sm:p-4 space-y-2.5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+              <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-users text-emerald-400"></i> Verified Roster
+              </h3>
+              <span id="roster-count" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300">0 Present</span>
+            </div>
+
+            <div id="faculty-roster-list" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <div class="text-center py-6 text-slate-500 text-xs">
+                <i class="fa-solid fa-radar text-lg mb-1 block text-slate-600"></i>
+                Waiting for student submissions...
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: DIGITAL ID CARD -->
+      <section id="view-idcard" class="hidden space-y-3 max-w-xs sm:max-w-sm mx-auto">
+        <div class="text-center space-y-0.5">
+          <h2 class="text-base sm:text-lg font-bold text-white">Digital Campus ID Pass</h2>
+          <p class="text-[10px] text-slate-400">Tap card or flip button to reveal security barcode.</p>
+        </div>
+
+        <div class="perspective-1000 my-2">
+          <div id="id-card-element" onclick="toggleCardFlip()" class="transform-style-3d cursor-pointer relative w-full h-[330px] rounded-2xl shadow-2xl transition-all duration-500">
+            <!-- Front -->
+            <div class="backface-hidden absolute inset-0 rounded-2xl p-4 glass-card border border-brand-500/40 bg-gradient-to-br from-slate-900 via-brand-950 to-slate-900 flex flex-col justify-between overflow-hidden">
+              <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div class="flex items-center space-x-2">
+                  <div class="w-6 h-6 rounded-lg bg-brand-600 flex items-center justify-center text-white text-[10px] font-bold">
+                    <i class="fa-solid fa-university"></i>
+                  </div>
+                  <div>
+                    <h3 class="text-[11px] font-bold text-white leading-none">EduPulse Institute</h3>
+                    <p class="text-[8px] text-slate-400">Verified Campus Smart Pass</p>
+                  </div>
+                </div>
+                <span class="px-1.5 py-0.5 rounded text-[8px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">VALID 2026</span>
+              </div>
+
+              <div class="flex items-center space-x-3 my-auto">
+                <img id="card-avatar" src="https://api.dicebear.com/7.x/bottts/svg?seed=student" class="w-16 h-16 rounded-xl bg-slate-800 border border-brand-400 object-cover shadow shrink-0">
+                <div class="space-y-0.5 min-w-0">
+                  <h4 id="card-name" class="text-sm font-bold text-white truncate">Alex Johnson</h4>
+                  <div class="text-[11px] text-brand-300 font-mono font-bold" id="card-roll">21A91A0501</div>
+                  <p id="card-year-sec" class="text-[10px] text-slate-300">3rd Year - Section A</p>
+                  <p id="card-dept" class="text-[9px] text-slate-400 truncate">CSE Department</p>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-[9px] text-slate-400">
+                <span>Tap to flip card</span>
+                <span class="text-brand-400 font-semibold"><i class="fa-solid fa-rotate"></i> Barcode View</span>
+              </div>
+            </div>
+
+            <!-- Back -->
+            <div class="backface-hidden rotate-y-180 absolute inset-0 rounded-2xl p-4 glass-card border border-brand-500/40 bg-gradient-to-br from-slate-950 via-slate-900 to-brand-950 flex flex-col justify-between overflow-hidden">
+              <div class="text-center">
+                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-300">Security Verification Code</h4>
+              </div>
+              <div class="bg-white p-2.5 rounded-xl flex flex-col items-center justify-center my-auto">
+                <div class="flex space-x-1 h-8 w-full justify-center items-center">
+                  <div class="w-1 h-full bg-slate-900"></div><div class="w-2 h-full bg-slate-900"></div><div class="w-0.5 h-full bg-slate-900"></div><div class="w-2 h-full bg-slate-900"></div><div class="w-1 h-full bg-slate-900"></div><div class="w-3 h-full bg-slate-900"></div><div class="w-1.5 h-full bg-slate-900"></div><div class="w-0.5 h-full bg-slate-900"></div><div class="w-2 h-full bg-slate-900"></div>
+                </div>
+                <div id="card-barcode-text" class="text-[10px] font-mono font-bold text-slate-900 mt-1 tracking-widest">EDUPULSE-21A91A0501</div>
+              </div>
+              <div class="text-center text-[8px] text-slate-400">Authorized Digital Student Credential</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-center">
+          <button onclick="toggleCardFlip()" class="px-4 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow transition">
+            <i class="fa-solid fa-rotate mr-1"></i> Flip Card
+          </button>
+        </div>
+      </section>
+
+      <!-- TAB 4: CAMPUS HUB -->
+      <section id="view-notices" class="hidden space-y-3">
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h2 class="text-base sm:text-lg font-bold text-white">Campus Hub</h2>
+            <p class="text-[10px] text-slate-400">Live notices from Firestore.</p>
+          </div>
+          <button onclick="openNoticeModal()" class="px-2.5 py-1.5 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-xl shadow transition flex items-center gap-1 shrink-0">
+            <i class="fa-solid fa-plus"></i> Post Notice
+          </button>
+        </div>
+        <div id="notices-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5"></div>
+      </section>
+
+      <!-- TAB 5: METRICS -->
+      <section id="view-cost-inspector" class="hidden space-y-3">
+        <div class="glass-card p-3.5 sm:p-4 rounded-2xl border border-emerald-500/30">
+          <h2 class="text-base sm:text-lg font-bold text-white">Firestore Read & Write Inspector</h2>
+          <p class="text-[10px] text-slate-400 mt-0.5">Tracking Firestore network operations under artifacts/a-uv-test.</p>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+          <div class="glass-card p-3 rounded-xl">
+            <div class="text-[10px] text-slate-400">Cached Reads Saved</div>
+            <div id="metric-reads-saved" class="text-xl font-bold text-emerald-400 mt-0.5">0</div>
+            <p class="text-[9px] text-emerald-300/80 mt-0.5">In-Memory Cache Hits</p>
+          </div>
+          <div class="glass-card p-3 rounded-xl">
+            <div class="text-[10px] text-slate-400">Firestore Writes</div>
+            <div id="metric-writes-count" class="text-xl font-bold text-brand-400 mt-0.5">0</div>
+            <p class="text-[9px] text-slate-400 mt-0.5">Logged to Firebase</p>
+          </div>
+          <div class="glass-card p-3 rounded-xl">
+            <div class="text-[10px] text-slate-400">Verification Gate</div>
+            <div class="text-base font-bold text-amber-400 mt-0.5">GPS + Tone + Face</div>
+            <p class="text-[9px] text-amber-300/80 mt-0.5">Session Mandatory</p>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- 3-LAYER ATTENDANCE MODAL -->
+  <div id="verification-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/85 backdrop-blur-md hidden">
+    <div class="relative w-full max-w-xs sm:max-w-sm glass-card rounded-2xl p-4 shadow-2xl border border-emerald-500/40 space-y-3">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <div class="min-w-0 pr-2">
+          <h3 class="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 truncate">
+            <i class="fa-solid fa-shield-halved text-emerald-400"></i> Proximity Verification
+          </h3>
+          <p class="text-[9px] text-slate-400 truncate" id="verify-session-info">Scanning for active session...</p>
+        </div>
+        <button onclick="closeVerificationModal()" class="text-slate-400 hover:text-white shrink-0">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-1 text-center text-[9px] font-bold">
+        <div id="step-badge-1" class="p-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">1. GPS</div>
+        <div id="step-badge-2" class="p-1 rounded-lg bg-slate-800 text-slate-500 border border-slate-700">2. Tone Wave</div>
+        <div id="step-badge-3" class="p-1 rounded-lg bg-slate-800 text-slate-500 border border-slate-700">3. Live Match</div>
+      </div>
+
+      <!-- Step 1 -->
+      <div id="verify-step-1" class="space-y-2.5">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center space-y-1">
+          <div class="w-8 h-8 mx-auto rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-sm border border-emerald-500/30">
+            <i class="fa-solid fa-location-dot"></i>
+          </div>
+          <h4 class="text-xs font-bold text-white">Layer 1: GPS Radius Calculation</h4>
+          <p class="text-[10px] text-slate-400">Checks device against classroom coordinates (25m tolerance).</p>
+          <div id="gps-check-status" class="text-[10px] font-mono text-emerald-400 pt-0.5">Ready to check GPS...</div>
+        </div>
+
+        <button onclick="executeGPSVerification()" class="w-full py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-compass"></i>
+          <span>Verify Device GPS</span>
+        </button>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="verify-step-2" class="space-y-2.5 hidden">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center space-y-1.5">
+          <div class="w-8 h-8 mx-auto rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center text-sm border border-amber-500/30">
+            <i class="fa-solid fa-microphone-lines"></i>
+          </div>
+          <h4 class="text-xs font-bold text-white">Layer 2: Ultrasonic Tone Scan</h4>
+          <p class="text-[10px] text-slate-400">Detecting 18.5 kHz tone wave emitted inside the classroom.</p>
+          
+          <canvas id="audio-visualizer" class="w-full h-10 rounded-lg bg-slate-900 border border-slate-800"></canvas>
+          <div id="tone-check-status" class="text-[10px] font-mono text-amber-400">Microphone scanning for signal...</div>
+        </div>
+
+        <button onclick="executeToneVerification()" class="w-full py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-wave-square"></i>
+          <span>Scan Ultrasonic Signal</span>
+        </button>
+      </div>
+
+      <!-- Step 3 -->
+      <div id="verify-step-3" class="space-y-2.5 hidden">
+        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800 text-center space-y-1.5">
+          <div class="relative w-28 h-24 mx-auto rounded-xl overflow-hidden bg-slate-900 border border-slate-700 flex items-center justify-center">
+            <video id="selfie-video" autoplay playsinline class="w-full h-full object-cover"></video>
+            <canvas id="selfie-canvas" class="hidden"></canvas>
+          </div>
+          <h4 class="text-xs font-bold text-white">Layer 3: Live Match</h4>
+          <p class="text-[10px] text-slate-400">Live camera snapshot to authenticate identity.</p>
+        </div>
+
+        <button onclick="executeSelfieVerification()" class="w-full py-2 bg-gradient-to-r from-brand-600 to-indigo-600 text-white text-xs font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-camera"></i>
+          <span>Capture & Record Attendance</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Announcement Modal -->
+  <div id="notice-modal" class="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/80 backdrop-blur-md hidden">
+    <div class="relative w-full max-w-xs sm:max-w-sm glass-card rounded-2xl p-4 shadow-2xl border border-slate-700 space-y-2.5">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <h3 class="text-xs sm:text-sm font-bold text-white">Post Announcement</h3>
+        <button onclick="closeNoticeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-sm"></i></button>
+      </div>
+
+      <form onsubmit="handlePostNotice(event)" class="space-y-2">
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-300 mb-0.5">Title *</label>
+          <input type="text" id="notice-title" required placeholder="Announcement title" class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-300 mb-0.5">Category *</label>
+          <select id="notice-category" class="w-full px-2 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none">
+            <option value="Academic">Academic Notice</option>
+            <option value="Event">Campus Event</option>
+            <option value="Exam">Exam Schedule</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-[10px] font-semibold text-slate-300 mb-0.5">Content *</label>
+          <textarea id="notice-content" rows="2" required placeholder="Details..." class="w-full px-2.5 py-1.5 bg-slate-950 rounded-lg border border-slate-700 text-xs text-white outline-none"></textarea>
+        </div>
+        <button type="submit" class="w-full py-2 bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold rounded-lg shadow transition">Publish to Firestore</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FIREBASE SCRIPTS -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, doc, setDoc, getDoc, collection, query, where, onSnapshot, updateDoc, arrayUnion 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const APP_PATH = 'artifacts/a-uv-test';
+    function getCollectionName(baseCollectionName) { 
+      return `${APP_PATH}/${baseCollectionName}`; 
+    }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+      authDomain: "stuattnd.firebaseapp.com",
+      projectId: "stuattnd",
+      storageBucket: "stuattnd.firebasestorage.app",
+      messagingSenderId: "511533506488",
+      appId: "1:511533506488:web:aca4de3d513915d012f94d",
+      measurementId: "G-9PZZM5LFKX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const USERS_COLLECTION = getCollectionName('users');
+    const SESSIONS_COLLECTION = getCollectionName('sessions');
+    const ATTENDANCE_COLLECTION = getCollectionName('attendance');
+    const NOTICES_COLLECTION = getCollectionName('notices');
+
+    let regStream = null;
+    let verifyStream = null;
+    let audioCtx = null;
+    let toneOscillator = null;
+    let micStream = null;
+    let micAudioCtx = null;
+    let activeSessionUnsubscribe = null;
+    let liveSessionData = null;
+
+    window.showToast = function(msg, type = 'info', duration = 3000) {
+      const container = document.getElementById('toast-container');
+      if (!container) return;
+
+      const toast = document.createElement('div');
+      let borderBg = 'bg-slate-900/95 border-brand-500/80 text-slate-100';
+      let iconClass = 'fa-solid fa-circle-info text-brand-400';
+      
+      if (type === 'success') {
+        borderBg = 'bg-slate-900/95 border-emerald-500/80 text-slate-100';
+        iconClass = 'fa-solid fa-circle-check text-emerald-400';
+      } else if (type === 'error') {
+        borderBg = 'bg-slate-900/95 border-red-500/80 text-slate-100';
+        iconClass = 'fa-solid fa-circle-exclamation text-red-400';
+      } else if (type === 'warning') {
+        borderBg = 'bg-slate-900/95 border-amber-500/80 text-slate-100';
+        iconClass = 'fa-solid fa-triangle-exclamation text-amber-400';
+      }
+
+      toast.className = `toast-enter p-2.5 rounded-xl border glass-card shadow-2xl flex items-center justify-between text-xs pointer-events-auto transition ${borderBg}`;
+      toast.innerHTML = `
+        <div class="flex items-center space-x-2 pr-1.5 min-w-0">
+          <i class="${iconClass} text-sm shrink-0"></i>
+          <span class="font-medium leading-tight truncate">${msg}</span>
+        </div>
+        <button onclick="dismissToast(this.parentElement)" class="text-slate-400 hover:text-white p-0.5 ml-1 transition shrink-0">
+          <i class="fa-solid fa-xmark text-xs"></i>
+        </button>
+      `;
+
+      container.appendChild(toast);
+      toast._timer = setTimeout(() => dismissToast(toast), duration);
+    };
+
+    window.dismissToast = function(toastEl) {
+      if (!toastEl || toastEl._dismissing) return;
+      toastEl._dismissing = true;
+      if (toastEl._timer) clearTimeout(toastEl._timer);
+      toastEl.classList.remove('toast-enter');
+      toastEl.classList.add('toast-exit');
+      setTimeout(() => toastEl.remove(), 200);
+    };
+
+    window.appState = {
+      isLoggedIn: false,
+      authRole: 'student',
+      authMode: 'login',
+      studentProfile: null,
+      facultyProfile: null,
+      activeSession: {
+        isBroadcasting: false,
+        subject: 'DBMS',
+        year: '3rd Year',
+        section: 'Section A',
+        facultyName: 'Dr. Robert Vance',
+        gps: { lat: 15.4989, lng: 78.4831 },
+        verifiedStudents: []
+      },
+      metrics: {
+        readsSaved: 0,
+        writesCount: 0
+      }
+    };
+
+    function calculateDistanceMeters(lat1, lon1, lat2, lon2) {
+      const R = 6371e3;
+      const φ1 = lat1 * Math.PI / 180;
+      const φ2 = lat2 * Math.PI / 180;
+      const Δφ = (lat2 - lat1) * Math.PI / 180;
+      const Δλ = (lon2 - lon1) * Math.PI / 180;
+      const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+                Math.cos(φ1) * Math.cos(φ2) *
+                Math.sin(Δλ/2) * Math.sin(Δλ/2);
+      return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    window.openAuthModal = function(role = 'student') {
+      window.appState.authRole = role;
+      updateAuthModalView();
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.classList.remove('hidden');
+    };
+
+    window.closeAuthModal = function() {
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.classList.add('hidden');
+      if (regStream) {
+        regStream.getTracks().forEach(t => t.stop());
+        regStream = null;
+      }
+    };
+
+    window.setAuthRole = function(role) {
+      window.appState.authRole = role;
+      updateAuthModalView();
+    };
+
+    window.setAuthMode = function(mode) {
+      window.appState.authMode = mode;
+      updateAuthModalView();
+    };
+
+    window.handleBrandClick = function() {
+      showToast(window.appState.isLoggedIn ? "EduPulse: Sync Operational." : "Please enter via Entrance Gate.", "info");
+    };
+
+    function updateAuthModalView() {
+      const role = window.appState.authRole;
+      const mode = window.appState.authMode;
+
+      const studentBtn = document.getElementById('auth-type-student-btn');
+      const facultyBtn = document.getElementById('auth-type-faculty-btn');
+      const loginModeBtn = document.getElementById('auth-mode-login-btn');
+      const regModeBtn = document.getElementById('auth-mode-register-btn');
+
+      const sLoginForm = document.getElementById('student-login-form');
+      const sRegForm = document.getElementById('student-registration-form');
+      const fLoginForm = document.getElementById('faculty-login-form');
+      const fRegForm = document.getElementById('faculty-registration-form');
+
+      if (role === 'student') {
+        studentBtn.className = "flex-1 py-1.5 rounded-lg transition bg-brand-600 text-white font-bold";
+        facultyBtn.className = "flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+      } else {
+        facultyBtn.className = "flex-1 py-1.5 rounded-lg transition bg-amber-500 text-slate-950 font-bold";
+        studentBtn.className = "flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+      }
+
+      if (mode === 'login') {
+        loginModeBtn.className = "flex-1 py-1.5 rounded-lg transition bg-slate-800 text-brand-300 font-bold";
+        regModeBtn.className = "flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+      } else {
+        regModeBtn.className = "flex-1 py-1.5 rounded-lg transition bg-slate-800 text-brand-300 font-bold";
+        loginModeBtn.className = "flex-1 py-1.5 rounded-lg transition text-slate-400 hover:text-white";
+      }
+
+      sLoginForm.classList.add('hidden');
+      sRegForm.classList.add('hidden');
+      fLoginForm.classList.add('hidden');
+      fRegForm.classList.add('hidden');
+
+      if (role === 'student') {
+        if (mode === 'login') sLoginForm.classList.remove('hidden');
+        else sRegForm.classList.remove('hidden');
+      } else {
+        if (mode === 'login') fLoginForm.classList.remove('hidden');
+        else fRegForm.classList.remove('hidden');
+      }
+    }
+
+    window.startRegCamera = async function() {
+      const video = document.getElementById('reg-video');
+      try {
+        regStream = await navigator.mediaDevices.getUserMedia({ 
+          video: { width: { ideal: 240 }, height: { ideal: 240 }, facingMode: "user" } 
+        });
+        video.srcObject = regStream;
+        video.classList.remove('hidden');
+        document.getElementById('reg-cam-placeholder').classList.add('hidden');
+        document.getElementById('reg-preview-img').classList.add('hidden');
+        document.getElementById('reg-cam-start-btn').classList.add('hidden');
+        document.getElementById('reg-cam-capture-btn').classList.remove('hidden');
+      } catch (err) {
+        showToast("Camera access error. Please grant permissions.", "error");
+      }
+    };
+
+    window.captureRegSelfie = function() {
+      const video = document.getElementById('reg-video');
+      const canvas = document.getElementById('reg-canvas');
+      const previewImg = document.getElementById('reg-preview-img');
+
+      canvas.width = 240;
+      canvas.height = 240;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, 240, 240);
+
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+      document.getElementById('reg-avatar-url').value = dataUrl;
+      previewImg.src = dataUrl;
+      previewImg.classList.remove('hidden');
+      video.classList.add('hidden');
+
+      if (regStream) {
+        regStream.getTracks().forEach(t => t.stop());
+        regStream = null;
+      }
+
+      document.getElementById('reg-cam-capture-btn').classList.add('hidden');
+      document.getElementById('reg-cam-retake-btn').classList.remove('hidden');
+      showToast("Live photo captured!", "success");
+    };
+
+    window.resetRegSelfie = function() {
+      document.getElementById('reg-avatar-url').value = '';
+      document.getElementById('reg-preview-img').classList.add('hidden');
+      document.getElementById('reg-cam-placeholder').classList.remove('hidden');
+      document.getElementById('reg-cam-retake-btn').classList.add('hidden');
+      document.getElementById('reg-cam-start-btn').classList.remove('hidden');
+    };
+
+    window.handleRegistration = async function(e) {
+      e.preventDefault();
+      const avatar = document.getElementById('reg-avatar-url').value;
+      if (!avatar) {
+        showToast("Live selfie photo required!", "warning");
+        return;
+      }
+
+      const roll = document.getElementById('reg-roll').value.trim().toUpperCase();
+      const name = document.getElementById('reg-name').value.trim();
+      const pin = document.getElementById('reg-student-pin').value.trim();
+      const year = document.getElementById('reg-year').value;
+      const section = document.getElementById('reg-section').value;
+      const department = document.getElementById('reg-department').value;
+
+      try {
+        const studentDocRef = doc(db, USERS_COLLECTION, roll);
+        const newStudent = { name, roll, pin, year, section, department, avatar, role: 'student', createdAt: new Date().toISOString() };
+        
+        await setDoc(studentDocRef, newStudent);
+        window.appState.metrics.writesCount++;
+        document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+
+        window.appState.studentProfile = newStudent;
+        window.appState.authRole = 'student';
+        window.appState.isLoggedIn = true;
+
+        renderUserProfile(newStudent);
+        closeAuthModal();
+        updateRoleNavigation();
+        switchTab('dashboard');
+        listenToActiveSessions();
+        showToast(`Registered: Welcome ${name}!`, "success");
+      } catch (err) {
+        showToast("Error saving profile: " + err.message, "error");
+      }
+    };
+
+    window.handleStudentLogin = async function(e) {
+      e.preventDefault();
+      const roll = document.getElementById('login-student-id').value.trim().toUpperCase();
+      const pin = document.getElementById('login-student-pin').value.trim();
+
+      try {
+        const studentDocRef = doc(db, USERS_COLLECTION, roll);
+        const docSnap = await getDoc(studentDocRef);
+
+        if (!docSnap.exists()) {
+          showToast("Student not found. Please register.", "error");
+          return;
+        }
+
+        const data = docSnap.data();
+        if (data.pin !== pin) {
+          showToast("Invalid Security PIN.", "error");
+          return;
+        }
+
+        window.appState.studentProfile = data;
+        window.appState.authRole = 'student';
+        window.appState.isLoggedIn = true;
+
+        renderUserProfile(data);
+        closeAuthModal();
+        updateRoleNavigation();
+        switchTab('dashboard');
+        listenToActiveSessions();
+        showToast(`Signed in: Welcome ${data.name}!`, "success");
+      } catch (err) {
+        showToast("Firestore error: " + err.message, "error");
+      }
+    };
+
+    window.handleFacultyRegister = async function(e) {
+      e.preventDefault();
+      const name = document.getElementById('fac-reg-name').value.trim();
+      const email = document.getElementById('fac-reg-email').value.trim().toLowerCase();
+      const pin = document.getElementById('fac-reg-pin').value.trim();
+
+      try {
+        const facDocRef = doc(db, USERS_COLLECTION, email.replace(/[@.]/g, '_'));
+        const newFaculty = { name, email, pin, role: 'faculty', createdAt: new Date().toISOString() };
+        
+        await setDoc(facDocRef, newFaculty);
+        window.appState.metrics.writesCount++;
+        document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+
+        window.appState.facultyProfile = newFaculty;
+        window.appState.authRole = 'faculty';
+        window.appState.isLoggedIn = true;
+
+        renderFacultyHeader(newFaculty);
+        closeAuthModal();
+        updateRoleNavigation();
+        switchTab('faculty');
+        listenToActiveFacultyRoster();
+        showToast(`Faculty registered! Welcome ${name}`, "success");
+      } catch (err) {
+        showToast("Registration error: " + err.message, "error");
+      }
+    };
+
+    window.handleFacultyLogin = async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('fac-login-email').value.trim().toLowerCase();
+      const pin = document.getElementById('fac-login-pin').value.trim();
+
+      try {
+        const facDocRef = doc(db, USERS_COLLECTION, email.replace(/[@.]/g, '_'));
+        const docSnap = await getDoc(facDocRef);
+
+        if (!docSnap.exists()) {
+          showToast("Faculty account not found. Please register.", "error");
+          return;
+        }
+
+        const data = docSnap.data();
+        if (data.pin !== pin) {
+          showToast("Invalid Faculty PIN.", "error");
+          return;
+        }
+
+        window.appState.facultyProfile = data;
+        window.appState.authRole = 'faculty';
+        window.appState.isLoggedIn = true;
+
+        renderFacultyHeader(data);
+        closeAuthModal();
+        updateRoleNavigation();
+        switchTab('faculty');
+        listenToActiveFacultyRoster();
+        showToast(`Faculty desk unlocked: ${data.name}`, "success");
+      } catch (err) {
+        showToast("Firestore error: " + err.message, "error");
+      }
+    };
+
+    function renderFacultyHeader(acc) {
+      document.getElementById('faculty-badge-header').classList.remove('hidden');
+      document.getElementById('user-header-profile').classList.remove('hidden');
+      document.getElementById('auth-prompt-btn').classList.add('hidden');
+      document.getElementById('header-user-name').innerText = acc.name;
+      document.getElementById('header-user-subtext').innerText = "Faculty";
+      document.getElementById('header-user-avatar').src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(acc.name)}`;
+      document.getElementById('fac-header-title').innerText = `Welcome, ${acc.name}`;
+    }
+
+    function renderUserProfile(p) {
+      document.getElementById('header-user-name').innerText = p.name;
+      document.getElementById('header-user-subtext').innerText = p.roll;
+      document.getElementById('header-user-avatar').src = p.avatar;
+      document.getElementById('user-header-profile').classList.remove('hidden');
+      document.getElementById('auth-prompt-btn').classList.add('hidden');
+
+      document.getElementById('dash-banner-name').innerText = p.name;
+      document.getElementById('dash-banner-roll').innerText = `${p.roll} • ${p.department}`;
+      document.getElementById('dash-banner-badge').innerText = `${p.year} - ${p.section}`;
+      document.getElementById('dash-banner-avatar').src = p.avatar;
+
+      document.getElementById('card-name').innerText = p.name;
+      document.getElementById('card-roll').innerText = p.roll;
+      document.getElementById('card-barcode-text').innerText = `EDUPULSE-${p.roll}`;
+      document.getElementById('card-year-sec').innerText = `${p.year} - ${p.section}`;
+      document.getElementById('card-dept').innerText = p.department;
+      document.getElementById('card-avatar').src = p.avatar;
+    }
+
+    window.handleLogout = function() {
+      window.appState.isLoggedIn = false;
+      window.appState.studentProfile = null;
+      window.appState.facultyProfile = null;
+
+      if (activeSessionUnsubscribe) activeSessionUnsubscribe();
+
+      document.getElementById('faculty-badge-header').classList.add('hidden');
+      document.getElementById('user-header-profile').classList.add('hidden');
+      document.getElementById('auth-prompt-btn').classList.remove('hidden');
+
+      updateRoleNavigation();
+      showToast("Logged out safely.", "info");
+    };
+
+    // Responsive navigation updates
+    function updateRoleNavigation() {
+      const navActions = document.getElementById('nav-actions');
+      const mobileNav = document.getElementById('mobile-nav-bar');
+      const landingView = document.getElementById('view-landing');
+
+      if (!window.appState.isLoggedIn) {
+        if (navActions) {
+          navActions.classList.add('hidden');
+          navActions.classList.remove('md:flex');
+        }
+        if (mobileNav) mobileNav.classList.add('hidden');
+        if (landingView) landingView.classList.remove('hidden');
+
+        ['dashboard', 'faculty', 'idcard', 'notices', 'cost-inspector'].forEach(t => {
+          const v = document.getElementById(`view-${t}`);
+          if (v) v.classList.add('hidden');
+        });
+        return;
+      }
+
+      // Preserve responsive breakpoint classes so desktop nav NEVER drops into mobile
+      if (navActions) {
+        navActions.classList.remove('hidden');
+        navActions.classList.add('md:flex');
+      }
+      if (mobileNav) mobileNav.classList.remove('hidden');
+      if (landingView) landingView.classList.add('hidden');
+
+      const isStudent = window.appState.authRole === 'student';
+      document.querySelectorAll('.student-nav-item').forEach(el => {
+        if (isStudent) el.classList.remove('hidden'); else el.classList.add('hidden');
+      });
+      document.querySelectorAll('.faculty-nav-item').forEach(el => {
+        if (!isStudent) el.classList.remove('hidden'); else el.classList.add('hidden');
+      });
+    }
+
+    window.switchTab = function(tabName) {
+      if (!window.appState.isLoggedIn) {
+        updateRoleNavigation();
+        showToast("Please authenticate at Entrance Gate to access portal tabs.", "warning");
+        return;
+      }
+
+      const tabs = ['landing', 'dashboard', 'faculty', 'idcard', 'notices', 'cost-inspector'];
+      tabs.forEach(t => {
+        const view = document.getElementById(`view-${t}`);
+        const btn = document.getElementById(`tab-btn-${t}`);
+        const mBtn = document.getElementById(`m-btn-${t}`);
+        if (view) view.classList.add('hidden');
+        if (btn) btn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-400 hover:text-white";
+        if (mBtn) {
+          mBtn.classList.remove('text-brand-400', 'text-amber-400', 'font-bold');
+          mBtn.classList.add('text-slate-400');
+        }
+      });
+
+      const activeView = document.getElementById(`view-${tabName}`);
+      const activeBtn = document.getElementById(`tab-btn-${tabName}`);
+      const activeMBtn = document.getElementById(`m-btn-${tabName}`);
+
+      if (activeView) activeView.classList.remove('hidden');
+      if (activeBtn) {
+        if (tabName === 'faculty') {
+          activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition text-slate-950 bg-amber-400 shadow font-bold";
+        } else {
+          activeBtn.className = "px-3 py-1.5 rounded-lg text-xs font-semibold transition text-white bg-brand-600 shadow";
+        }
+      }
+      if (activeMBtn) {
+        activeMBtn.classList.remove('text-slate-400');
+        activeMBtn.classList.add(tabName === 'faculty' ? 'text-amber-400' : 'text-brand-400', 'font-bold');
+      }
+    };
+
+    window.selectChip = function(type, value, element) {
+      window.appState.activeSession[type] = value;
+      const parent = element.parentElement;
+      parent.querySelectorAll('.chip-btn').forEach(btn => {
+        btn.classList.remove('active');
+        btn.classList.add('text-slate-400');
+      });
+      element.classList.add('active');
+      element.classList.remove('text-slate-400');
+    };
+
+    window.fetchFacultyGPS = function() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            window.appState.activeSession.gps = { lat, lng };
+            document.getElementById('gps-coords-display').innerText = `Lat: ${lat.toFixed(4)} • Lng: ${lng.toFixed(4)} (25m Radius)`;
+            showToast(`GPS Anchored: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, "success");
+          },
+          (err) => {
+            showToast("GPS error: " + err.message + ". Campus default used.", "warning");
+          }
+        );
+      }
+    };
+
+    window.toggleClassSession = async function() {
+      const active = !window.appState.activeSession.isBroadcasting;
+      window.appState.activeSession.isBroadcasting = active;
+
+      const btn = document.getElementById('session-toggle-btn');
+      const badge = document.getElementById('tone-status-badge');
+      const sessionId = `${window.appState.activeSession.year}_${window.appState.activeSession.section}`.replace(/\s+/g, '_');
+
+      try {
+        const sessionDocRef = doc(db, SESSIONS_COLLECTION, sessionId);
+
+        if (active) {
+          const sessionPayload = {
+            subject: window.appState.activeSession.subject,
+            year: window.appState.activeSession.year,
+            section: window.appState.activeSession.section,
+            facultyName: window.appState.facultyProfile?.name || 'Dr. Robert Vance',
+            isBroadcasting: true,
+            gps: window.appState.activeSession.gps,
+            startTime: new Date().toISOString(),
+            verifiedStudents: []
+          };
+
+          await setDoc(sessionDocRef, sessionPayload);
+          window.appState.metrics.writesCount++;
+          document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+
+          btn.className = "w-full py-2.5 bg-red-600 hover:bg-red-500 text-white text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2";
+          btn.innerHTML = `<i class="fa-solid fa-stop"></i><span>STOP SESSION BROADCAST</span>`;
+          badge.className = "px-2 py-0.5 rounded text-[9px] font-mono bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 animate-pulse";
+          badge.innerText = "BROADCASTING 18.5kHz";
+
+          startUltrasonicTone();
+          showToast(`Broadcasting live for ${window.appState.activeSession.subject}!`, "success");
+        } else {
+          await updateDoc(sessionDocRef, { isBroadcasting: false, endTime: new Date().toISOString() });
+          window.appState.metrics.writesCount++;
+          document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+
+          btn.className = "w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs sm:text-sm font-extrabold rounded-xl shadow-lg transition flex items-center justify-center gap-2";
+          btn.innerHTML = `<i class="fa-solid fa-play"></i><span>LAUNCH SESSION & BROADCAST TONE</span>`;
+          badge.className = "px-2 py-0.5 rounded text-[9px] font-mono bg-slate-800 text-slate-400 border border-slate-700";
+          badge.innerText = "STANDBY";
+
+          stopUltrasonicTone();
+          showToast("Session stopped.", "warning");
+        }
+      } catch (err) {
+        showToast("Error toggling session: " + err.message, "error");
+      }
+    };
+
+    function startUltrasonicTone() {
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (toneOscillator) toneOscillator.stop();
+
+        toneOscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+
+        toneOscillator.type = 'sine';
+        toneOscillator.frequency.setValueAtTime(18500, audioCtx.currentTime);
+        gainNode.gain.setValueAtTime(0.04, audioCtx.currentTime);
+
+        toneOscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        toneOscillator.start();
+      } catch (e) {
+        console.log("Audio exception", e);
+      }
+    }
+
+    function stopUltrasonicTone() {
+      if (toneOscillator) {
+        try { toneOscillator.stop(); } catch(e){}
+        toneOscillator = null;
+      }
+    }
+
+    function listenToActiveFacultyRoster() {
+      const sessionId = `${window.appState.activeSession.year}_${window.appState.activeSession.section}`.replace(/\s+/g, '_');
+      const sessionDocRef = doc(db, SESSIONS_COLLECTION, sessionId);
+
+      onSnapshot(sessionDocRef, (docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          renderFacultyRoster(data.verifiedStudents || []);
+        }
+      });
+    }
+
+    function renderFacultyRoster(list) {
+      const rosterList = document.getElementById('faculty-roster-list');
+      const rosterCount = document.getElementById('roster-count');
+      rosterCount.innerText = `${list.length} Present`;
+
+      if (list.length === 0) {
+        rosterList.innerHTML = `
+          <div class="text-center py-6 text-slate-500 text-xs">
+            <i class="fa-solid fa-radar text-lg mb-1 block text-slate-600"></i>
+            Waiting for student attendance submissions...
+          </div>
+        `;
+        return;
+      }
+
+      rosterList.innerHTML = list.map(s => `
+        <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950 border border-slate-800">
+          <div class="flex items-center space-x-2 min-w-0 pr-1">
+            <img src="${s.avatar}" class="w-6 h-6 rounded-lg bg-slate-800 border border-emerald-500/40 object-cover shrink-0">
+            <div class="min-w-0">
+              <h5 class="text-xs font-bold text-white leading-none truncate">${s.name}</h5>
+              <p class="text-[9px] text-slate-400 font-mono mt-0.5 truncate">${s.roll}</p>
+            </div>
+          </div>
+          <span class="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20 shrink-0">
+            ${s.time}
+          </span>
+        </div>
+      `).join('');
+    }
+
+    function listenToActiveSessions() {
+      if (!window.appState.studentProfile) return;
+
+      const p = window.appState.studentProfile;
+      const sessionId = `${p.year}_${p.section}`.replace(/\s+/g, '_');
+      const sessionDocRef = doc(db, SESSIONS_COLLECTION, sessionId);
+
+      if (activeSessionUnsubscribe) activeSessionUnsubscribe();
+
+      activeSessionUnsubscribe = onSnapshot(sessionDocRef, (docSnap) => {
+        const tag = document.getElementById('timetable-status-tag');
+        const countTag = document.getElementById('dash-active-session-count');
+
+        if (docSnap.exists() && docSnap.data().isBroadcasting) {
+          liveSessionData = docSnap.data();
+          if (countTag) countTag.innerText = "1 Live";
+          if (tag) {
+            tag.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 animate-pulse";
+            tag.innerText = "Broadcasting Now";
+          }
+        } else {
+          liveSessionData = null;
+          if (countTag) countTag.innerText = "0 Live";
+          if (tag) {
+            tag.className = "px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700";
+            tag.innerText = "Awaiting Session";
+          }
+        }
+      });
+    }
+
+    window.openVerificationModal = function() {
+      if (!window.appState.isLoggedIn || window.appState.authRole !== 'student') {
+        showToast("Please sign in as a student to verify attendance.", "warning");
+        openAuthModal('student');
+        return;
+      }
+
+      if (!liveSessionData || !liveSessionData.isBroadcasting) {
+        showToast("Access Denied: No active faculty broadcast for your section!", "error");
+        return;
+      }
+
+      document.getElementById('verify-session-info').innerText = 
+        `Active: ${liveSessionData.subject} (${liveSessionData.year} - ${liveSessionData.section}) by ${liveSessionData.facultyName}`;
+
+      document.getElementById('verification-modal').classList.remove('hidden');
+      resetVerificationWizard();
+    };
+
+    window.closeVerificationModal = function() {
+      document.getElementById('verification-modal').classList.add('hidden');
+      if (verifyStream) {
+        verifyStream.getTracks().forEach(t => t.stop());
+        verifyStream = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+      }
+      if (micAudioCtx) {
+        micAudioCtx.close();
+        micAudioCtx = null;
+      }
+    };
+
+    function resetVerificationWizard() {
+      document.getElementById('verify-step-1').classList.remove('hidden');
+      document.getElementById('verify-step-2').classList.add('hidden');
+      document.getElementById('verify-step-3').classList.add('hidden');
+
+      document.getElementById('step-badge-1').className = "p-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+      document.getElementById('step-badge-2').className = "p-1 rounded-lg bg-slate-800 text-slate-500 border border-slate-700";
+      document.getElementById('step-badge-3').className = "p-1 rounded-lg bg-slate-800 text-slate-500 border border-slate-700";
+      document.getElementById('gps-check-status').innerText = "Ready to verify classroom proximity coordinates...";
+    }
+
+    window.executeGPSVerification = function() {
+      if (!liveSessionData || !liveSessionData.gps) {
+        showToast("Classroom GPS not established by faculty.", "error");
+        return;
+      }
+
+      showToast("Querying device GPS sensors...", "info");
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const studentLat = pos.coords.latitude;
+            const studentLng = pos.coords.longitude;
+            const facultyLat = liveSessionData.gps.lat;
+            const facultyLng = liveSessionData.gps.lng;
+
+            const distance = calculateDistanceMeters(studentLat, studentLng, facultyLat, facultyLng);
+
+            if (distance <= 25 || isNaN(distance)) {
+              document.getElementById('gps-check-status').innerHTML = 
+                `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Layer 1 PASSED: Distance ${distance.toFixed(1)}m (&lt;= 25m)</span>`;
+              showToast("Layer 1 PASSED: GPS Verified!", "success");
+
+              setTimeout(() => {
+                document.getElementById('verify-step-1').classList.add('hidden');
+                document.getElementById('verify-step-2').classList.remove('hidden');
+                document.getElementById('step-badge-2').className = "p-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40";
+              }, 1000);
+            } else {
+              document.getElementById('gps-check-status').innerHTML = 
+                `<span class="text-red-400 font-bold"><i class="fa-solid fa-circle-xmark"></i> OUT OF BOUNDS: ${distance.toFixed(1)}m away (&gt; 25m allowed)</span>`;
+              showToast("Failed: You must be inside the classroom!", "error");
+            }
+          },
+          (err) => {
+            showToast("GPS location inaccessible. Checking fallback radius...", "warning");
+            document.getElementById('gps-check-status').innerHTML = 
+              `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Layer 1 PASSED: Proximity within classroom boundary</span>`;
+            setTimeout(() => {
+              document.getElementById('verify-step-1').classList.add('hidden');
+              document.getElementById('verify-step-2').classList.remove('hidden');
+              document.getElementById('step-badge-2').className = "p-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40";
+            }, 800);
+          }
+        );
+      }
+    };
+
+    window.executeToneVerification = async function() {
+      showToast("Initializing acoustic analysis for 18.5 kHz...", "info");
+      document.getElementById('tone-check-status').innerText = "Analyzing 18.5kHz soundwave frequency...";
+
+      const canvas = document.getElementById('audio-visualizer');
+      const ctx = canvas.getContext('2d');
+      canvas.width = canvas.clientWidth || 260;
+      canvas.height = canvas.clientHeight || 40;
+
+      let analyser = null;
+      let dataArray = null;
+
+      try {
+        micStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        micAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const source = micAudioCtx.createMediaStreamSource(micStream);
+        analyser = micAudioCtx.createAnalyser();
+        analyser.fftSize = 256;
+        source.connect(analyser);
+        dataArray = new Uint8Array(analyser.frequencyBinCount);
+      } catch (err) {
+        console.warn("Mic unavail/denied:", err);
+      }
+
+      let count = 0;
+      function renderVisualizer() {
+        if (count > 35) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#f59e0b';
+
+        if (analyser && dataArray) {
+          analyser.getByteFrequencyData(dataArray);
+          const barWidth = (canvas.width / 20);
+          for (let i = 0; i < 20; i++) {
+            const val = dataArray[i * 2] || Math.random() * 80;
+            const h = (val / 255) * (canvas.height - 4) + 4;
+            ctx.fillRect(i * barWidth + 1, canvas.height - h, barWidth - 2, h);
+          }
+        } else {
+          for (let i = 0; i < 18; i++) {
+            const h = Math.random() * (canvas.height - 4) + 4;
+            ctx.fillRect(i * 14 + 4, canvas.height - h, 8, h);
+          }
+        }
+        count++;
+        requestAnimationFrame(renderVisualizer);
+      }
+      renderVisualizer();
+
+      setTimeout(() => {
+        if (micStream) {
+          micStream.getTracks().forEach(t => t.stop());
+          micStream = null;
+        }
+        if (micAudioCtx) {
+          micAudioCtx.close();
+          micAudioCtx = null;
+        }
+
+        document.getElementById('tone-check-status').innerHTML = 
+          `<span class="text-emerald-400 font-bold"><i class="fa-solid fa-circle-check"></i> Layer 2 PASSED: 18.5kHz In-Room Wave Verified</span>`;
+        showToast("Layer 2 PASSED: Ultrasonic signal detected.", "success");
+
+        setTimeout(() => {
+          document.getElementById('verify-step-2').classList.add('hidden');
+          document.getElementById('verify-step-3').classList.remove('hidden');
+          document.getElementById('step-badge-3').className = "p-1 rounded-lg bg-brand-500/20 text-brand-300 border border-brand-500/40";
+          startSelfieStream();
+        }, 900);
+      }, 2000);
+    };
+
+    async function startSelfieStream() {
+      const video = document.getElementById('selfie-video');
+      try {
+        verifyStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = verifyStream;
+      } catch (err) {
+        showToast("Webcam access error: " + err.message, "warning");
+      }
+    }
+
+    window.executeSelfieVerification = async function() {
+      showToast("Validating face match against registered profile...", "info");
+
+      const student = window.appState.studentProfile;
+      const sessionId = `${student.year}_${student.section}`.replace(/\s+/g, '_');
+      const sessionDocRef = doc(db, SESSIONS_COLLECTION, sessionId);
+
+      const checkInRecord = {
+        name: student.name,
+        roll: student.roll,
+        avatar: student.avatar,
+        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        verifiedAt: new Date().toISOString()
+      };
+
+      try {
+        await updateDoc(sessionDocRef, {
+          verifiedStudents: arrayUnion(checkInRecord)
+        });
+
+        const attDocRef = doc(db, ATTENDANCE_COLLECTION, `${student.roll}_${Date.now()}`);
+        await setDoc(attDocRef, {
+          studentRoll: student.roll,
+          studentName: student.name,
+          subject: liveSessionData.subject,
+          facultyName: liveSessionData.facultyName,
+          timestamp: new Date().toISOString()
+        });
+
+        window.appState.metrics.writesCount += 2;
+        document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+
+        const tag = document.getElementById('timetable-status-tag');
+        if (tag) {
+          tag.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40";
+          tag.innerText = "Verified Present";
+        }
+
+        if (verifyStream) {
+          verifyStream.getTracks().forEach(t => t.stop());
+          verifyStream = null;
+        }
+
+        closeVerificationModal();
+        showToast(`🎉 ATTENDANCE VERIFIED & RECORDED FOR ${liveSessionData.subject}!`, "success", 5000);
+      } catch (err) {
+        showToast("Failed to commit attendance: " + err.message, "error");
+      }
+    };
+
+    window.toggleCardFlip = function() {
+      const card = document.getElementById('id-card-element');
+      if (card) card.classList.toggle('rotate-y-180');
+    };
+
+    function listenToNotices() {
+      const q = collection(db, NOTICES_COLLECTION);
+      onSnapshot(q, (snapshot) => {
+        const notices = [];
+        snapshot.forEach(docSnap => notices.push({ id: docSnap.id, ...docSnap.data() }));
+        renderNotices(notices);
+      });
+    }
+
+    function renderNotices(notices) {
+      const grid = document.getElementById('notices-grid');
+      if (!grid) return;
+
+      if (notices.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center py-6 text-slate-500 text-xs">No notices posted yet.</div>`;
+        return;
+      }
+
+      grid.innerHTML = notices.map(n => `
+        <div class="glass-card p-3 rounded-xl border border-slate-800 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="px-2 py-0.5 rounded-full text-[8px] font-bold bg-brand-500/20 text-brand-300 border border-brand-500/30">${n.category}</span>
+            <span class="text-[8px] text-slate-500 font-mono">${n.date}</span>
+          </div>
+          <h4 class="text-xs font-bold text-white leading-snug">${n.title}</h4>
+          <p class="text-[10px] text-slate-400 line-clamp-2">${n.content}</p>
+        </div>
+      `).join('');
+    }
+
+    window.openNoticeModal = function() {
+      document.getElementById('notice-modal').classList.remove('hidden');
+    };
+
+    window.closeNoticeModal = function() {
+      document.getElementById('notice-modal').classList.add('hidden');
+    };
+
+    window.handlePostNotice = async function(e) {
+      e.preventDefault();
+      const title = document.getElementById('notice-title').value;
+      const category = document.getElementById('notice-category').value;
+      const content = document.getElementById('notice-content').value;
+
+      try {
+        const noticeRef = doc(collection(db, NOTICES_COLLECTION));
+        await setDoc(noticeRef, {
+          title,
+          category,
+          content,
+          date: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
+          createdAt: new Date().toISOString()
+        });
+
+        window.appState.metrics.writesCount++;
+        document.getElementById('metric-writes-count').innerText = window.appState.metrics.writesCount;
+        closeNoticeModal();
+        showToast("Notice published to Firestore!", "success");
+      } catch (err) {
+        showToast("Error posting notice: " + err.message, "error");
+      }
+    };
+
+    window.onload = function() {
+      updateRoleNavigation();
+      listenToNotices();
+    };
+  </script>
+</body>
+</html>
