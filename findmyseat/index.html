@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en" class="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Hall - Seating Finder</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.8); transform: scale(1); }
+            50% { box-shadow: 0 0 25px 10px rgba(234, 179, 8, 0.7); transform: scale(1.04); }
+        }
+        .highlight-cell {
+            animation: pulse-glow 1.5s infinite ease-in-out !important;
+            background-color: #fde047 !important;
+            color: #1e293b !important;
+            border-color: #ca8a04 !important;
+            z-index: 50 !important;
+        }
+        /* Custom scrollbar for tables */
+        ::-webkit-scrollbar { height: 8px; width: 8px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.05); }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.2); border-radius: 4px; }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-100 min-h-screen transition-colors duration-300 font-sans selection:bg-blue-500 selection:text-white">
+
+    <!-- Top Navigation / Header -->
+    <header class="sticky top-0 z-30 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white shadow-md shadow-blue-500/20">
+                    <i class="fa-solid fa-graduation-cap text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg tracking-tight leading-tight">Find My Seat & Position Finder</h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Seating Arrangement Locator</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <!-- View Switcher -->
+                <div class="hidden sm:flex bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <button onclick="switchView('table')" id="btnTableView" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm transition">Table View</button>
+                    <button onclick="switchView('card')" id="btnCardView" class="px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-400 hover:text-slate-900 transition">Card View</button>
+                </div>
+                <!-- Dark Mode Toggle -->
+                <button onclick="toggleDarkMode()" class="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center hover:bg-slate-200 dark:hover:bg-slate-700 transition">
+                    <i id="themeIcon" class="fa-solid fa-moon text-slate-600 dark:text-yellow-400"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
+
+        <!-- Search & Control Panel -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/80 dark:border-slate-800">
+            <div class="max-w-2xl mx-auto space-y-4">
+                <div class="text-center space-y-1">
+                    <h2 class="text-xl sm:text-2xl font-bold tracking-tight">Find my Seat</h2>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Enter your short roll (e.g., <code class="bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded text-blue-500 font-mono">24-P5</code>) below[cite: 1]:</p>
+                </div>
+
+                <!-- Input Box -->
+                <div class="relative flex items-center shadow-lg rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition">
+                    <span class="pl-4 text-slate-400"><i class="fa-solid fa-id-card"></i></span>
+                    <input type="text" id="searchInput" placeholder="Enter short roll (e.g. 24-P5, 24-10)..." 
+                           class="w-full py-3.5 pl-3 pr-32 bg-transparent text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none text-base"
+                           oninput="handleInput(event)" onkeypress="handleKeyPress(event)">
+                    <div class="absolute right-2 flex items-center space-x-1">
+                        <button onclick="clearSearch()" id="clearBtn" class="hidden text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2"><i class="fa-solid fa-xmark"></i></button>
+                        <button onclick="searchGrid()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium text-sm transition shadow-md shadow-blue-600/30">Find my Seat</button>
+                    </div>
+                </div>
+
+                <!-- Quick Filter Chips -->
+                <div class="flex flex-wrap items-center justify-center gap-1.5 pt-1 text-xs">
+                    <span class="text-slate-400 font-medium mr-1">Quick Rolls:</span>
+                    <button onclick="quickSearch('24-P5')" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 transition font-mono">24-P5</button>
+                    <button onclick="quickSearch('24-10')" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 transition font-mono">24-10</button>
+                    <button onclick="quickSearch('24-Q1')" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 transition font-mono">24-Q1</button>
+                    <button onclick="quickSearch('24-D1')" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 transition font-mono">24-D1</button>
+                    <button onclick="quickSearch('25-19')" class="px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 dark:hover:bg-slate-700 transition font-mono">25-19</button>
+                </div>
+            </div>
+
+            <!-- Result Alert Card -->
+            <div id="resultCard" class="hidden mt-6 p-4 rounded-xl border transition-all duration-300"></div>
+        </div>
+
+        <!-- Exam Hall Layout Section -->
+        <div class="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-xl shadow-slate-200/50 dark:shadow-none border border-slate-200/80 dark:border-slate-800 space-y-4">
+            <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-slate-100 dark:border-slate-800">
+                <div>
+                    <h3 class="font-bold text-lg flex items-center gap-2">
+                        <span>Exam Hall Layout View</span>
+                        <span class="text-xs font-normal px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/50 text-blue-600 dark:text-blue-400">14 Columns × 5 Rows</span>
+                    </h3>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Divided into Left, Middle, and Right sections</p>
+                </div>
+                <!-- Mobile View Switcher -->
+                <div class="flex sm:hidden w-full sm:w-auto bg-slate-100 dark:bg-slate-800 p-1 rounded-lg border border-slate-200 dark:border-slate-700">
+                    <button onclick="switchView('table')" id="btnTableViewMob" class="flex-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm transition">Table</button>
+                    <button onclick="switchView('card')" id="btnCardViewMob" class="flex-1 px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-400 transition">Cards</button>
+                </div>
+            </div>
+
+            <!-- Table View Container -->
+            <div id="tableViewContainer" class="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                <table id="gridTable" class="w-full text-center border-collapse text-sm whitespace-nowrap">
+                    <!-- Dynamic Render -->
+                </table>
+            </div>
+
+            <!-- Card View Container (Mobile Friendly) -->
+            <div id="cardViewContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                <!-- Dynamic Render -->
+            </div>
+        </div>
+    </main>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Grid Data parsed from the layout image[cite: 1]
+        const gridData = [
+            // Row 1
+            [
+                {section: "LEFT", col: "ROW1", val: "EMPTY"},
+                {section: "LEFT", col: "ROW2", val: "24-10"},
+                {section: "LEFT", col: "ROW3", val: "24-P5"},
+                {section: "LEFT", col: "ROW4", val: "24-E0"},
+                {section: "LEFT", col: "ROW5", val: "24-94"},
+                {section: "MIDDLE", col: "ROW6", val: "24-P3"},
+                {section: "MIDDLE", col: "ROW7", val: "24-K7"},
+                {section: "MIDDLE", col: "ROW8", val: "24-N5"},
+                {section: "MIDDLE", col: "ROW9", val: "24-R1"},
+                {section: "RIGHT", col: "ROW10", val: "24-J7"},
+                {section: "RIGHT", col: "ROW11", val: "24-K2"},
+                {section: "RIGHT", col: "ROW12", val: "24-C9"},
+                {section: "RIGHT", col: "ROW13", val: "24-79"},
+                {section: "RIGHT", col: "ROW14", val: "EMPTY"}
+            ],
+            // Row 2
+            [
+                {section: "LEFT", col: "ROW1", val: "24-60"},
+                {section: "LEFT", col: "ROW2", val: "24-J8"},
+                {section: "LEFT", col: "ROW3", val: "24-Q1"},
+                {section: "LEFT", col: "ROW4", val: "24-46"},
+                {section: "LEFT", col: "ROW5", val: "24-N7"},
+                {section: "MIDDLE", col: "ROW6", val: "24-21"},
+                {section: "MIDDLE", col: "ROW7", val: "24-C3"},
+                {section: "MIDDLE", col: "ROW8", val: "24-R3"},
+                {section: "MIDDLE", col: "ROW9", val: "24-M8"},
+                {section: "RIGHT", col: "ROW10", val: "24-A1"},
+                {section: "RIGHT", col: "ROW11", val: "25-17"},
+                {section: "RIGHT", col: "ROW12", val: "24-M4"},
+                {section: "RIGHT", col: "ROW13", val: "24-25"},
+                {section: "RIGHT", col: "ROW14", val: "22-37"}
+            ],
+            // Row 3
+            [
+                {section: "LEFT", col: "ROW1", val: "24-H3"},
+                {section: "LEFT", col: "ROW2", val: "24-F3"},
+                {section: "LEFT", col: "ROW3", val: "24-62"},
+                {section: "LEFT", col: "ROW4", val: "24-39"},
+                {section: "LEFT", col: "ROW5", val: "24-K0"},
+                {section: "MIDDLE", col: "ROW6", val: "24-D1"},
+                {section: "MIDDLE", col: "ROW7", val: "25-19"},
+                {section: "MIDDLE", col: "ROW8", val: "24-12"},
+                {section: "MIDDLE", col: "ROW9", val: "24-P9"},
+                {section: "RIGHT", col: "ROW10", val: "24-F7"},
+                {section: "RIGHT", col: "ROW11", val: "24-N9"},
+                {section: "RIGHT", col: "ROW12", val: "24-M7"},
+                {section: "RIGHT", col: "ROW13", val: "25-28"},
+                {section: "RIGHT", col: "ROW14", val: "24-F2"}
+            ],
+            // Row 4
+            [
+                {section: "LEFT", col: "ROW1", val: "24-H4"},
+                {section: "LEFT", col: "ROW2", val: "24-98"},
+                {section: "LEFT", col: "ROW3", val: "24-H1"},
+                {section: "LEFT", col: "ROW4", val: "24-26"},
+                {section: "LEFT", col: "ROW5", val: "24-A6"},
+                {section: "MIDDLE", col: "ROW6", val: "24-F5"},
+                {section: "MIDDLE", col: "ROW7", val: "24-19"},
+                {section: "MIDDLE", col: "ROW8", val: "24-N4"},
+                {section: "MIDDLE", col: "ROW9", val: "25-23"},
+                {section: "RIGHT", col: "ROW10", val: "24-83"},
+                {section: "RIGHT", col: "ROW11", val: "24-N3"},
+                {section: "RIGHT", col: "ROW12", val: "24-58"},
+                {section: "RIGHT", col: "ROW13", val: "24-77"},
+                {section: "RIGHT", col: "ROW14", val: "24-D0"}
+            ],
+            // Row 5
+            [
+                {section: "LEFT", col: "ROW1", val: "EMPTY"},
+                {section: "LEFT", col: "ROW2", val: "24-B8"},
+                {section: "LEFT", col: "ROW3", val: "24-M2"},
+                {section: "LEFT", col: "ROW4", val: "24-75"},
+                {section: "LEFT", col: "ROW5", val: "24-36"},
+                {section: "MIDDLE", col: "ROW6", val: "24-G9"},
+                {section: "MIDDLE", col: "ROW7", val: "24-C5"},
+                {section: "MIDDLE", col: "ROW8", val: "24-K3"},
+                {section: "MIDDLE", col: "ROW9", val: "24-78"},
+                {section: "RIGHT", col: "ROW10", val: "25-27"},
+                {section: "RIGHT", col: "ROW11", val: "24-J4"},
+                {section: "RIGHT", col: "ROW12", val: "24-C6"},
+                {section: "RIGHT", col: "ROW13", val: "24-49"},
+                {section: "RIGHT", col: "ROW14", val: "EMPTY"}
+            ]
+        ];
+
+        function renderAll() {
+            renderTable();
+            renderCards();
+        }
+
+        function renderTable() {
+            const table = document.getElementById('gridTable');
+            let html = `
+                <thead>
+                    <tr class="bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 font-semibold border-b border-slate-200 dark:border-slate-700">
+                        <th colspan="5" class="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 tracking-wider text-indigo-600 dark:text-indigo-400">LEFT SECTION</th>
+                        <th colspan="4" class="py-2.5 px-3 border-r border-slate-200 dark:border-slate-700 tracking-wider text-emerald-600 dark:text-emerald-400">MIDDLE SECTION</th>
+                        <th colspan="5" class="py-2.5 px-3 tracking-wider text-purple-600 dark:text-purple-400">RIGHT SECTION</th>
+                    </tr>
+                    <tr class="bg-slate-50 dark:bg-slate-800/40 text-xs text-slate-500 dark:text-slate-400 border-b border-slate-200 dark:border-slate-700">
+            `;
+            
+            for (let c = 0; c < 14; c++) {
+                html += `<th class="py-2 px-3 font-medium">${gridData[0][c].col}</th>`;
+            }
+            html += `</tr></thead><tbody class="divide-y divide-slate-100 dark:divide-slate-800">`;
+
+            for (let r = 0; r < gridData.length; r++) {
+                html += `<tr class="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">`;
+                for (let c = 0; c < gridData[r].length; c++) {
+                    const item = gridData[r][c];
+                    const isEmpty = item.val === "EMPTY";
+                    html += `<td class="py-3 px-3 font-mono text-xs sm:text-sm border-r border-slate-100 dark:border-slate-800 last:border-r-0 rounded ${isEmpty ? 'text-slate-400 dark:text-slate-600 italic font-sans' : 'font-semibold'}" data-row="${r}" data-col="${c}">${item.val}</td>`;
+                }
+                html += `</tr>`;
+            }
+            html += `</tbody>`;
+            table.innerHTML = html;
+        }
+
+        function renderCards() {
+            const container = document.getElementById('cardViewContainer');
+            let html = '';
+
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    const item = gridData[r][c];
+                    const isEmpty = item.val === "EMPTY";
+                    const rowNum = r + 1;
+                    
+                    let badgeColor = 'bg-indigo-50 text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-400';
+                    if (item.section === 'MIDDLE') badgeColor = 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400';
+                    if (item.section === 'RIGHT') badgeColor = 'bg-purple-50 text-purple-600 dark:text-purple-400 dark:bg-purple-950/50 dark:text-purple-300';
+
+                    html += `
+                        <div class="card-cell p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex flex-col justify-between transition hover:shadow-md" data-row="${r}" data-col="${c}">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${badgeColor}">${item.section}</span>
+                                <span class="text-xs text-slate-400 font-medium">Row ${rowNum} (${item.col})</span>
+                            </div>
+                            <div class="py-2 text-center">
+                                <span class="text-lg font-mono font-bold ${isEmpty ? 'text-slate-400 dark:text-slate-600 italic text-sm font-sans' : 'text-slate-800 dark:text-slate-100'}">${item.val}</span>
+                            </div>
+                            <button onclick="selectCardCode('${item.val}')" class="mt-2 text-xs py-1 px-2 rounded bg-slate-100 dark:bg-slate-800 hover:bg-blue-50 hover:text-blue-600 transition text-slate-600 dark:text-slate-300 font-medium">
+                                Find Seat
+                            </button>
+                        </div>
+                    `;
+                }
+            }
+            container.innerHTML = html;
+        }
+
+        function switchView(view) {
+            const tableCont = document.getElementById('tableViewContainer');
+            const cardCont = document.getElementById('cardViewContainer');
+            
+            const btnTable = document.getElementById('btnTableView');
+            const btnCard = document.getElementById('btnCardView');
+            const btnTableMob = document.getElementById('btnTableViewMob');
+            const btnCardMob = document.getElementById('btnCardViewMob');
+
+            if (view === 'table') {
+                tableCont.classList.remove('hidden');
+                cardCont.classList.add('hidden');
+                
+                [btnTable, btnTableMob].forEach(b => { if(b) { b.className = "flex-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm transition text-slate-900 dark:text-slate-100"; }});
+                [btnCard, btnCardMob].forEach(b => { if(b) { b.className = "flex-1 px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-400 transition"; }});
+            } else {
+                tableCont.classList.add('hidden');
+                cardCont.classList.remove('hidden');
+
+                [btnTable, btnTableMob].forEach(b => { if(b) { b.className = "flex-1 px-3 py-1.5 text-xs font-semibold rounded-md text-slate-600 dark:text-slate-400 transition"; }});
+                [btnCard, btnCardMob].forEach(b => { if(b) { b.className = "flex-1 px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm transition text-slate-900 dark:text-slate-100"; }});
+            }
+        }
+
+        function toggleDarkMode() {
+            const htmlEl = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            if (htmlEl.classList.contains('dark')) {
+                htmlEl.classList.remove('dark');
+                htmlEl.classList.add('light');
+                icon.className = "fa-solid fa-moon text-slate-600";
+            } else {
+                htmlEl.classList.remove('light');
+                htmlEl.classList.add('dark');
+                icon.className = "fa-solid fa-sun text-yellow-400";
+            }
+        }
+
+        function handleInput(e) {
+            const val = e.target.value.trim();
+            const clearBtn = document.getElementById('clearBtn');
+            if (val.length > 0) {
+                clearBtn.classList.remove('hidden');
+            } else {
+                clearBtn.classList.add('hidden');
+                resetHighlights();
+            }
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') {
+                searchGrid();
+            }
+        }
+
+        function quickSearch(code) {
+            document.getElementById('searchInput').value = code;
+            document.getElementById('clearBtn').classList.remove('hidden');
+            searchGrid();
+        }
+
+        function selectCardCode(code) {
+            if(code === 'EMPTY') return;
+            document.getElementById('searchInput').value = code;
+            document.getElementById('clearBtn').classList.remove('hidden');
+            searchGrid();
+        }
+
+        function clearSearch() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('clearBtn').classList.add('hidden');
+            document.getElementById('resultCard').classList.add('hidden');
+            resetHighlights();
+        }
+
+        function resetHighlights() {
+            document.querySelectorAll('[data-row]').forEach(el => {
+                el.classList.remove('highlight-cell');
+            });
+        }
+
+        function searchGrid() {
+            const query = document.getElementById('searchInput').value.trim().toUpperCase();
+            const resultCard = document.getElementById('resultCard');
+            
+            resetHighlights();
+
+            if (!query) {
+                resultCard.className = 'hidden mt-6 p-4 rounded-xl border';
+                return;
+            }
+
+            let found = false;
+            for (let r = 0; r < gridData.length; r++) {
+                for (let c = 0; c < gridData[r].length; c++) {
+                    if (gridData[r][c].val.toUpperCase() === query) {
+                        const rowNum = r + 1;
+                        const item = gridData[r][c];
+                        
+                        // Apply highlight class to matching table cells and card elements
+                        document.querySelectorAll(`[data-row="${r}"][data-col="${c}"]`).forEach(el => {
+                            el.classList.add('highlight-cell');
+                            el.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+                        });
+
+                        resultCard.className = 'mt-6 p-5 rounded-xl border bg-emerald-50 dark:bg-emerald-950/30 border-emerald-200 dark:border-emerald-800/80 text-emerald-900 dark:text-emerald-200 shadow-sm';
+                        resultCard.innerHTML = `
+                            <div class="flex items-start justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-emerald-500/20">
+                                        <i class="fa-solid fa-check"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-bold text-base">Seat Found for Short Roll "${item.val}"</h4>
+                                        <p class="text-xs opacity-90 mt-0.5">Your seat has been located successfully in the exam hall.</p>
+                                    </div>
+                                </div>
+                                <span class="text-xs font-bold uppercase px-2.5 py-1 rounded-md bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-300">${item.section}</span>
+                            </div>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 pt-3 border-t border-emerald-200/60 dark:border-emerald-800/40 text-xs sm:text-sm font-medium">
+                                <div><span class="opacity-75 block text-xs">Row Number:</span> <strong class="text-base">Row ${rowNum}</strong></div>
+                                <div><span class="opacity-75 block text-xs">Section:</span> <strong class="text-base">${item.section}</strong></div>
+                                <div class="col-span-2 sm:col-span-1"><span class="opacity-75 block text-xs">Column:</span> <strong class="text-base">${item.col}</strong></div>
+                            </div>
+                        `;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) break;
+            }
+
+            if (!found) {
+                resultCard.className = 'mt-6 p-5 rounded-xl border bg-rose-50 dark:bg-rose-950/30 border-rose-200 dark:border-rose-800/80 text-rose-900 dark:text-rose-200 shadow-sm';
+                resultCard.innerHTML = `
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-rose-500 text-white flex items-center justify-center font-bold text-lg">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-base">Short Roll Not Found</h4>
+                            <p class="text-xs opacity-90 mt-0.5">No seat matches short roll "<strong>${query}</strong>" in this exam hall layout.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Initialize on load
+        window.onload = renderAll;
+    </script>
+</body>
+</html>
