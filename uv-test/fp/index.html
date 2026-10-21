@@ -468,7 +468,7 @@
         <label class="block text-xs font-semibold text-slate-300 mb-1">Target Section</label>
         <select id="modalRosterTargetSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono">
           <option value="AIML_1A">I B.Tech - Section A</option>
-          <option value="AIML_2B" selected>II B.Tech - Section B</option>
+          <option value="AIML_3D" selected>III B.Tech - Section D</option>
           <option value="AIML_4A">IV B.Tech - Section A</option>
         </select>
       </div>
@@ -512,7 +512,7 @@
           <select id="studentFilterSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500">
             <option value="ALL">All Sections / Classes</option>
             <option value="AIML_1A">I B.Tech - Section A</option>
-            <option value="AIML_2B">II B.Tech - Section B</option>
+            <option value="AIML_3D">III B.Tech - Section D</option>
             <option value="AIML_4A">IV B.Tech - Section A</option>
           </select>
         </div>
@@ -570,7 +570,7 @@
           <label class="block font-semibold text-slate-300 mb-1">Assigned Section</label>
           <select id="editStudentSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono">
             <option value="AIML_1A">I B.Tech - Section A</option>
-            <option value="AIML_2B">II B.Tech - Section B</option>
+            <option value="AIML_3D">III B.Tech - Section B</option>
             <option value="AIML_4A">IV B.Tech - Section A</option>
           </select>
         </div>
@@ -679,9 +679,9 @@
           regularSlot: "09:00 - 10:00"
         },
         {
-          id: "AIML_2B_CS204",
-          year: "II B.Tech",
-          section: "B",
+          id: "AIML_3D_CS204",
+          year: "III B.Tech",
+          section: "D",
           subjectCode: "CS204",
           subjectName: "Data Structures & Algorithms",
           channelFreq: 18700,
@@ -1472,7 +1472,7 @@
             directoryMap.set(roll, {
               rollNumber: roll,
               name: data.name || "Student",
-              sectionId: data.assignedSection || "AIML_2B",
+              sectionId: data.assignedSection || "AIML_3D",
               boundDevice: data.boundDeviceFingerprint || "Unbound",
               hasRemoteProfile: true
             });
@@ -2086,7 +2086,7 @@ async function syncSessionToFirestore() {
         const nameEl = document.getElementById(`cfg_name_${idx}`);
         const freqEl = document.getElementById(`cfg_freq_${idx}`);
 
-        const yr = yrEl ? (yrEl.value.trim() || "II B.Tech") : "II B.Tech";
+        const yr = yrEl ? (yrEl.value.trim() || "III B.Tech") : "III B.Tech";
         const sec = secEl ? (secEl.value.trim().toUpperCase() || "A") : "A";
         const code = codeEl ? (codeEl.value.trim().toUpperCase() || "CS000") : "CS000";
         const name = nameEl ? (nameEl.value.trim() || "Subject") : "Subject";
