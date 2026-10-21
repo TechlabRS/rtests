@@ -1,1 +1,1045 @@
-index
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>EduPulse - Student Terminal</title>
+  
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  
+  <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.js"></script>
+  <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+
+  <!-- Firebase Modular SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getFirestore, doc, setDoc, getDoc, collection, onSnapshot, serverTimestamp 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const APP_PATH = 'artifacts/uv-test-app';
+    function getCollectionName(base) { return `${APP_PATH}/${base}`; }
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+      authDomain: "stuattnd.firebaseapp.com",
+      projectId: "stuattnd",
+      storageBucket: "stuattnd.firebasestorage.app",
+      messagingSenderId: "511533506488",
+      appId: "1:511533506488:web:aca4de3d513915d012f94d",
+      measurementId: "G-9PZZM5LFKX"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    window.db = db;
+    window.getCollectionName = getCollectionName;
+    window.doc = doc;
+    window.setDoc = setDoc;
+    window.getDoc = getDoc;
+    window.collection = collection;
+    window.onSnapshot = onSnapshot;
+    window.serverTimestamp = serverTimestamp;
+    window.firebaseReady = true;
+    document.dispatchEvent(new Event('firebase-initialized'));
+  </script>
+
+  <style>
+    #projectorQrReaderView video{object-fit:cover;width:100%!important;height:100%!important}
+    body { font-family: 'Plus Jakarta Sans', sans-serif; overflow-x: hidden; touch-action: manipulation; }
+    .font-mono { font-family: 'JetBrains Mono', monospace; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white safe-paddings">
+
+  <!-- Mobile Fixed Header -->
+  <header class="fixed top-0 left-0 right-0 z-50 border-b border-slate-900 bg-slate-950/90 backdrop-blur-xl px-4 py-3 flex items-center justify-between">
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-xs font-bold shadow-md shadow-indigo-600/30 shrink-0">
+        <i class="fa-solid fa-graduation-cap"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 class="text-xs font-bold text-white leading-tight truncate">EduPulse Terminal</h1>
+        <p class="text-[10px] text-slate-500 font-mono truncate" id="headerAssignedSection">Bound: --</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <span id="sessionStatusDot" class="w-2 h-2 rounded-full bg-slate-600" title="Standby"></span>
+      <button id="btnSwitchDevice" title="Switch Profile" class="p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-400 hover:text-amber-400 text-xs shrink-0 transition-colors">
+        <i class="fa-solid fa-user-gear"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile View Container -->
+  <main class="flex-1 max-w-sm mx-auto w-full px-3 pt-16 pb-16 flex flex-col justify-center min-w-0">
+
+    <!-- STAGE 0: ONBOARDING MODAL -->
+    <div id="stageOnboarding" class="hidden bg-slate-900/90 border border-slate-800 rounded-3xl p-5 shadow-2xl flex flex-col gap-3.5">
+      <div class="text-center">
+        <h2 class="text-base font-bold text-white">Profile Binding</h2>
+        <p class="text-xs text-slate-400 mt-0.5">Identify your roll number once.</p>
+      </div>
+
+      <div class="space-y-2.5">
+        <div>
+          <label class="text-[10px] font-mono text-slate-400 block mb-0.5">ROLL NUMBER</label>
+          <input id="enrollRollInput" type="text" placeholder="21091A0201" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs font-mono uppercase text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-mono text-slate-400 block mb-0.5">STUDENT NAME</label>
+          <input id="enrollNameInput" type="text" placeholder="Aakash Varma" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white">
+        </div>
+        <div>
+          <label class="text-[10px] font-mono text-slate-400 block mb-0.5">SECTION</label>
+          <select id="enrollSectionSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono">
+            <option value="AIML_1A">I B.Tech - Section A</option>
+            <option value="AIML_2B" selected>II B.Tech - Section B</option>
+            <option value="AIML_3A">III B.Tech - Section A</option>
+            <option value="AIML_3B">III B.Tech - Section B</option>
+            <option value="AIML_4A">IV B.Tech - Section A</option>
+          </select>
+        </div>
+
+        <div class="w-48 h-48 mx-auto bg-black rounded-full overflow-hidden flex items-center justify-center border-4 border-slate-800 relative shadow-xl">
+          <video id="enrollVideo" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
+          <span id="enrollStatusOverlay" class="absolute bottom-4 text-[9px] bg-slate-900/80 px-2 py-0.5 rounded-full text-slate-300">Camera Inactive</span>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button id="btnStartEnrollCamera" class="flex-1 py-2 rounded-xl bg-slate-800 text-xs font-semibold text-slate-200">1. Start Cam</button>
+          <button id="btnCaptureDescriptor" disabled class="flex-1 py-2 rounded-xl bg-indigo-600 disabled:opacity-40 text-xs font-semibold text-white">2. Bind</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STAGE 1: DYNAMIC INGRESS -->
+    <div id="stageScanProjectorQr" class="bg-slate-900/80 border border-slate-800/80 rounded-3xl p-5 shadow-2xl flex flex-col gap-4 backdrop-blur-md">
+      
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-lg shrink-0">
+          <i class="fa-solid fa-graduation-cap"></i>
+        </div>
+        <div class="min-w-0">
+          <h2 id="cardStudentName" class="text-sm font-bold text-white truncate">Student</h2>
+          <p id="cardStudentRoll" class="text-[11px] font-mono text-slate-400 truncate">Roll: -- | Class: --</p>
+        </div>
+      </div>
+
+      <div id="sectionConflictAlert" class="hidden p-2.5 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs text-center">
+        <span class="font-bold block"><i class="fa-solid fa-triangle-exclamation mr-1"></i> Scan Problem</span>
+        <p id="sectionConflictMsg" class="text-[11px] text-rose-400 mt-0.5">This session belongs to another class.</p>
+      </div>
+
+      <!-- MODE A: QR SCANNER VIEW -->
+      <div id="containerQrIngress" class="flex flex-col gap-3">
+        <div class="text-center">
+          <span class="text-[10px] font-mono text-indigo-400 uppercase tracking-widest font-semibold block">Step 1 of 2</span>
+          <h3 class="text-xs font-bold text-slate-100 mt-0.5">Scan Classroom Projector Screen</h3>
+        </div>
+
+        <div class="w-full h-[40vh] min-h-[250px] bg-black rounded-2xl overflow-hidden border border-slate-800 relative flex items-center justify-center">
+          <div id="projectorQrReaderView" class="w-full h-full"></div>
+        </div>
+
+        <button id="btnStartScanningProjector" class="w-full py-3 rounded-2xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs tracking-wide shadow-lg shadow-indigo-600/25 transition-all">
+          ACTIVATE CAMERA SCANNER
+        </button>
+      </div>
+
+      <!-- MODE B: BEACON-ONLY INGRESS VIEW -->
+      <div id="containerBeaconIngress" class="hidden flex flex-col gap-3.5 text-center">
+        <div class="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 flex flex-col items-center">
+          <div class="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-2xl mb-2 animate-pulse">
+            <i class="fa-solid fa-tower-broadcast"></i>
+          </div>
+          <span class="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">QR Bypassed by Faculty</span>
+          <h3 class="text-sm font-extrabold text-white mt-1" id="beaconSessionTitle">Live Session Broadcasting</h3>
+          <p class="text-[11px] text-slate-300 mt-0.5" id="beaconSessionSub">Room ultrasound carrier active. Tap below to verify room presence.</p>
+        </div>
+
+        <button id="btnDirectBeaconVerify" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 active:scale-95 text-white font-bold text-xs tracking-wide shadow-lg shadow-emerald-600/30 transition-all flex items-center justify-center gap-2">
+          <i class="fa-solid fa-wave-square"></i>
+          <span>Verify In-Room Audio Tone</span>
+        </button>
+      </div>
+
+      <!-- Standby state -->
+      <div id="containerStandbyNotice" class="hidden text-center p-4 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs">
+        <i class="fa-solid fa-clock text-indigo-400 mb-1.5 text-base block"></i>
+        <span>Waiting for your instructor to launch attendance for <strong id="standbySectionText" class="text-white font-mono">--</strong>...</span>
+      </div>
+
+    </div>
+
+    <!-- STAGE 2: ADAPTIVE PRESENCE VERIFICATION -->
+    <div id="stageVerifyPresence" class="hidden bg-slate-900/95 border border-slate-800 rounded-3xl p-4 shadow-2xl flex flex-col items-center gap-3.5 backdrop-blur-md">
+      
+      <!-- Stepper Ribbon -->
+      <div class="w-full flex items-center justify-between px-2 py-2 bg-slate-950 rounded-xl border border-slate-800/80 text-[10px]">
+        <div class="step-circle w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold" id="ribbonSection" title="Section">
+          <i class="fa-solid fa-door-open"></i>
+        </div>
+        <div class="h-0.5 flex-1 bg-slate-800 mx-1"></div>
+        <div class="step-circle w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold" id="ribbonGps" title="GPS">
+          <i class="fa-solid fa-location-crosshairs"></i>
+        </div>
+        <div class="h-0.5 flex-1 bg-slate-800 mx-1"></div>
+        <div class="step-circle w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold" id="ribbonUltrasound" title="Audio">
+          <i class="fa-solid fa-wave-square"></i>
+        </div>
+        <div class="h-0.5 flex-1 bg-slate-800 mx-1"></div>
+        <div class="step-circle w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold" id="ribbonBiometrics" title="Face">
+          <i class="fa-solid fa-face-smile"></i>
+        </div>
+        <div class="h-0.5 flex-1 bg-slate-800 mx-1"></div>
+        <div class="step-circle w-6 h-6 rounded-full bg-slate-800 text-slate-400 flex items-center justify-center font-bold" id="ribbonCommit" title="Commit">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+        </div>
+      </div>
+
+      <!-- Biometric Camera Viewport -->
+      <div id="cameraOvalContainer" class="relative w-44 sm:w-48 aspect-[3/4] max-h-[30vh] rounded-[36px] overflow-hidden border-4 border-slate-800 flex items-center justify-center bg-black shadow-xl">
+        <video id="studentFaceVideo" autoplay playsinline muted class="w-full h-full object-cover transform -scale-x-100"></video>
+        
+        <svg id="reticleSilhouette" class="absolute inset-0 w-full h-full pointer-events-none p-4" viewBox="0 0 100 100">
+          <ellipse cx="50" cy="42" rx="22" ry="26" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 2" class="text-indigo-400/60" />
+          <path d="M 24 90 C 24 70, 76 70, 76 90" fill="none" stroke="currentColor" stroke-width="2.5" stroke-dasharray="4 2" class="text-indigo-400/60" />
+        </svg>
+
+        <span id="faceFeedbackPill" class="absolute bottom-2.5 text-[9px] font-semibold bg-slate-900/90 text-slate-200 px-2.5 py-0.5 rounded-full border border-slate-700">
+          Align Face & Blink
+        </span>
+      </div>
+
+      <!-- Real-Time FFT Audio Visualizer -->
+      <div id="audioOnlyTerminalHud" class="hidden w-full p-4 rounded-2xl bg-slate-950 border border-slate-800 flex flex-col items-center text-center">
+        <div class="flex items-end space-x-1 h-12 w-full justify-center px-4 mb-2" id="audio-visualizer-bars">
+          <div class="w-2 bg-indigo-500/40 h-3 rounded-t"></div>
+          <div class="w-2 bg-indigo-500/60 h-6 rounded-t"></div>
+          <div class="w-2 bg-indigo-500 h-10 rounded-t shadow-md shadow-indigo-500"></div>
+          <div class="w-2 bg-indigo-500/80 h-8 rounded-t"></div>
+          <div class="w-2 bg-indigo-500/50 h-4 rounded-t"></div>
+        </div>
+        <h4 class="text-xs font-bold text-white uppercase tracking-wider">Acoustic Signal Scanner</h4>
+        <p class="text-[10px] text-slate-400 mt-0.5" id="audioOnlyStatusMsg">Scanning in-room audio tone...</p>
+      </div>
+
+      <div class="text-center min-w-0">
+        <p class="text-xs font-bold text-white truncate" id="step2SubjectTitle">Verifying Presence</p>
+        <p class="text-[10px] text-slate-400 font-mono mt-0.5 truncate" id="step2TelemetryStatus">Validating security policy...</p>
+      </div>
+
+      <!-- Progressive Waiver Trigger -->
+      <div id="studentWaiverPrompt" class="hidden">
+        <button id="btnRequestGpsWaiver" class="text-[11px] text-amber-400 underline font-semibold flex items-center gap-1">
+          <i class="fa-solid fa-satellite-dish"></i> Signal weak? Request waiver
+        </button>
+      </div>
+
+      <!-- Error Recovery Box -->
+      <div id="auditFailureBox" class="hidden w-full p-2.5 rounded-xl bg-rose-950/60 border border-rose-800 text-center">
+        <span class="text-xs font-bold text-rose-300 block" id="auditFailureTitle">Check Failed</span>
+        <p class="text-[11px] text-rose-400 mt-0.5" id="auditFailureDesc"></p>
+        <button id="btnRetryVerification" class="w-full mt-2 py-1.5 bg-rose-600 text-white font-bold text-xs rounded-lg">Retry</button>
+      </div>
+
+    </div>
+
+    <!-- STAGE 3: HIGH-VISIBILITY VERIFICATION PASS -->
+    <div id="stageSuccessConfirm" class="hidden bg-emerald-600 text-slate-950 rounded-3xl p-6 shadow-2xl relative overflow-hidden flex flex-col items-center text-center">
+      <div class="w-16 h-16 rounded-full bg-white text-emerald-600 flex items-center justify-center text-2xl shadow-xl mb-3 relative z-10">
+        <i class="fa-solid fa-check"></i>
+      </div>
+
+      <div class="relative z-10">
+        <span class="text-[9px] font-mono font-extrabold uppercase tracking-widest bg-emerald-900/30 text-emerald-950 px-2.5 py-0.5 rounded-full border border-emerald-900/20">
+          Official Attendance Pass
+        </span>
+        <h2 class="text-xl font-extrabold text-white mt-1.5 truncate" id="confirmRoll">--</h2>
+        <p class="text-xs font-bold text-emerald-950 truncate" id="confirmName">Student Name</p>
+        <p class="text-[11px] font-mono font-semibold text-emerald-900 truncate" id="confirmSubject">--</p>
+      </div>
+
+      <div class="w-full bg-emerald-700/40 p-2.5 rounded-xl border border-emerald-500/30 mt-4 text-[11px] font-mono text-emerald-950 flex justify-between items-center relative z-10">
+        <span>Time: <strong id="confirmTime" class="text-white">--:--</strong></span>
+        <span class="text-[9px] bg-white px-1.5 py-0.5 rounded font-bold" id="confirmGatesBadge">VERIFIED</span>
+      </div>
+
+      <button id="btnBackToTerminal" class="w-full mt-4 py-3 rounded-2xl bg-slate-950 hover:bg-slate-900 text-white font-bold text-xs tracking-wider uppercase transition-all shadow-lg shadow-black/30 flex items-center justify-center gap-2 relative z-10">
+        <i class="fa-solid fa-arrow-left"></i>
+        <span>Back to Terminal</span>
+      </button>
+    </div>
+
+  </main>
+
+  <!-- Mobile Fixed Footer -->
+  <footer class="fixed bottom-0 left-0 right-0 z-50 p-3 text-center text-[10px] text-slate-600 border-t border-slate-900 bg-slate-950/90 backdrop-blur-xl">
+    <div class="flex items-center justify-center gap-1.5 font-mono">
+      <span>EduPulse Spatial Attendance Terminal</span>
+      <span class="text-slate-700">•</span>
+      <span class="text-indigo-400/80">v9.5 PWA</span>
+    </div>
+  </footer>
+
+  <script>
+    const LOCAL_STORAGE_IDENTITY_KEY = 'edupulse_v9_student_identity';
+
+    let audioCtx = null;
+    let studentMicStream = null;
+    let studentVideoStream = null;
+    let enrollVideoStream = null;
+    let studentAnalyserNode = null;
+    let studentSpectrumAnimId = null;
+    let studentFaceInterval = null;
+    let html5QrScanner = null;
+    let faceApiModelsLoaded = false;
+    let ultrasoundScanTimeout = null;
+    let activeSessionUnsubscribe = null;
+
+    const sessionContext = {
+      sessionId: "",
+      classId: "",
+      year: "",
+      section: "",
+      subjectCode: "",
+      subjectName: "",
+      channelFreq: 18700,
+      nonce: "",
+      policy: {
+        requireQr: true,
+        requireDevice: true,
+        requireUltrasound: true,
+        requireFace: true,
+        requireGps: true
+      },
+      exp: 0
+    };
+
+    const studentState = {
+      roll: "",
+      name: "",
+      assignedSection: "AIML_2B",
+      deviceFingerprint: "",
+      registeredDescriptor: null,
+      liveDescriptor: null,
+      faceMatchDistance: 9.99,
+      isDeviceLocked: false,
+      isGpsMatched: false,
+      isFaceMatched: false,
+      isSoundMatched: false,
+      isExceptionApproved: false,
+      hasBlinked: false
+    };
+
+    const stageOnboarding = document.getElementById('stageOnboarding');
+    const stageScanProjectorQr = document.getElementById('stageScanProjectorQr');
+    const stageVerifyPresence = document.getElementById('stageVerifyPresence');
+    const stageSuccessConfirm = document.getElementById('stageSuccessConfirm');
+
+    const cardStudentName = document.getElementById('cardStudentName');
+    const cardStudentRoll = document.getElementById('cardStudentRoll');
+    const headerAssignedSection = document.getElementById('headerAssignedSection');
+    const btnStartScanningProjector = document.getElementById('btnStartScanningProjector');
+    const btnSwitchDevice = document.getElementById('btnSwitchDevice');
+    const sectionConflictAlert = document.getElementById('sectionConflictAlert');
+    const sectionConflictMsg = document.getElementById('sectionConflictMsg');
+    const sessionStatusDot = document.getElementById('sessionStatusDot');
+
+    const containerQrIngress = document.getElementById('containerQrIngress');
+    const containerBeaconIngress = document.getElementById('containerBeaconIngress');
+    const containerStandbyNotice = document.getElementById('containerStandbyNotice');
+    const standbySectionText = document.getElementById('standbySectionText');
+    const beaconSessionTitle = document.getElementById('beaconSessionTitle');
+    const beaconSessionSub = document.getElementById('beaconSessionSub');
+    const btnDirectBeaconVerify = document.getElementById('btnDirectBeaconVerify');
+
+    const step2SubjectTitle = document.getElementById('step2SubjectTitle');
+    const step2TelemetryStatus = document.getElementById('step2TelemetryStatus');
+    const cameraOvalContainer = document.getElementById('cameraOvalContainer');
+    const audioOnlyTerminalHud = document.getElementById('audioOnlyTerminalHud');
+    const audioOnlyStatusMsg = document.getElementById('audioOnlyStatusMsg');
+    const studentFaceVideo = document.getElementById('studentFaceVideo');
+    const reticleSilhouette = document.getElementById('reticleSilhouette');
+    const faceFeedbackPill = document.getElementById('faceFeedbackPill');
+    const studentWaiverPrompt = document.getElementById('studentWaiverPrompt');
+    const btnRequestGpsWaiver = document.getElementById('btnRequestGpsWaiver');
+    const auditFailureBox = document.getElementById('auditFailureBox');
+    const auditFailureTitle = document.getElementById('auditFailureTitle');
+    const btnRetryVerification = document.getElementById('btnRetryVerification');
+    const btnBackToTerminal = document.getElementById('btnBackToTerminal');
+
+    const ribbonSection = document.getElementById('ribbonSection');
+    const ribbonGps = document.getElementById('ribbonGps');
+    const ribbonUltrasound = document.getElementById('ribbonUltrasound');
+    const ribbonBiometrics = document.getElementById('ribbonBiometrics');
+    const ribbonCommit = document.getElementById('ribbonCommit');
+
+    const confirmRoll = document.getElementById('confirmRoll');
+    const confirmName = document.getElementById('confirmName');
+    const confirmSubject = document.getElementById('confirmSubject');
+    const confirmTime = document.getElementById('confirmTime');
+    const confirmGatesBadge = document.getElementById('confirmGatesBadge');
+
+    const enrollRollInput = document.getElementById('enrollRollInput');
+    const enrollNameInput = document.getElementById('enrollNameInput');
+    const enrollSectionSelect = document.getElementById('enrollSectionSelect');
+    const enrollVideo = document.getElementById('enrollVideo');
+    const enrollStatusOverlay = document.getElementById('enrollStatusOverlay');
+    const btnStartEnrollCamera = document.getElementById('btnStartEnrollCamera');
+    const btnCaptureDescriptor = document.getElementById('btnCaptureDescriptor');
+
+    async function initStudent() {
+      await computeDeviceFingerprint();
+      loadPersistedIdentity();
+      loadFaceApiModels();
+      listenToLiveSectionSession();
+    }
+
+    if (window.firebaseReady) initStudent();
+    else document.addEventListener('firebase-initialized', initStudent);
+
+    // AI Model Caching Engine Fix: Cache API wrapper interceptor to prevent CDN re-downloads
+    async function loadFaceApiModels() {
+	  const timeout = new Promise((_, reject) => setTimeout(() => reject('timeout'), 40000));
+	  try {
+		const MODEL_URL = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+		
+		await Promise.race([
+		  Promise.all([
+			faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+			faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
+			faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL)
+		  ]),
+		  timeout
+		]);
+		faceApiModelsLoaded = true;
+	  } catch (err) {
+		console.error("Face-API Load Error:", err);
+		faceApiModelsLoaded = false;
+	  }
+	}
+
+    async function computeDeviceFingerprint() {
+      let id = null;
+      try { id = localStorage.getItem('edupulse_device_id'); } catch (e) {}
+      if (!id) {
+        id = (crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).slice(2) + Date.now().toString(36)).replace(/-/g, '');
+        try { localStorage.setItem('edupulse_device_id', id); } catch (e) {}
+      }
+      studentState.deviceFingerprint = `DEV-${id.slice(0, 8).toUpperCase()}`;
+    }
+
+    function loadPersistedIdentity() {
+      const stored = localStorage.getItem(LOCAL_STORAGE_IDENTITY_KEY);
+      if (stored) {
+        try {
+          const p = JSON.parse(stored);
+          studentState.roll = p.rollNumber;
+          studentState.name = p.name;
+          studentState.assignedSection = p.assignedSection || "AIML_2B";
+          studentState.isDeviceLocked = true;
+
+          cardStudentName.textContent = p.name;
+          cardStudentRoll.textContent = `Roll: ${p.rollNumber} | Class: ${p.assignedSection}`;
+          headerAssignedSection.textContent = `Bound: ${p.assignedSection}`;
+          standbySectionText.textContent = p.assignedSection;
+          confirmRoll.textContent = p.rollNumber;
+          confirmName.textContent = p.name;
+
+          stageOnboarding.classList.add('hidden');
+          stageScanProjectorQr.classList.remove('hidden');
+          fetchRegisteredBiometrics(p.rollNumber);
+        } catch (e) {}
+      } else {
+        stageOnboarding.classList.remove('hidden');
+        stageScanProjectorQr.classList.add('hidden');
+      }
+    }
+
+    async function fetchRegisteredBiometrics(roll) {
+      if (!window.db) return;
+      try {
+        const snap = await window.getDoc(window.doc(window.db, window.getCollectionName('students'), roll));
+        if (snap.exists()) {
+          const d = snap.data();
+          studentState.boundFingerprint = d.boundDeviceFingerprint || "";
+          if (Array.isArray(d.faceDescriptor) && d.faceDescriptor.length === 128) studentState.registeredDescriptor = new Float32Array(d.faceDescriptor);
+        }
+      } catch (e) {}
+    }
+
+    btnSwitchDevice.addEventListener('click', () => {
+      if (confirm("Reset student profile binding?")) {
+        localStorage.removeItem(LOCAL_STORAGE_IDENTITY_KEY);
+        loadPersistedIdentity();
+      }
+    });
+
+    function listenToLiveSectionSession() {
+      if (!window.db || !studentState.assignedSection) return;
+
+      if (activeSessionUnsubscribe) {
+        activeSessionUnsubscribe();
+        activeSessionUnsubscribe = null;
+      }
+
+      const activeRef = window.doc(window.db, window.getCollectionName('active_sessions'), studentState.assignedSection);
+      activeSessionUnsubscribe = window.onSnapshot(activeRef, (snap) => {
+        if (!snap.exists()) {
+          showStandbyMode();
+          return;
+        }
+
+        const liveSession = snap.data();
+        if (!liveSession.isOpen) {
+          showStandbyMode();
+          return;
+        }
+
+        if (liveSession.updatedAt && liveSession.updatedAt.toMillis) {
+          const ageMs = Date.now() - liveSession.updatedAt.toMillis();
+          if (ageMs > 300000) {
+            showStandbyMode();
+            return;
+          }
+        }
+
+        Object.assign(sessionContext, liveSession);
+        adaptIngressModeToPolicy(liveSession.policy);
+      });
+    }
+
+    function showStandbyMode() {
+      stopQrScanner();
+      containerQrIngress.classList.add('hidden');
+      containerBeaconIngress.classList.add('hidden');
+      containerStandbyNotice.classList.remove('hidden');
+      if (sessionStatusDot) sessionStatusDot.className = "w-2 h-2 rounded-full bg-slate-600";
+    }
+
+    function adaptIngressModeToPolicy(policy) {
+      containerStandbyNotice.classList.add('hidden');
+      if (sessionStatusDot) sessionStatusDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+
+      if (!policy || policy.requireQr === true) {
+        containerBeaconIngress.classList.add('hidden');
+        containerQrIngress.classList.remove('hidden');
+      } else {
+        containerQrIngress.classList.add('hidden');
+        containerBeaconIngress.classList.remove('hidden');
+        beaconSessionTitle.textContent = `${sessionContext.subjectName} (${sessionContext.subjectCode})`;
+        beaconSessionSub.textContent = `Emitting ${sessionContext.channelFreq} Hz room beacon. Tap to verify.`;
+      }
+    }
+
+    btnDirectBeaconVerify.addEventListener('click', () => {
+      stageScanProjectorQr.classList.add('hidden');
+      stageVerifyPresence.classList.remove('hidden');
+      startAdaptiveSecurityPipeline();
+    });
+
+const RIBBON_ICONS = new Map();
+    function setRibbonCircle(el, state) {
+      if (!RIBBON_ICONS.has(el)) RIBBON_ICONS.set(el, el.innerHTML);
+      const base = "step-circle w-6 h-6 rounded-full flex items-center justify-center font-bold ";
+      const map = { active: ['bg-indigo-600 text-white animate-pulse', null], passed: ['bg-emerald-500 text-white', 'check'], bypassed: ['bg-slate-800 text-slate-500', 'minus'], failed: ['bg-rose-600 text-white', 'xmark'], idle: ['bg-slate-800 text-slate-500', null] };
+      const [cls, icon] = map[state] || map.idle;
+      el.className = base + cls;
+      el.innerHTML = icon ? `<i class="fa-solid fa-${icon}"></i>` : RIBBON_ICONS.get(el);
+    }
+
+let qrHandled = false, qrCooldownUntil = 0, sensorsStarted = false, committing = false, unsubExc = null;
+    const auditFailureDesc = document.getElementById('auditFailureDesc');
+    const req = k => (sessionContext.policy || {})[k] !== false;
+
+    function scanMsg(t) { sectionConflictMsg.textContent = t; sectionConflictAlert.classList.remove('hidden'); }
+
+    async function stopQrScanner() {
+      if (!html5QrScanner) return;
+      const sc = html5QrScanner; html5QrScanner = null;
+      try { if (sc.isScanning) await sc.stop(); sc.clear(); } catch (e) {}
+    }
+
+    btnStartScanningProjector.addEventListener('click', async () => {
+      btnStartScanningProjector.classList.add('hidden');
+      sectionConflictAlert.classList.add('hidden');
+      await stopQrScanner();
+      qrHandled = false;
+      html5QrScanner = new Html5Qrcode("projectorQrReaderView", {
+        formatsToSupport: [Html5QrcodeSupportedFormats.QR_CODE],
+        useBarCodeDetectorIfSupported: true,
+        verbose: false
+      });
+      try {
+        await html5QrScanner.start(
+          { facingMode: "environment" },
+          {
+            fps: 15,
+            disableFlip: true,
+            qrbox: (w, h) => { const m = Math.floor(Math.min(w, h) * 0.85); return { width: m, height: m }; },
+            videoConstraints: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 }, advanced: [{ focusMode: "continuous" }] }
+          },
+          onQrDecoded,
+          () => {}
+        );
+      } catch (e) {
+        await stopQrScanner();
+        scanMsg("Camera unavailable. Allow camera access (page must be HTTPS) and try again.");
+        btnStartScanningProjector.classList.remove('hidden');
+      }
+    });
+
+    async function onQrDecoded(raw) {
+      if (qrHandled || Date.now() < qrCooldownUntil) return;
+      qrHandled = true;
+      const fail = (msg) => { scanMsg(msg); qrCooldownUntil = Date.now() + 1500; qrHandled = false; };
+      let p;
+      try { p = JSON.parse(raw); } catch (e) { return fail("Not an EduPulse code. Point at the projector screen."); }
+      if (!p || !p.s || !p.n) return fail("Not an EduPulse code. Point at the projector screen.");
+      if (p.e && Date.now() / 1000 > p.e + 60) return fail("QR expired. Scan the live projector screen.");
+
+      try {
+        // Authoritative check against the live session of MY section (also catches wrong-class QRs and replays)
+        const snap = await window.getDoc(window.doc(window.db, window.getCollectionName('active_sessions'), studentState.assignedSection));
+        const live = snap.exists() ? snap.data() : null;
+        if (!live || !live.isOpen) return fail("No live session for your section right now.");
+        if (live.sessionId !== p.s) return fail(`This QR is for another class. You are in ${studentState.assignedSection}.`);
+        if (p.n !== live.activeNonce && p.n !== live.prevNonce) return fail("QR code is out of date. Scan the current one.");
+        Object.assign(sessionContext, live);
+      } catch (e) { return fail("Could not verify with server. Check your connection."); }
+
+      await stopQrScanner();
+      stageScanProjectorQr.classList.add('hidden');
+      stageVerifyPresence.classList.remove('hidden');
+      startAdaptiveSecurityPipeline();
+    }
+
+    function stopSensors() {
+      if (studentFaceInterval) { clearInterval(studentFaceInterval); studentFaceInterval = null; }
+      clearTimeout(ultrasoundScanTimeout);
+      if (studentSpectrumAnimId) { cancelAnimationFrame(studentSpectrumAnimId); studentSpectrumAnimId = null; }
+      [studentVideoStream, studentMicStream].forEach(st => st && st.getTracks().forEach(t => t.stop()));
+      studentVideoStream = null; studentMicStream = null;
+    }
+
+    function resetPipelineUI() {
+      stopSensors();
+      Object.assign(studentState, { isFaceMatched: false, isSoundMatched: false, isGpsMatched: false, isExceptionApproved: false, hasBlinked: false, faceMatchDistance: 9.99 });
+      faceBusy = false; maxEar = 0; matchStreak = 0; chirpPatternState = 0; successfulChirps = 0;
+      [ribbonSection, ribbonGps, ribbonUltrasound, ribbonBiometrics, ribbonCommit].forEach(r => setRibbonCircle(r, 'idle'));
+      auditFailureBox.classList.add('hidden');
+      studentWaiverPrompt.classList.add('hidden');
+      btnRequestGpsWaiver.innerHTML = '<i class="fa-solid fa-satellite-dish"></i> Signal weak? Request waiver';
+    }
+
+    async function startAdaptiveSecurityPipeline() {
+      resetPipelineUI();
+      sensorsStarted = false; committing = false;
+      const policy = sessionContext.policy || {};
+      step2SubjectTitle.textContent = `${sessionContext.subjectName} (${sessionContext.subjectCode})`;
+      setRibbonCircle(ribbonSection, 'passed');
+      listenToStudentExceptionStatus();
+
+      if (!studentState.registeredDescriptor || studentState.boundFingerprint === undefined) await fetchRegisteredBiometrics(studentState.roll);
+      if (req('requireDevice') && studentState.boundFingerprint && studentState.boundFingerprint !== studentState.deviceFingerprint) {
+        return showAuditFailure("Device Mismatch", "This roll number is bound to another phone. Ask faculty to reset the device lock.");
+      }
+
+      if (policy.requireGps === false) {
+        setRibbonCircle(ribbonGps, 'bypassed');
+        studentState.isGpsMatched = true;
+      } else {
+        setRibbonCircle(ribbonGps, 'active');
+        step2TelemetryStatus.textContent = "Verifying GPS geofence...";
+        let ok = false;
+        try { ok = await verifyCampusGeofence(); }
+        catch (err) {
+          if (studentState.isExceptionApproved) return;
+          setRibbonCircle(ribbonGps, 'failed');
+          studentWaiverPrompt.classList.remove('hidden');
+          return showAuditFailure("GPS Error", err && err.code === 1 ? "Location permission denied." : "Could not get a location fix.");
+        }
+        if (!ok && !studentState.isExceptionApproved) {
+          setRibbonCircle(ribbonGps, 'failed');
+          studentWaiverPrompt.classList.remove('hidden');
+          return showAuditFailure("Geofence Mismatch", "You appear to be outside the permitted campus boundary.");
+        }
+        studentState.isGpsMatched = true;
+        setRibbonCircle(ribbonGps, 'passed');
+      }
+      await continuePipeline();
+    }
+
+    async function continuePipeline() {
+      if (sensorsStarted) return;
+      sensorsStarted = true;
+      const policy = sessionContext.policy || {};
+      if (policy.requireUltrasound === false || studentState.isExceptionApproved) {
+        setRibbonCircle(ribbonUltrasound, studentState.isExceptionApproved ? 'passed' : 'bypassed');
+        studentState.isSoundMatched = true;
+      } else {
+        studentState.isSoundMatched = false;
+        setRibbonCircle(ribbonUltrasound, 'active');
+      }
+      if (policy.requireFace === false) {
+        setRibbonCircle(ribbonBiometrics, 'bypassed');
+        cameraOvalContainer.classList.add('hidden');
+        audioOnlyTerminalHud.classList.remove('hidden');
+        studentState.isFaceMatched = true;
+      } else {
+        cameraOvalContainer.classList.remove('hidden');
+        audioOnlyTerminalHud.classList.add('hidden');
+        studentState.isFaceMatched = false;
+        setRibbonCircle(ribbonBiometrics, 'active');
+      }
+      step2TelemetryStatus.textContent = "Checking room tone / face...";
+      startMediaSensors();
+    }
+
+    function verifyCampusGeofence() {
+      return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) { reject(new Error('Geolocation unsupported')); return; }
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const campusLat = 15.4850;
+            const campusLon = 78.4870;
+            const userLat = position.coords.latitude;
+            const userLon = position.coords.longitude;
+
+            const R = 6371e3;
+            const φ1 = (campusLat * Math.PI) / 180;
+            const φ2 = (userLat * Math.PI) / 180;
+            const Δφ = ((userLat - campusLat) * Math.PI) / 180;
+            const Δλ = ((userLon - campusLon) * Math.PI) / 180;
+
+            const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) + Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            const distance = R * c;
+
+            if (distance - Math.min(position.coords.accuracy || 0, 150) <= 500) {
+              resolve(true);
+            } else {
+              resolve(false);
+            }
+          },
+          (err) => reject(err),
+          { timeout: 15000, enableHighAccuracy: true, maximumAge: 10000 }
+        );
+      });
+    }
+
+    function ensureAudioContext() {
+      if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+    }
+
+    async function startMediaSensors() {
+      ensureAudioContext();
+      const policy = sessionContext.policy || {};
+
+      try {
+        if (policy.requireUltrasound) {
+          studentMicStream = await navigator.mediaDevices.getUserMedia({
+            audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+          });
+          const micSource = audioCtx.createMediaStreamSource(studentMicStream);
+          studentAnalyserNode = audioCtx.createAnalyser();
+          studentAnalyserNode.fftSize = 8192;
+          studentAnalyserNode.smoothingTimeConstant = 0.2;
+          micSource.connect(studentAnalyserNode);
+
+          renderAcousticSpectrum();
+          ultrasoundScanTimeout = setTimeout(() => {
+            if (!studentState.isSoundMatched && !studentState.isExceptionApproved) {
+              setRibbonCircle(ribbonUltrasound, 'failed');
+              studentWaiverPrompt.classList.remove('hidden');
+            }
+          }, 12000);
+        }
+
+        if (policy.requireFace) {
+          studentVideoStream = await navigator.mediaDevices.getUserMedia({
+            video: { width: 360, height: 480, facingMode: "user" }
+          });
+          studentFaceVideo.srcObject = studentVideoStream;
+          startOneShotFaceAudit();
+        }
+
+        checkFinalReadiness();
+      } catch (err) {
+        showAuditFailure("Hardware Blocked", "Camera or microphone permissions denied.");
+      }
+    }
+
+    // Audio Engine Fix: Added logic to verify the dual-tone alternating frequency chirp
+    let chirpPatternState = 0; // 0 = looking for base frequency, 1 = looking for alt frequency
+    let successfulChirps = 0;
+
+let lastChirpAt = 0;
+    function toneLevel(d, freq) {   // dB above the local noise floor around freq
+      const c = Math.round(freq / (audioCtx.sampleRate / studentAnalyserNode.fftSize));
+      let pk = -200;
+      for (let b = c - 3; b <= c + 3; b++) if (d[b] > pk) pk = d[b];
+      let sum = 0, n = 0;
+      for (const o of [-40, -30, -20, 20, 30, 40]) { const v = d[c + o]; if (isFinite(v)) { sum += v; n++; } }
+      return pk - (n ? sum / n : -100);
+    }
+
+    function renderAcousticSpectrum() {
+      if (!studentAnalyserNode) return;
+      const d = new Float32Array(studentAnalyserNode.frequencyBinCount);
+      studentAnalyserNode.getFloatFrequencyData(d);
+      const baseFreq = sessionContext.channelFreq, altFreq = baseFreq + 500;
+
+      const bars = document.getElementById('audio-visualizer-bars')?.children;
+      if (bars) {
+        const fr = [baseFreq - 250, baseFreq, baseFreq + 250, altFreq, altFreq + 250];
+        for (let i = 0; i < bars.length; i++) bars[i].style.height = `${Math.max(6, Math.min(44, 6 + toneLevel(d, fr[i % 5]) * 2))}px`;
+      }
+
+      const hasB = toneLevel(d, baseFreq) > 12, hasA = toneLevel(d, altFreq) > 12, t = performance.now();
+      if (chirpPatternState === 1 && t - lastChirpAt > 1200) chirpPatternState = 0;
+      if (chirpPatternState === 0 && hasB && !hasA) { chirpPatternState = 1; lastChirpAt = t; }
+      else if (chirpPatternState === 1 && hasA) { chirpPatternState = 0; successfulChirps++; }
+
+      if (successfulChirps >= 2) {
+        studentState.isSoundMatched = true;
+        clearTimeout(ultrasoundScanTimeout);
+        setRibbonCircle(ribbonUltrasound, 'passed');
+        audioOnlyStatusMsg.textContent = `${baseFreq}/${altFreq} Hz Dual Tone Verified!`;
+        checkFinalReadiness();
+      } else {
+        studentSpectrumAnimId = requestAnimationFrame(renderAcousticSpectrum);
+      }
+    }
+
+let faceBusy = false, maxEar = 0, matchStreak = 0, faceModelsPromise = null;
+    async function ensureFaceModels() {
+      if (faceApiModelsLoaded) return true;
+      if (!faceModelsPromise) faceModelsPromise = loadFaceApiModels().finally(() => { faceModelsPromise = null; });
+      await faceModelsPromise;
+      return faceApiModelsLoaded;
+    }
+    function earOf(lm) {
+      const f = e => (Math.hypot(e[1].x - e[5].x, e[1].y - e[5].y) + Math.hypot(e[2].x - e[4].x, e[2].y - e[4].y)) / (2 * Math.hypot(e[0].x - e[3].x, e[0].y - e[3].y));
+      return (f(lm.getLeftEye()) + f(lm.getRightEye())) / 2;
+    }
+
+    function startOneShotFaceAudit() {
+      if (studentFaceInterval) clearInterval(studentFaceInterval);
+      maxEar = 0; matchStreak = 0;
+      studentFaceInterval = setInterval(async () => {
+        if (faceBusy || !studentVideoStream) return;
+        faceBusy = true;
+        try {
+          if (!(await ensureFaceModels())) return showAuditFailure("Biometric Error", "Face models failed to load. Check connection and retry.");
+          const reg = studentState.registeredDescriptor;
+          if (!reg || reg.length !== 128) {
+            studentWaiverPrompt.classList.remove('hidden');
+            return showAuditFailure("No Face Profile", "Re-enroll your face or request a waiver.");
+          }
+          const det = await faceapi.detectSingleFace(studentFaceVideo).withFaceLandmarks().withFaceDescriptor();
+          const paint = c => reticleSilhouette.querySelectorAll('ellipse, path').forEach(el => el.className.baseVal = c);
+          if (!det) { paint("text-indigo-400/60"); faceFeedbackPill.textContent = "Align Face"; matchStreak = 0; return; }
+          paint("text-cyan-400");
+
+          const ear = earOf(det.landmarks);
+          if (ear > maxEar) maxEar = ear;
+          if (maxEar > 0.2 && ear < maxEar * 0.72) studentState.hasBlinked = true;   // relative drop = blink
+
+          const dist = faceapi.euclideanDistance(det.descriptor, reg);
+          studentState.faceMatchDistance = parseFloat(dist.toFixed(3));
+          matchStreak = dist < 0.5 ? matchStreak + 1 : 0;
+
+          if (!studentState.hasBlinked) faceFeedbackPill.textContent = "Blink to prove liveness";
+          else if (matchStreak >= 2) completeBiometricVerification();
+          else faceFeedbackPill.textContent = dist < 0.5 ? "Matching..." : "Face not recognised";
+        } catch (e) {}
+        finally { faceBusy = false; }
+      }, 150);
+    }
+
+    function completeBiometricVerification() {
+      studentState.isFaceMatched = true;
+      if (studentFaceInterval) clearInterval(studentFaceInterval);
+      if (studentVideoStream) { studentVideoStream.getTracks().forEach(t => t.stop()); studentVideoStream = null; }
+
+      reticleSilhouette.querySelectorAll('ellipse, path').forEach(el => el.className.baseVal = "text-emerald-400");
+      faceFeedbackPill.textContent = "Authenticated";
+      setRibbonCircle(ribbonBiometrics, 'passed');
+
+      checkFinalReadiness();
+    }
+
+    function checkFinalReadiness() {
+      const policy = sessionContext.policy || {};
+      const gpsReady = !policy.requireGps || studentState.isGpsMatched || studentState.isExceptionApproved;
+      const faceReady = !policy.requireFace || studentState.isFaceMatched;
+      const soundReady = !policy.requireUltrasound || studentState.isSoundMatched || studentState.isExceptionApproved;
+
+      if (gpsReady && faceReady && soundReady) commitAttendanceAndFinish();
+    }
+
+    async function commitAttendanceAndFinish() {
+      if (committing) return;
+      committing = true;
+      setRibbonCircle(ribbonCommit, 'active');
+      if (studentSpectrumAnimId) cancelAnimationFrame(studentSpectrumAnimId);
+      if (studentMicStream) { studentMicStream.getTracks().forEach(t => t.stop()); studentMicStream = null; }
+
+      const checkInTime = new Date().toLocaleTimeString('en-IN', { hour12: false });
+      const policy = sessionContext.policy || {};
+
+      if (!window.db || !sessionContext.sessionId) {
+        committing = false;
+        setRibbonCircle(ribbonCommit, 'failed');
+        return showAuditFailure("Sync Error", "No connection to the session. Try again.");
+      }
+      {
+        try {
+          const docRef = window.doc(window.db, window.getCollectionName('sessions'), sessionContext.sessionId, 'attendees', studentState.roll);
+          await window.setDoc(docRef, {
+            roll: studentState.roll,
+            name: studentState.name,
+            classId: studentState.assignedSection,
+            subjectCode: sessionContext.subjectCode,
+            subjectName: sessionContext.subjectName,
+            faceDist: policy.requireFace ? studentState.faceMatchDistance : "BYPASSED",
+            acousticProof: policy.requireUltrasound ? `${sessionContext.channelFreq}Hz-CH` : "BYPASSED",
+            deviceFingerprint: studentState.deviceFingerprint,
+            isOverride: studentState.isExceptionApproved || false,
+            timestamp: checkInTime,});
+          if (!studentState.boundFingerprint) {
+            window.setDoc(window.doc(window.db, window.getCollectionName('students'), studentState.roll), { boundDeviceFingerprint: studentState.deviceFingerprint }, { merge: true }).catch(() => {});
+          }
+          setRibbonCircle(ribbonCommit, 'passed');
+        } catch (e) {
+          setRibbonCircle(ribbonCommit, 'failed');
+          committing = false;
+          showAuditFailure("Sync Error", "Could not commit record. Tap retry.");
+          return;
+        }
+      }
+
+      confirmSubject.textContent = sessionContext.subjectName;
+      confirmTime.textContent = checkInTime;
+      confirmGatesBadge.textContent = policy.requireUltrasound && !policy.requireFace && !policy.requireQr ? "BEACON-LOCKED" : "VERIFIED";
+
+      setTimeout(() => {
+        stageVerifyPresence.classList.add('hidden');
+        stageSuccessConfirm.classList.remove('hidden');
+      }, 400);
+    }
+
+function showAuditFailure(title, desc) {
+      auditFailureTitle.textContent = title;
+      auditFailureDesc.textContent = desc || '';
+      auditFailureBox.classList.remove('hidden');
+      stopSensors();
+    }
+
+    function returnToIngress() {
+      resetPipelineUI();
+      committing = false; qrHandled = false;
+      stageSuccessConfirm.classList.add('hidden');
+      stageVerifyPresence.classList.add('hidden');
+      stageScanProjectorQr.classList.remove('hidden');
+      sectionConflictAlert.classList.add('hidden');
+      btnStartScanningProjector.classList.remove('hidden');
+      listenToLiveSectionSession();
+    }
+
+    btnRetryVerification.addEventListener('click', returnToIngress);
+    btnBackToTerminal.addEventListener('click', () => {
+      if (audioCtx && audioCtx.state !== 'closed') audioCtx.suspend().catch(() => {});
+      returnToIngress();
+    });
+
+    btnRequestGpsWaiver.addEventListener('click', async () => {
+      if (!window.db || !studentState.roll) return;
+      btnRequestGpsWaiver.textContent = "Waiver Sent...";
+      const docRef = window.doc(window.db, window.getCollectionName('sessions'), sessionContext.sessionId, 'exceptions', studentState.roll);
+      await window.setDoc(docRef, {
+        roll: studentState.roll,
+        name: studentState.name,
+        faceDist: studentState.faceMatchDistance,
+        soundMatched: studentState.isSoundMatched,
+        deviceFingerprint: studentState.deviceFingerprint,
+        status: "PENDING",
+        requestedAt: window.serverTimestamp()
+      });
+    });
+
+function listenToStudentExceptionStatus() {
+      if (unsubExc) { unsubExc(); unsubExc = null; }
+      if (!window.db || !sessionContext.sessionId || !studentState.roll) return;
+      const docRef = window.doc(window.db, window.getCollectionName('sessions'), sessionContext.sessionId, 'exceptions', studentState.roll);
+      unsubExc = window.onSnapshot(docRef, (snap) => {
+        if (!snap.exists() || snap.data().status !== "APPROVED" || studentState.isExceptionApproved) return;
+        studentState.isExceptionApproved = true;
+        studentState.isGpsMatched = true;
+        studentState.isSoundMatched = true;
+        setRibbonCircle(ribbonGps, 'passed');
+        setRibbonCircle(ribbonUltrasound, 'passed');
+        studentWaiverPrompt.classList.add('hidden');
+        auditFailureBox.classList.add('hidden');
+        if (!sensorsStarted) continuePipeline(); else checkFinalReadiness();
+      });
+    }
+
+    btnStartEnrollCamera.addEventListener('click', async () => {
+      try {
+        enrollVideoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 360, height: 270, facingMode: "user" } });
+        enrollVideo.srcObject = enrollVideoStream;
+        enrollStatusOverlay.textContent = "Look into camera";
+        btnCaptureDescriptor.disabled = false;
+      } catch (e) { alert("Camera denied."); }
+    });
+
+btnCaptureDescriptor.addEventListener('click', async () => {
+      const roll = enrollRollInput.value.trim().toUpperCase();
+      const name = enrollNameInput.value.trim();
+      const section = enrollSectionSelect.value;
+      if (!/^[A-Z0-9]{6,15}$/.test(roll) || !name) return alert("Enter a valid Roll number and Name.");
+      if (!window.db) return alert("Offline. Connect to the internet and retry.");
+
+      btnCaptureDescriptor.disabled = true;
+      try {
+        enrollStatusOverlay.textContent = "Loading face model...";
+        if (!(await ensureFaceModels())) throw new Error("Face model failed to load. Check connection and retry.");
+
+        const samples = [];
+        for (let i = 0; i < 10 && samples.length < 3; i++) {
+          enrollStatusOverlay.textContent = `Hold still ${samples.length + 1}/3`;
+          const det = await faceapi.detectSingleFace(enrollVideo).withFaceLandmarks().withFaceDescriptor();
+          if (det) samples.push(det.descriptor);
+          await new Promise(r => setTimeout(r, 300));
+        }
+        if (samples.length < 3) throw new Error("Face not clearly detected. Improve lighting and retry.");
+        const desc = Array.from(samples[0], (_, k) => samples.reduce((a, d) => a + d[k], 0) / samples.length);
+
+        const ref = window.doc(window.db, window.getCollectionName('students'), roll);
+        const ex = await window.getDoc(ref);
+        if (ex.exists() && ex.data().boundDeviceFingerprint && ex.data().boundDeviceFingerprint !== studentState.deviceFingerprint) {
+          throw new Error("This roll is already bound to another phone. Ask faculty to reset it.");
+        }
+        await window.setDoc(ref, { roll, name, assignedSection: section, faceDescriptor: desc, boundDeviceFingerprint: studentState.deviceFingerprint, enrolledAt: window.serverTimestamp() });
+
+        localStorage.setItem(LOCAL_STORAGE_IDENTITY_KEY, JSON.stringify({ rollNumber: roll, name, assignedSection: section }));
+        if (enrollVideoStream) enrollVideoStream.getTracks().forEach(t => t.stop());
+        loadPersistedIdentity();
+        listenToLiveSectionSession();
+      } catch (err) {
+        alert(err.message || "Enrollment failed.");
+        enrollStatusOverlay.textContent = "Look into camera";
+      } finally { btnCaptureDescriptor.disabled = false; }
+    });
+  </script>
+</body>
+</html>
