@@ -3,6 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <script>
+/* EduPulse offline gate: self-contained (no CDN) so it renders even when nothing else loaded */
+(function () {
+  var css = '#offGate{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;background:radial-gradient(circle at 50% 15%,#312e81 0,#0f172a 45%,#020617 100%);color:#e2e8f0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;touch-action:none;user-select:none;-webkit-user-select:none}' +
+    '#offGate.on{display:flex}#offGate h2{margin:0;font-size:20px;font-weight:800;color:#fff}#offGate p{margin:0;font-size:12px;color:#94a3b8;max-width:320px}' +
+    '#offGate .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;animation:offp 1.2s infinite}@keyframes offp{50%{opacity:.25;transform:scale(1.5)}}' +
+    '#offCanvas{border-radius:18px;background:rgba(15,23,42,.85);border:1px solid #334155;box-shadow:0 0 40px rgba(99,102,241,.25);touch-action:none}' +
+    '#offHud{display:flex;gap:14px;font:600 11px ui-monospace,monospace;color:#a5b4fc}' +
+    '#offGate button{font:700 12px system-ui;padding:9px 14px;border-radius:12px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;cursor:pointer}#offGate button.pri{background:#4f46e5;border-color:#6366f1;color:#fff}' +
+    '#offToast{font:700 11px system-ui;color:#34d399;min-height:14px}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var el, cv, cx, shown = false, pending = false, wasShown = false, fails = 0;
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], B = [1, 2, 4, 8];
+  var G = { n: 7, lvl: 1, moves: 0, t0: 0, x: 0, y: 0, cells: [], run: false, won: false };
+
+  function gen(n) {
+    var c = new Array(n * n).fill(0), vis = new Array(n * n).fill(false), s = [0]; vis[0] = true;
+    while (s.length) {
+      var cur = s[s.length - 1], x = cur % n, y = (cur / n) | 0, o = [];
+      if (y > 0 && !vis[cur - n]) o.push([1, cur - n, 4]);
+      if (x < n - 1 && !vis[cur + 1]) o.push([2, cur + 1, 8]);
+      if (y < n - 1 && !vis[cur + n]) o.push([4, cur + n, 1]);
+      if (x > 0 && !vis[cur - 1]) o.push([8, cur - 1, 2]);
+      if (!o.length) { s.pop(); continue; }
+      var p = o[(Math.random() * o.length) | 0]; c[cur] |= p[0]; c[p[1]] |= p[2]; vis[p[1]] = true; s.push(p[1]);
+    }
+    return c;
+  }
+  function newMaze() { G.cells = gen(G.n); G.x = 0; G.y = 0; G.moves = 0; G.t0 = Date.now(); G.run = false; G.won = false; }
+  function cell() { return G.cells[G.y * G.n + G.x]; }
+
+  function move(d) {
+    if (G.run || G.won) return;
+    G.run = true;
+    (function step() {
+      if (!(cell() & B[d])) { G.run = false; return; }
+      G.x += DX[d]; G.y += DY[d]; G.moves++;
+      if (G.x === G.n - 1 && G.y === G.n - 1) return win();
+      var o = [], c = cell();
+      for (var k = 0; k < 4; k++) if ((c & B[k]) && k !== (d + 2) % 4) o.push(k);
+      if (o.length === 1) { d = o[0]; setTimeout(step, 60); } else G.run = false;
+    })();
+  }
+  function win() {
+    G.won = true; G.run = false;
+    var t = Math.round((Date.now() - G.t0) / 1000);
+    document.getElementById('offToast').textContent = 'Signal found! Level ' + G.lvl + ' in ' + t + 's / ' + G.moves + ' moves';
+    G.lvl++; G.n = Math.min(13, 6 + G.lvl);
+    setTimeout(function () { document.getElementById('offToast').textContent = ''; newMaze(); }, 1400);
+  }
+
+  function draw() {
+    if (!shown) return;
+    var w = cv.width, n = G.n, s = w / n, t = Date.now() / 1000;
+    cx.clearRect(0, 0, w, w);
+    cx.lineCap = 'round'; cx.lineWidth = 3; cx.strokeStyle = '#6366f1'; cx.shadowColor = '#818cf8'; cx.shadowBlur = 8;
+    cx.beginPath();
+    for (var i = 0; i < n * n; i++) {
+      var x = (i % n) * s, y = ((i / n) | 0) * s, c = G.cells[i];
+      if (!(c & 1)) { cx.moveTo(x, y); cx.lineTo(x + s, y); }
+      if (!(c & 2)) { cx.moveTo(x + s, y); cx.lineTo(x + s, y + s); }
+      if (!(c & 4)) { cx.moveTo(x, y + s); cx.lineTo(x + s, y + s); }
+      if (!(c & 8)) { cx.moveTo(x, y); cx.lineTo(x, y + s); }
+    }
+    cx.stroke();
+    var gx = (n - .5) * s, p = (t % 1.4) / 1.4;
+    cx.shadowColor = '#34d399'; cx.strokeStyle = 'rgba(52,211,153,' + (1 - p) + ')'; cx.lineWidth = 2;
+    cx.beginPath(); cx.arc(gx, gx, s * (.15 + p * .4), 0, 7); cx.stroke();
+    cx.fillStyle = '#34d399'; cx.beginPath(); cx.arc(gx, gx, s * .13, 0, 7); cx.fill();
+    cx.shadowColor = '#22d3ee'; cx.fillStyle = '#22d3ee';
+    cx.beginPath(); cx.arc((G.x + .5) * s, (G.y + .5) * s, s * (.24 + Math.sin(t * 6) * .03), 0, 7); cx.fill();
+    document.getElementById('offHud').innerHTML = '<span>LEVEL ' + G.lvl + '</span><span>MOVES ' + G.moves + '</span><span>' + Math.round((Date.now() - G.t0) / 1000) + 's</span>';
+    requestAnimationFrame(draw);
+  }
+
+  function build() {
+    el = document.createElement('div'); el.id = 'offGate';
+    el.innerHTML = '<h2><span class="dot"></span>You\u2019re offline</h2><p>No problem \u2014 we\u2019ll reconnect automatically. Meanwhile, swipe to guide the pulse to the signal tower.</p>' +
+      '<canvas id="offCanvas"></canvas><div id="offHud"></div><div id="offToast"></div>' +
+      '<div style="display:flex;gap:8px"><button id="offNew">New maze</button><button class="pri" id="offCheck">Check connection</button></div>';
+    document.body.appendChild(el);
+    cv = document.getElementById('offCanvas'); cx = cv.getContext('2d');
+    var sz = Math.min(window.innerWidth - 32, window.innerHeight - 280, 360); cv.width = cv.height = Math.max(220, sz); cv.style.width = cv.style.height = cv.width + 'px';
+    var sx, sy;
+    cv.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    cv.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+      move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+    }, { passive: true });
+    document.addEventListener('keydown', function (e) {
+      if (!shown) return;
+      var m = { ArrowUp: 0, w: 0, ArrowRight: 1, d: 1, ArrowDown: 2, s: 2, ArrowLeft: 3, a: 3 }[e.key];
+      if (m !== undefined) { e.preventDefault(); move(m); }
+    });
+    document.getElementById('offNew').onclick = function () { newMaze(); };
+    document.getElementById('offCheck').onclick = check;
+    newMaze();
+    if (pending) show();
+  }
+
+  function show() {
+    if (!el) { pending = true; return; }
+    if (shown) return;
+    shown = wasShown = true; el.classList.add('on'); document.body.style.overflow = 'hidden'; draw();
+  }
+  function hide() {
+    if (!shown) return;
+    shown = false; el.classList.remove('on'); document.body.style.overflow = '';
+    // if the page loaded without its libraries (opened offline), reload now that we're back
+    if (wasShown && (typeof tailwind === 'undefined' || !window.firebaseReady)) location.reload();
+  }
+  function probe() {
+    return new Promise(function (res) {
+      if (!navigator.onLine) return res(false);
+      var done = false, t = setTimeout(function () { if (!done) { done = true; res(false); } }, 4000);
+      fetch('https://www.gstatic.com/generate_204', { mode: 'no-cors', cache: 'no-store' })
+        .then(function () { if (!done) { done = true; clearTimeout(t); res(true); } })
+        .catch(function () { if (!done) { done = true; clearTimeout(t); res(false); } });
+    });
+  }
+  function check() { probe().then(function (ok) { if (ok) { pending = false; hide(); } else show(); }); }
+
+  document.addEventListener('DOMContentLoaded', build);
+  window.addEventListener('offline', function () { show(); });
+  window.addEventListener('online', check);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  window.addEventListener('load', function () { if (typeof tailwind === 'undefined' || !navigator.onLine) show(); setTimeout(check, 1500); });
+  setInterval(check, 10000);
+})();
+</script>
   <title>EduPulse - Student Terminal</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -96,13 +228,7 @@
         </div>
         <div>
           <label class="text-[10px] font-mono text-slate-400 block mb-0.5">SECTION</label>
-          <select id="enrollSectionSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono">
-            <option value="AIML_1A">I B.Tech - Section A</option>
-            <option value="AIML_2B" selected>II B.Tech - Section B</option>
-            <option value="AIML_3A">III B.Tech - Section A</option>
-            <option value="AIML_3B">III B.Tech - Section B</option>
-            <option value="AIML_4A">IV B.Tech - Section A</option>
-          </select>
+          <select id="enrollSectionSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono"><option value="">Loading sections...</option></select>
         </div>
 
         <div class="w-48 h-48 mx-auto bg-black rounded-full overflow-hidden flex items-center justify-center border-4 border-slate-800 relative shadow-xl">
@@ -166,6 +292,13 @@
           <i class="fa-solid fa-wave-square"></i>
           <span>Verify In-Room Audio Tone</span>
         </button>
+      </div>
+
+      <!-- Section removed: re-pick -->
+      <div id="sectionRepick" class="hidden flex flex-col gap-2 p-3 rounded-xl bg-amber-950/40 border border-amber-800 text-center text-xs text-amber-200">
+        <span class="font-bold">Your section was changed or archived</span>
+        <select id="rePickSelect" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-mono"></select>
+        <button id="btnRepick" class="w-full py-2 rounded-xl bg-amber-600 text-white font-bold">Move me to this section</button>
       </div>
 
       <!-- Standby state -->
@@ -324,7 +457,7 @@
     const studentState = {
       roll: "",
       name: "",
-      assignedSection: "AIML_2B",
+      assignedSection: "",
       deviceFingerprint: "",
       registeredDescriptor: null,
       liveDescriptor: null,
@@ -394,10 +527,51 @@
     const btnStartEnrollCamera = document.getElementById('btnStartEnrollCamera');
     const btnCaptureDescriptor = document.getElementById('btnCaptureDescriptor');
 
+const sectionsStore = new Map();
+    let campusCfg = { lat: 15.485, lon: 78.487, radius: 500 };
+    const activeSecs = () => [...sectionsStore.values()].filter(x => !x.archived).sort((a, b) => a.label.localeCompare(b.label));
+    const secLabel = id => (sectionsStore.get(id) || {}).label || id || '--';
+    function fillSelect(sel) {
+      const cur = sel.value;
+      sel.innerHTML = activeSecs().map(x => `<option value="${x.id}">${x.label}</option>`).join('') || '<option value="">No sections yet</option>';
+      if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+    }
+    function refreshSectionUI() {
+      const rp = document.getElementById('rePickSelect'), box = document.getElementById('sectionRepick');
+      fillSelect(enrollSectionSelect); fillSelect(rp);
+      if (!studentState.roll) return;
+      const id = studentState.assignedSection, l = secLabel(id), sec = sectionsStore.get(id);
+      headerAssignedSection.textContent = `Bound: ${l}`;
+      cardStudentRoll.textContent = `Roll: ${studentState.roll} | Class: ${l}`;
+      standbySectionText.textContent = l;
+      const bad = sectionsStore.size > 0 && (!sec || sec.archived);
+      box.classList.toggle('hidden', !bad);
+      if (bad) { stopQrScanner(); containerQrIngress.classList.add('hidden'); containerBeaconIngress.classList.add('hidden'); containerStandbyNotice.classList.remove('hidden'); }
+    }
+    function startSectionSync() {
+      window.onSnapshot(window.collection(window.db, window.getCollectionName('sections')), snap => {
+        sectionsStore.clear(); snap.forEach(d => sectionsStore.set(d.id, { id: d.id, ...d.data() })); refreshSectionUI();
+      });
+      window.onSnapshot(window.doc(window.db, window.getCollectionName('config'), 'campus'), snap => {
+        if (!snap.exists()) return;
+        const c = snap.data();
+        if (isFinite(c.lat) && isFinite(c.lon)) campusCfg = { lat: +c.lat, lon: +c.lon, radius: +c.radius || 500 };
+      });
+    }
+    document.getElementById('btnRepick').addEventListener('click', async () => {
+      const sec = document.getElementById('rePickSelect').value; if (!sec) return;
+      try { await window.setDoc(window.doc(window.db, window.getCollectionName('students'), studentState.roll), { assignedSection: sec }, { merge: true }); }
+      catch (e) { return alert('Could not update. Try again.'); }
+      studentState.assignedSection = sec;
+      try { const p = JSON.parse(localStorage.getItem(LOCAL_STORAGE_IDENTITY_KEY)); p.assignedSection = sec; localStorage.setItem(LOCAL_STORAGE_IDENTITY_KEY, JSON.stringify(p)); } catch (e) {}
+      listenToLiveSectionSession(); refreshSectionUI();
+    });
+
     async function initStudent() {
       await computeDeviceFingerprint();
       loadPersistedIdentity();
       loadFaceApiModels();
+      startSectionSync();
       listenToLiveSectionSession();
     }
 
@@ -442,7 +616,7 @@
           const p = JSON.parse(stored);
           studentState.roll = p.rollNumber;
           studentState.name = p.name;
-          studentState.assignedSection = p.assignedSection || "AIML_2B";
+          studentState.assignedSection = p.assignedSection || "";
           studentState.isDeviceLocked = true;
 
           cardStudentName.textContent = p.name;
@@ -609,7 +783,7 @@ let qrHandled = false, qrCooldownUntil = 0, sensorsStarted = false, committing =
         const snap = await window.getDoc(window.doc(window.db, window.getCollectionName('active_sessions'), studentState.assignedSection));
         const live = snap.exists() ? snap.data() : null;
         if (!live || !live.isOpen) return fail("No live session for your section right now.");
-        if (live.sessionId !== p.s) return fail(`This QR is for another class. You are in ${studentState.assignedSection}.`);
+        if (live.sessionId !== p.s) return fail(`This QR is for another class. You are in ${secLabel(studentState.assignedSection)}.`);
         if (p.n !== live.activeNonce && p.n !== live.prevNonce) return fail("QR code is out of date. Scan the current one.");
         Object.assign(sessionContext, live);
       } catch (e) { return fail("Could not verify with server. Check your connection."); }
@@ -707,8 +881,8 @@ let qrHandled = false, qrCooldownUntil = 0, sensorsStarted = false, committing =
         if (!navigator.geolocation) { reject(new Error('Geolocation unsupported')); return; }
         navigator.geolocation.getCurrentPosition(
           (position) => {
-            const campusLat = 15.4850;
-            const campusLon = 78.4870;
+            const campusLat = campusCfg.lat;
+            const campusLon = campusCfg.lon;
             const userLat = position.coords.latitude;
             const userLon = position.coords.longitude;
 
@@ -722,7 +896,7 @@ let qrHandled = false, qrCooldownUntil = 0, sensorsStarted = false, committing =
             const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
             const distance = R * c;
 
-            if (distance - Math.min(position.coords.accuracy || 0, 150) <= 500) {
+            if (distance - Math.min(position.coords.accuracy || 0, 150) <= campusCfg.radius) {
               resolve(true);
             } else {
               resolve(false);
