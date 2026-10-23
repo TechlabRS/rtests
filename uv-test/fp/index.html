@@ -3,6 +3,138 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script>
+/* EduPulse offline gate: self-contained (no CDN) so it renders even when nothing else loaded */
+(function () {
+  var css = '#offGate{position:fixed;inset:0;z-index:99999;display:none;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;background:radial-gradient(circle at 50% 15%,#312e81 0,#0f172a 45%,#020617 100%);color:#e2e8f0;font-family:system-ui,-apple-system,"Segoe UI",sans-serif;text-align:center;touch-action:none;user-select:none;-webkit-user-select:none}' +
+    '#offGate.on{display:flex}#offGate h2{margin:0;font-size:20px;font-weight:800;color:#fff}#offGate p{margin:0;font-size:12px;color:#94a3b8;max-width:320px}' +
+    '#offGate .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#f59e0b;margin-right:6px;animation:offp 1.2s infinite}@keyframes offp{50%{opacity:.25;transform:scale(1.5)}}' +
+    '#offCanvas{border-radius:18px;background:rgba(15,23,42,.85);border:1px solid #334155;box-shadow:0 0 40px rgba(99,102,241,.25);touch-action:none}' +
+    '#offHud{display:flex;gap:14px;font:600 11px ui-monospace,monospace;color:#a5b4fc}' +
+    '#offGate button{font:700 12px system-ui;padding:9px 14px;border-radius:12px;border:1px solid #475569;background:#1e293b;color:#e2e8f0;cursor:pointer}#offGate button.pri{background:#4f46e5;border-color:#6366f1;color:#fff}' +
+    '#offToast{font:700 11px system-ui;color:#34d399;min-height:14px}';
+  var st = document.createElement('style'); st.textContent = css; document.head.appendChild(st);
+
+  var el, cv, cx, shown = false, pending = false, wasShown = false, fails = 0;
+  var DX = [0, 1, 0, -1], DY = [-1, 0, 1, 0], B = [1, 2, 4, 8];
+  var G = { n: 7, lvl: 1, moves: 0, t0: 0, x: 0, y: 0, cells: [], run: false, won: false };
+
+  function gen(n) {
+    var c = new Array(n * n).fill(0), vis = new Array(n * n).fill(false), s = [0]; vis[0] = true;
+    while (s.length) {
+      var cur = s[s.length - 1], x = cur % n, y = (cur / n) | 0, o = [];
+      if (y > 0 && !vis[cur - n]) o.push([1, cur - n, 4]);
+      if (x < n - 1 && !vis[cur + 1]) o.push([2, cur + 1, 8]);
+      if (y < n - 1 && !vis[cur + n]) o.push([4, cur + n, 1]);
+      if (x > 0 && !vis[cur - 1]) o.push([8, cur - 1, 2]);
+      if (!o.length) { s.pop(); continue; }
+      var p = o[(Math.random() * o.length) | 0]; c[cur] |= p[0]; c[p[1]] |= p[2]; vis[p[1]] = true; s.push(p[1]);
+    }
+    return c;
+  }
+  function newMaze() { G.cells = gen(G.n); G.x = 0; G.y = 0; G.moves = 0; G.t0 = Date.now(); G.run = false; G.won = false; }
+  function cell() { return G.cells[G.y * G.n + G.x]; }
+
+  function move(d) {
+    if (G.run || G.won) return;
+    G.run = true;
+    (function step() {
+      if (!(cell() & B[d])) { G.run = false; return; }
+      G.x += DX[d]; G.y += DY[d]; G.moves++;
+      if (G.x === G.n - 1 && G.y === G.n - 1) return win();
+      var o = [], c = cell();
+      for (var k = 0; k < 4; k++) if ((c & B[k]) && k !== (d + 2) % 4) o.push(k);
+      if (o.length === 1) { d = o[0]; setTimeout(step, 60); } else G.run = false;
+    })();
+  }
+  function win() {
+    G.won = true; G.run = false;
+    var t = Math.round((Date.now() - G.t0) / 1000);
+    document.getElementById('offToast').textContent = 'Signal found! Level ' + G.lvl + ' in ' + t + 's / ' + G.moves + ' moves';
+    G.lvl++; G.n = Math.min(13, 6 + G.lvl);
+    setTimeout(function () { document.getElementById('offToast').textContent = ''; newMaze(); }, 1400);
+  }
+
+  function draw() {
+    if (!shown) return;
+    var w = cv.width, n = G.n, s = w / n, t = Date.now() / 1000;
+    cx.clearRect(0, 0, w, w);
+    cx.lineCap = 'round'; cx.lineWidth = 3; cx.strokeStyle = '#6366f1'; cx.shadowColor = '#818cf8'; cx.shadowBlur = 8;
+    cx.beginPath();
+    for (var i = 0; i < n * n; i++) {
+      var x = (i % n) * s, y = ((i / n) | 0) * s, c = G.cells[i];
+      if (!(c & 1)) { cx.moveTo(x, y); cx.lineTo(x + s, y); }
+      if (!(c & 2)) { cx.moveTo(x + s, y); cx.lineTo(x + s, y + s); }
+      if (!(c & 4)) { cx.moveTo(x, y + s); cx.lineTo(x + s, y + s); }
+      if (!(c & 8)) { cx.moveTo(x, y); cx.lineTo(x, y + s); }
+    }
+    cx.stroke();
+    var gx = (n - .5) * s, p = (t % 1.4) / 1.4;
+    cx.shadowColor = '#34d399'; cx.strokeStyle = 'rgba(52,211,153,' + (1 - p) + ')'; cx.lineWidth = 2;
+    cx.beginPath(); cx.arc(gx, gx, s * (.15 + p * .4), 0, 7); cx.stroke();
+    cx.fillStyle = '#34d399'; cx.beginPath(); cx.arc(gx, gx, s * .13, 0, 7); cx.fill();
+    cx.shadowColor = '#22d3ee'; cx.fillStyle = '#22d3ee';
+    cx.beginPath(); cx.arc((G.x + .5) * s, (G.y + .5) * s, s * (.24 + Math.sin(t * 6) * .03), 0, 7); cx.fill();
+    document.getElementById('offHud').innerHTML = '<span>LEVEL ' + G.lvl + '</span><span>MOVES ' + G.moves + '</span><span>' + Math.round((Date.now() - G.t0) / 1000) + 's</span>';
+    requestAnimationFrame(draw);
+  }
+
+  function build() {
+    el = document.createElement('div'); el.id = 'offGate';
+    el.innerHTML = '<h2><span class="dot"></span>You\u2019re offline</h2><p>No problem \u2014 we\u2019ll reconnect automatically. Meanwhile, swipe to guide the pulse to the signal tower.</p>' +
+      '<canvas id="offCanvas"></canvas><div id="offHud"></div><div id="offToast"></div>' +
+      '<div style="display:flex;gap:8px"><button id="offNew">New maze</button><button class="pri" id="offCheck">Check connection</button></div>';
+    document.body.appendChild(el);
+    cv = document.getElementById('offCanvas'); cx = cv.getContext('2d');
+    var sz = Math.min(window.innerWidth - 32, window.innerHeight - 280, 360); cv.width = cv.height = Math.max(220, sz); cv.style.width = cv.style.height = cv.width + 'px';
+    var sx, sy;
+    cv.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    cv.addEventListener('touchend', function (e) {
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (Math.max(Math.abs(dx), Math.abs(dy)) < 20) return;
+      move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 1 : 3) : (dy > 0 ? 2 : 0));
+    }, { passive: true });
+    document.addEventListener('keydown', function (e) {
+      if (!shown) return;
+      var m = { ArrowUp: 0, w: 0, ArrowRight: 1, d: 1, ArrowDown: 2, s: 2, ArrowLeft: 3, a: 3 }[e.key];
+      if (m !== undefined) { e.preventDefault(); move(m); }
+    });
+    document.getElementById('offNew').onclick = function () { newMaze(); };
+    document.getElementById('offCheck').onclick = check;
+    newMaze();
+    if (pending) show();
+  }
+
+  function show() {
+    if (!el) { pending = true; return; }
+    if (shown) return;
+    shown = wasShown = true; el.classList.add('on'); document.body.style.overflow = 'hidden'; draw();
+  }
+  function hide() {
+    if (!shown) return;
+    shown = false; el.classList.remove('on'); document.body.style.overflow = '';
+    // if the page loaded without its libraries (opened offline), reload now that we're back
+    if (wasShown && (typeof tailwind === 'undefined' || !window.firebaseReady)) location.reload();
+  }
+  function probe() {
+    return new Promise(function (res) {
+      if (!navigator.onLine) return res(false);
+      var done = false, t = setTimeout(function () { if (!done) { done = true; res(false); } }, 4000);
+      fetch('https://www.gstatic.com/generate_204', { mode: 'no-cors', cache: 'no-store' })
+        .then(function () { if (!done) { done = true; clearTimeout(t); res(true); } })
+        .catch(function () { if (!done) { done = true; clearTimeout(t); res(false); } });
+    });
+  }
+  function check() { probe().then(function (ok) { if (ok) { pending = false; hide(); } else show(); }); }
+
+  document.addEventListener('DOMContentLoaded', build);
+  window.addEventListener('offline', function () { show(); });
+  window.addEventListener('online', check);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) check(); });
+  window.addEventListener('load', function () { if (typeof tailwind === 'undefined' || !navigator.onLine) show(); setTimeout(check, 1500); });
+  setInterval(check, 10000);
+})();
+</script>
   <title>EduPulse - Faculty Broadcaster</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -466,11 +598,7 @@
 
       <div>
         <label class="block text-xs font-semibold text-slate-300 mb-1">Target Section</label>
-        <select id="modalRosterTargetSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono">
-          <option value="AIML_1A">I B.Tech - Section A</option>
-          <option value="AIML_3D" selected>III B.Tech - Section D</option>
-          <option value="AIML_4A">IV B.Tech - Section A</option>
-        </select>
+        <select id="modalRosterTargetSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono" data-sec-select></select>
       </div>
 
       <div class="space-y-2.5">
@@ -509,12 +637,7 @@
           <input type="text" id="studentSearchInput" placeholder="Search by name or roll number..." class="w-full bg-slate-950 border border-slate-700 rounded-xl pl-9 pr-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-indigo-500">
         </div>
         <div>
-          <select id="studentFilterSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500">
-            <option value="ALL">All Sections / Classes</option>
-            <option value="AIML_1A">I B.Tech - Section A</option>
-            <option value="AIML_3D">III B.Tech - Section D</option>
-            <option value="AIML_4A">IV B.Tech - Section A</option>
-          </select>
+          <select id="studentFilterSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 font-mono focus:outline-none focus:border-indigo-500" data-sec-select data-all="1"></select>
         </div>
       </div>
 
@@ -568,11 +691,7 @@
         </div>
         <div>
           <label class="block font-semibold text-slate-300 mb-1">Assigned Section</label>
-          <select id="editStudentSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono">
-            <option value="AIML_1A">I B.Tech - Section A</option>
-            <option value="AIML_3D">III B.Tech - Section B</option>
-            <option value="AIML_4A">IV B.Tech - Section A</option>
-          </select>
+          <select id="editStudentSectionSelect" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-slate-100 font-mono" data-sec-select></select>
         </div>
         <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-between">
           <div>
@@ -679,9 +798,9 @@
           regularSlot: "09:00 - 10:00"
         },
         {
-          id: "AIML_3D_CS204",
-          year: "III B.Tech",
-          section: "D",
+          id: "AIML_2B_CS204",
+          year: "II B.Tech",
+          section: "B",
           subjectCode: "CS204",
           subjectName: "Data Structures & Algorithms",
           channelFreq: 18700,
@@ -709,6 +828,8 @@
     let qrTimeLeft = 15;
     let activeQrNonce = "";
     let prevQrNonce = "";
+    const sectionsStore = new Map();
+    let studentCounts = {};
     let unsubAttendees = null, unsubExceptions = null;
     let activeExceptionsMap = new Map();
     let liveAttendanceMap = new Map();
@@ -1079,9 +1200,12 @@
     }
 
     function getNormalizedSectionKey(cls) {
+      if (cls.sectionId) return cls.sectionId;
       const y = String(cls.year || '').trim().toUpperCase().split(/\s+/)[0];
-      const yrNum = ({ I: '1', II: '2', III: '3', IV: '4' })[y] || '1';
-      return `AIML_${yrNum}${String(cls.section).toUpperCase()}`;
+      const legacy = `AIML_${({ I: '1', II: '2', III: '3', IV: '4' })[y] || '1'}${String(cls.section).toUpperCase()}`;
+      const sec = String(cls.section).toUpperCase();
+      const hit = [...sectionsStore.values()].find(s => s.year === cls.year && s.section === sec);
+      return hit ? hit.id : legacy;
     }
 	
 	function ensureAudioContext() {
@@ -1472,7 +1596,7 @@
             directoryMap.set(roll, {
               rollNumber: roll,
               name: data.name || "Student",
-              sectionId: data.assignedSection || "AIML_3D",
+              sectionId: data.assignedSection || "",
               boundDevice: data.boundDeviceFingerprint || "Unbound",
               hasRemoteProfile: true
             });
@@ -2006,6 +2130,9 @@ async function syncSessionToFirestore() {
         secOpts.forEach(s => { secSelect += `<option value="${s}" ${cls.section === s ? 'selected' : ''}>${s}</option>`; });
         secSelect += `</select>`;
 
+        const curSid = cls.sectionId || getNormalizedSectionKey(cls);
+        const secList = activeSections().concat(sectionsStore.has(curSid) && sectionsStore.get(curSid).archived ? [sectionsStore.get(curSid)] : []);
+        const secidSelect = `<select id="cfg_secid_${idx}" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white text-xs">` + (secList.map(s => `<option value="${s.id}" ${s.id === curSid ? 'selected' : ''}>${s.label}</option>`).join('') || '<option value="">Add sections first</option>') + `</select>`;
         const slotEl = document.createElement('div');
         slotEl.className = "p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-2 relative group";
         slotEl.innerHTML = `
@@ -2016,14 +2143,7 @@ async function syncSessionToFirestore() {
             </button>
           </div>
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
-            <div>
-              <label class="block text-[9px] font-mono text-slate-500 mb-0.5">YEAR</label>
-              ${yearSelect}
-            </div>
-            <div>
-              <label class="block text-[9px] font-mono text-slate-500 mb-0.5">SECTION</label>
-              ${secSelect}
-            </div>
+            <div class="col-span-2"><label class="block text-[9px] font-mono text-slate-500 mb-0.5">SECTION</label>${secidSelect}</div>
             <div>
               <label class="block text-[9px] font-mono text-slate-500 mb-0.5">CODE</label>
               <input type="text" value="${cls.subjectCode}" id="cfg_code_${idx}" placeholder="e.g. CS204" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-white text-xs font-mono">
@@ -2086,16 +2206,19 @@ async function syncSessionToFirestore() {
         const nameEl = document.getElementById(`cfg_name_${idx}`);
         const freqEl = document.getElementById(`cfg_freq_${idx}`);
 
-        const yr = yrEl ? (yrEl.value.trim() || "III B.Tech") : "III B.Tech";
-        const sec = secEl ? (secEl.value.trim().toUpperCase() || "A") : "A";
+        const sObj = sectionsStore.get(document.getElementById(`cfg_secid_${idx}`)?.value);
+        const yr = sObj ? sObj.year : cls.year;
+        const sec = sObj ? sObj.section : cls.section;
+        const secId = sObj ? sObj.id : getNormalizedSectionKey(cls);
         const code = codeEl ? (codeEl.value.trim().toUpperCase() || "CS000") : "CS000";
         const name = nameEl ? (nameEl.value.trim() || "Subject") : "Subject";
         const freq = freqEl ? (parseInt(freqEl.value, 10) || 18500) : 18500;
         
-        const generatedId = `${getNormalizedSectionKey({year: yr, section: sec})}_${code}`;
+        const generatedId = `${secId}_${code}`;
 
         updatedClasses.push({
           id: generatedId,
+          sectionId: secId,
           year: yr,
           section: sec,
           subjectCode: code,
@@ -2118,6 +2241,118 @@ async function syncSessionToFirestore() {
     setInterval(() => {
       if (currentTimeDisplay) currentTimeDisplay.textContent = new Date().toLocaleTimeString('en-IN');
     }, 1000);
+
+        // ================= DYNAMIC SECTIONS (shared via Firestore) =================
+    const SEC_YEARS = ['I B.Tech', 'II B.Tech', 'III B.Tech', 'IV B.Tech'];
+    const SEC_NUM = { 'I B.Tech': 1, 'II B.Tech': 2, 'III B.Tech': 3, 'IV B.Tech': 4 };
+    const SEED_SECTIONS = [['I B.Tech', 'A'], ['II B.Tech', 'B'], ['III B.Tech', 'A'], ['IV B.Tech', 'A']];
+    const coll = n => window.getCollectionName(n);
+    let secModal = null, secSeeded = false;
+
+    function activeSections() { return [...sectionsStore.values()].filter(s => !s.archived).sort((a, b) => a.label.localeCompare(b.label)); }
+
+    function refreshSectionSelects() {
+      document.querySelectorAll('select[data-sec-select]').forEach(sel => {
+        const cur = sel.value;
+        sel.innerHTML = (sel.dataset.all ? '<option value="ALL">All Sections / Classes</option>' : '') + activeSections().map(s => `<option value="${s.id}">${s.label}</option>`).join('');
+        if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+      });
+    }
+
+    function startSectionSync() {
+      if (!window.db) return;
+      window.onSnapshot(window.collection(window.db, coll('sections')), async snap => {
+        if (snap.empty && !secSeeded) {
+          secSeeded = true;
+          for (const [y, l] of SEED_SECTIONS) await window.setDoc(window.doc(window.db, coll('sections'), `AIML_${SEC_NUM[y]}${l}`), { year: y, section: l, label: `${y} - Section ${l}`, archived: false, createdAt: window.serverTimestamp() });
+          return;
+        }
+        sectionsStore.clear();
+        snap.forEach(d => sectionsStore.set(d.id, { id: d.id, ...d.data() }));
+        refreshSectionSelects(); renderSectionsManager();
+        if (!configModalBackdrop?.classList.contains('hidden')) renderConfigCourseSlots();
+      });
+      window.onSnapshot(window.collection(window.db, coll('students')), snap => {
+        studentCounts = {};
+        snap.forEach(d => { const k = d.data().assignedSection; studentCounts[k] = (studentCounts[k] || 0) + 1; });
+        renderSectionsManager();
+      });
+      window.onSnapshot(window.doc(window.db, coll('config'), 'campus'), snap => {
+        if (!snap.exists() || !secModal) return;
+        const c = snap.data();
+        secModal.querySelector('#campLat').value = c.lat ?? ''; secModal.querySelector('#campLon').value = c.lon ?? ''; secModal.querySelector('#campRad').value = c.radius ?? '';
+      });
+    }
+
+    function renderSectionsManager() {
+      const list = secModal && secModal.querySelector('#secList'); if (!list) return;
+      const all = [...sectionsStore.values()].sort((a, b) => a.label.localeCompare(b.label));
+      list.innerHTML = all.map(s => `<div class="flex items-center gap-2 p-2.5 rounded-xl bg-slate-950 border border-slate-800 ${s.archived ? 'opacity-50' : ''}">
+        <div class="flex-1 min-w-0"><p class="font-bold text-white truncate">${s.label}</p><p class="text-[10px] font-mono text-slate-500">${s.id} • ${studentCounts[s.id] || 0} students${s.archived ? ' • archived' : ''}</p></div>
+        <button data-act="rename" data-id="${s.id}" class="px-2 py-1 rounded bg-slate-800" title="Rename"><i class="fa-solid fa-pen"></i></button>
+        <button data-act="archive" data-id="${s.id}" class="px-2 py-1 rounded bg-slate-800" title="${s.archived ? 'Restore' : 'Archive'}"><i class="fa-solid ${s.archived ? 'fa-box-open' : 'fa-box-archive'}"></i></button>
+        <button data-act="delete" data-id="${s.id}" class="px-2 py-1 rounded bg-rose-950 text-rose-400" title="Delete"><i class="fa-solid fa-trash-can"></i></button></div>`).join('') || '<p class="text-slate-500 text-center py-4">No sections yet. Add one above.</p>';
+    }
+
+    async function deleteSection(id) {
+      if (facultyPortfolio.assignedClasses.some(c => getNormalizedSectionKey(c) === id)) return alert('A course in your portfolio uses this section. Reassign or remove the course first.');
+      const n = studentCounts[id] || 0;
+      if (n > 0) {
+        const others = activeSections().filter(s => s.id !== id);
+        if (!others.length) return alert('Create another section first so students can be moved.');
+        const t = (prompt(`${n} student(s) are in this section. Type the ID to move them to:\n` + others.map(s => `${s.id} = ${s.label}`).join('\n')) || '').trim();
+        if (!sectionsStore.has(t) || t === id) return;
+        const snap = await window.getDocs(window.collection(window.db, coll('students')));
+        const jobs = []; snap.forEach(d => { if (d.data().assignedSection === id) jobs.push(window.updateDoc(d.ref, { assignedSection: t })); });
+        await Promise.all(jobs);
+      } else if (!confirm('Delete this empty section?')) return;
+      await window.deleteDoc(window.doc(window.db, coll('sections'), id));
+    }
+
+    function buildSectionsModal() {
+      secModal = document.createElement('div');
+      secModal.className = 'hidden fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-3';
+      secModal.innerHTML = `<div class="w-full max-w-lg max-h-[90vh] overflow-y-auto bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 text-xs text-slate-200">
+        <div class="flex items-center justify-between"><h2 class="text-sm font-bold text-white">Sections & Campus</h2><button id="secClose" class="text-slate-400 px-2"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="flex gap-2"><select id="secNewYear" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg p-2">${SEC_YEARS.map(y => `<option>${y}</option>`).join('')}</select>
+          <input id="secNewLetter" maxlength="2" placeholder="A" class="w-16 bg-slate-950 border border-slate-700 rounded-lg p-2 uppercase font-mono text-center">
+          <button id="secAdd" class="px-3 rounded-lg bg-indigo-600 font-bold text-white">Add</button></div>
+        <div id="secList" class="space-y-2"></div>
+        <div class="pt-3 border-t border-slate-800 space-y-2"><p class="font-bold text-white">Campus geofence (used by student GPS check)</p>
+          <div class="grid grid-cols-3 gap-2"><input id="campLat" placeholder="Latitude" class="bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono"><input id="campLon" placeholder="Longitude" class="bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono"><input id="campRad" placeholder="Radius (m)" class="bg-slate-950 border border-slate-700 rounded-lg p-2 font-mono"></div>
+          <div class="flex gap-2"><button id="campUseMe" class="flex-1 py-2 rounded-lg bg-slate-800">Use my location</button><button id="campSave" class="flex-1 py-2 rounded-lg bg-indigo-600 font-bold text-white">Save</button></div></div></div>`;
+      document.body.appendChild(secModal);
+      const q = s => secModal.querySelector(s);
+      q('#secClose').onclick = () => secModal.classList.add('hidden');
+      secModal.addEventListener('click', e => { if (e.target === secModal) secModal.classList.add('hidden'); });
+      q('#secAdd').onclick = async () => {
+        const y = q('#secNewYear').value, l = q('#secNewLetter').value.trim().toUpperCase();
+        if (!/^[A-Z0-9]{1,2}$/.test(l)) return alert('Enter a section letter, e.g. A');
+        const id = `AIML_${SEC_NUM[y]}${l}`;
+        if (sectionsStore.has(id)) return alert('That section already exists (check archived ones).');
+        await window.setDoc(window.doc(window.db, coll('sections'), id), { year: y, section: l, label: `${y} - Section ${l}`, archived: false, createdAt: window.serverTimestamp() });
+        q('#secNewLetter').value = '';
+      };
+      q('#secList').addEventListener('click', async e => {
+        const b = e.target.closest('button[data-act]'); if (!b) return;
+        const id = b.dataset.id, s = sectionsStore.get(id), ref = window.doc(window.db, coll('sections'), id);
+        if (b.dataset.act === 'rename') { const v = (prompt('New display name', s.label) || '').trim(); if (v) await window.updateDoc(ref, { label: v }); }
+        else if (b.dataset.act === 'archive') await window.updateDoc(ref, { archived: !s.archived });
+        else await deleteSection(id);
+      });
+      q('#campUseMe').onclick = () => navigator.geolocation ? navigator.geolocation.getCurrentPosition(p => { q('#campLat').value = p.coords.latitude.toFixed(6); q('#campLon').value = p.coords.longitude.toFixed(6); if (!q('#campRad').value) q('#campRad').value = 500; }, () => alert('Location permission denied.'), { enableHighAccuracy: true }) : alert('Geolocation unsupported.');
+      q('#campSave').onclick = async () => {
+        const lat = parseFloat(q('#campLat').value), lon = parseFloat(q('#campLon').value), radius = parseInt(q('#campRad').value, 10) || 500;
+        if (!isFinite(lat) || !isFinite(lon)) return alert('Enter valid coordinates.');
+        await window.setDoc(window.doc(window.db, coll('config'), 'campus'), { lat, lon, radius, updatedAt: window.serverTimestamp() });
+        alert('Campus geofence saved. Students use it immediately.');
+      };
+      renderSectionsManager();
+    }
+    buildSectionsModal();
+    btnOpenConfigModal?.insertAdjacentHTML('beforebegin', '<button id="btnOpenSections" class="p-2 sm:p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 transition-all" title="Sections & Campus"><i class="fa-solid fa-layer-group text-xs"></i></button>');
+    document.getElementById('btnOpenSections')?.addEventListener('click', () => secModal.classList.remove('hidden'));
+    if (window.firebaseReady) startSectionSync(); else document.addEventListener('firebase-initialized', startSectionSync);
 
     loadPortfolio();
   </script>
