@@ -1,10 +1,38 @@
 <!DOCTYPE html>
-<html lang="en" class="dark">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#F5F5DC" />
   <title>VibhaConnect v5.4 - Ultimate Biometric Suite</title>
-  
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Theme (runs before paint: no flash). Default = light cream, remembers choice -->
+  <script>
+    (function () {
+      var KEY = 'vibha-theme';
+      function get() { try { return localStorage.getItem(KEY); } catch (e) { return null; } }
+      document.documentElement.classList.toggle('dark', (get() || 'light') === 'dark');
+      function sync() {
+        var dark = document.documentElement.classList.contains('dark');
+        var i = document.getElementById('theme-icon');
+        if (i) i.className = 'ph-bold ' + (dark ? 'ph-sun' : 'ph-moon');
+        var m = document.querySelector('meta[name=theme-color]');
+        if (m) m.content = dark ? '#26160F' : '#F5F5DC';
+      }
+      window.toggleTheme = function () {
+        var dark = !document.documentElement.classList.contains('dark');
+        document.documentElement.classList.toggle('dark', dark);
+        try { localStorage.setItem(KEY, dark ? 'dark' : 'light'); } catch (e) {}
+        sync();
+      };
+      document.addEventListener('DOMContentLoaded', sync);
+    })();
+  </script>
+
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Phosphor Icons -->
@@ -13,13 +41,25 @@
   <script defer src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
 
   <script>
+    const v = (n) => `rgb(var(--${n}) / <alpha-value>)`;
     tailwind.config = {
       darkMode: 'class',
       theme: {
         extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'system-ui', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+            display: ['"Bricolage Grotesque"', '"Plus Jakarta Sans"', 'sans-serif']
+          },
           colors: {
-            brand: { 50: '#eff6ff', 500: '#3b82f6', 600: '#2563eb', 700: '#1d4ed8' },
-            dark: { bg: '#090d16', card: '#111827', border: '#1f293d', accent: '#1e293b' }
+            brand: { 300: v('brand-300'), 400: v('brand-400'), 500: v('brand-500'), 600: v('brand-600'), 700: v('brand-700') },
+            dark: { bg: v('inset'), card: v('card'), border: v('border'), accent: v('accent') },
+            slate: { 200: v('slate-200'), 300: v('slate-300'), 400: v('slate-400'), 500: v('slate-500'), 800: v('slate-800') },
+            emerald: { 200: v('emerald-200'), 400: v('emerald-400'), 500: v('emerald-500'), 600: v('emerald-600') },
+            rose: { 200: v('rose-200'), 400: v('rose-400'), 500: v('rose-500'), 600: v('rose-600') },
+            amber: { 200: v('amber-200'), 400: v('amber-400'), 500: v('amber-500') },
+            cyan: { 500: '#F4A460' },
+            teal: { 600: '#3F7D4E' }
           }
         }
       }
@@ -27,89 +67,190 @@
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
-    body { font-family: 'Inter', sans-serif; background-color: #090d16; color: #f1f5f9; overflow-x: hidden; }
-    .font-mono { font-family: 'JetBrains Mono', monospace; }
-    ::-webkit-scrollbar { width: 5px; height: 5px; }
-    ::-webkit-scrollbar-track { background: #090d16; }
-    ::-webkit-scrollbar-thumb { background: #1f293d; border-radius: 9999px; }
+    /* ===== Burnt Sienna design tokens (R G B channels) ===== */
+    :root {
+      --page:245 245 220; --card:255 254 247; --inset:241 239 213; --border:226 219 184; --accent:234 228 192;
+      --ink:43 26 20; --shadow:160 82 45;
+      --brand-300:139 63 34; --brand-400:160 82 45; --brand-500:184 58 33; --brand-600:196 69 43; --brand-700:160 82 45;
+      --slate-200:43 26 20; --slate-300:74 47 35; --slate-400:110 84 68; --slate-500:133 105 90; --slate-800:232 225 191;
+      --emerald-200:31 81 48; --emerald-400:47 107 63; --emerald-500:63 140 85; --emerald-600:63 125 78;
+      --rose-200:127 21 39; --rose-400:180 35 63; --rose-500:214 51 79; --rose-600:190 30 60;
+      --amber-200:107 63 6; --amber-400:154 91 12; --amber-500:224 150 47;
+      color-scheme: light;
+    }
+    html.dark {
+      --page:26 15 10; --card:38 22 15; --inset:27 16 11; --border:67 40 28; --accent:53 32 26;
+      --ink:245 245 220; --shadow:0 0 0;
+      --brand-300:248 196 148; --brand-400:244 164 96; --brand-500:227 83 54; --brand-600:196 69 43; --brand-700:160 82 45;
+      --slate-200:245 240 218; --slate-300:224 211 188; --slate-400:184 165 144; --slate-500:158 136 118; --slate-800:58 36 27;
+      --emerald-200:191 232 203; --emerald-400:139 211 160; --emerald-500:78 154 95; --emerald-600:63 125 78;
+      --rose-200:255 194 204; --rose-400:255 143 163; --rose-500:224 72 98; --rose-600:190 30 60;
+      --amber-200:250 215 168; --amber-400:244 164 96; --amber-500:232 160 60;
+      color-scheme: dark;
+    }
+
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      color: rgb(var(--ink)); background-color: rgb(var(--page)); overflow-x: hidden;
+      background-image:
+        radial-gradient(900px 420px at 6% -8%, rgb(var(--brand-500) / .12), transparent 65%),
+        radial-gradient(800px 380px at 100% 0%, rgb(244 164 96 / .24), transparent 60%);
+      background-attachment: fixed;
+    }
+    html.dark body {
+      background-image:
+        radial-gradient(900px 420px at 6% -8%, rgb(227 83 54 / .14), transparent 65%),
+        radial-gradient(800px 380px at 100% 0%, rgb(160 82 45 / .18), transparent 60%);
+    }
+    h1, h2, h3, h4 { font-family: "Bricolage Grotesque", "Plus Jakarta Sans", sans-serif; letter-spacing: -.01em; }
+    ::placeholder { color: rgb(var(--slate-500)); opacity: .85; }
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 9999px; }
+    :focus-visible { outline: 2px solid rgb(var(--brand-500)); outline-offset: 2px; }
+    input:focus-visible, select:focus-visible { outline: none; box-shadow: 0 0 0 3px rgb(var(--brand-500) / .25); }
+
+    /* Text colour: headings use "ink" in both themes; solid buttons stay white */
+    .text-white:not([class*="bg-brand-"]):not([class*="bg-emerald-"]):not([class*="bg-rose-"]):not([class*="from-"]):not(.keep-white) { color: rgb(var(--ink)); }
+    .hover\:text-white:not([class*="hover:bg-"]):hover { color: rgb(var(--ink)); }
+    .keep-white { color: #fff !important; }
+    button:disabled { color: rgb(var(--slate-500)) !important; cursor: not-allowed; box-shadow: none !important; }
+    html:not(.dark) .shadow-xl, html:not(.dark) .shadow-2xl {
+      box-shadow: 0 12px 32px -14px rgb(var(--shadow) / .28), 0 2px 6px -2px rgb(var(--shadow) / .12);
+    }
+
+    /* Camera frame: aspect ratio is set from the real video size (JS) so face boxes line up */
+    .cam-frame { position: relative; width: 100%; aspect-ratio: 4 / 3; }
     .mirror { transform: scaleX(-1); }
+
+    /* Navigation: bottom bar on phones/tablets, pill in header on desktop */
+    .tab-btn {
+      position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; padding: 9px 4px 8px; min-height: 56px; font-size: 11px; font-weight: 600;
+      color: rgb(var(--slate-400)); transition: color .15s, background-color .15s;
+    }
+    .tab-btn i { font-size: 22px; }
+    .tab-btn[aria-selected="true"] { color: rgb(var(--brand-500)); }
+    .tab-btn[aria-selected="true"]::before {
+      content: ""; position: absolute; top: 0; left: 28%; right: 28%; height: 3px;
+      border-radius: 0 0 6px 6px; background: rgb(var(--brand-500));
+    }
+    @media (min-width: 1024px) {
+      .tab-btn { flex-direction: row; gap: 8px; padding: 8px 16px; min-height: 0; font-size: 14px; border-radius: 10px; }
+      .tab-btn i { font-size: 18px; }
+      .tab-btn[aria-selected="true"] { background: rgb(var(--brand-600)); color: #fff; box-shadow: 0 6px 14px -6px rgb(var(--brand-600) / .6); }
+      .tab-btn[aria-selected="true"]::before { display: none; }
+      .tab-btn:not([aria-selected="true"]):hover { color: rgb(var(--ink)); background: rgb(var(--accent)); }
+    }
+
+    /* Scan-mode cards: icon turns brand colour when selected */
+    .mode-card i { color: rgb(var(--slate-400)); transition: color .15s; }
+    input:checked + .mode-card i { color: rgb(var(--brand-500)); }
+    input:focus-visible + .mode-card { outline: 2px solid rgb(var(--brand-500)); outline-offset: 2px; }
+
+    /* Dialog */
+    dialog { background: rgb(var(--card)); color: rgb(var(--ink)); border: 1px solid rgb(var(--border)); border-radius: 1rem; padding: 0; width: calc(100% - 2rem); max-width: 28rem; box-shadow: 0 30px 60px -20px rgba(43,26,20,.5); }
+    dialog::backdrop { background: rgba(43,26,20,.55); backdrop-filter: blur(4px); }
+
+    /* Touch comfort */
+    @media (pointer: coarse) {
+      main button, dialog button { min-height: 44px; }
+      main select, main input:not([type=range]):not([type=file]), dialog input { min-height: 44px; }
+    }
+    @media (max-width: 640px) {
+      main input:not([type=range]), main select, dialog input { font-size: 16px; } /* stops iOS zoom-on-focus */
+    }
+
     .scan-line {
       position: absolute; top: 0; left: 0; right: 0; height: 2px;
-      background: linear-gradient(90deg, transparent, #3b82f6, transparent);
-      box-shadow: 0 0 15px #3b82f6; animation: scan 2s ease-in-out infinite; z-index: 10;
+      background: linear-gradient(90deg, transparent, #F4A460, transparent);
+      box-shadow: 0 0 15px #F4A460; animation: scan 2s ease-in-out infinite; z-index: 10;
     }
     @keyframes scan { 0% { top: 0%; opacity: 0; } 15%, 85% { opacity: 1; } 100% { top: 100%; opacity: 0; } }
-    .pulse-green { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); animation: pulseGreen 1.5s infinite; }
-    @keyframes pulseGreen { 0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); } 70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); } }
+    .pulse-green { animation: pulseGreen 1.6s infinite; }
+    @keyframes pulseGreen {
+      0% { box-shadow: 0 0 0 0 rgba(63,140,85,.65); }
+      70% { box-shadow: 0 0 0 8px rgba(63,140,85,0); }
+      100% { box-shadow: 0 0 0 0 rgba(63,140,85,0); }
+    }
     @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
     .toast-anim { animation: slideIn 0.25s ease-out forwards; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+<body class="min-h-[100dvh] flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
   <!-- Floating Toast Overlay -->
-  <div id="toast-container" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full px-4 pointer-events-none"></div>
+  <div id="toast-container" role="status" aria-live="polite" class="fixed z-50 flex flex-col gap-2.5 w-full inset-x-0 px-4 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] sm:inset-x-auto sm:right-5 sm:px-0 sm:max-w-sm lg:bottom-5 pointer-events-none"></div>
 
   <!-- Header -->
-  <header class="border-b border-dark-border bg-dark-card/90 backdrop-blur-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-2">
-      <div class="flex items-center space-x-3 min-w-0">
-        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-brand-500/20 shrink-0">
-          <i class="ph-bold ph-lightning text-white text-lg sm:text-xl"></i>
+  <header class="sticky top-0 z-40 border-b border-dark-border bg-dark-card/95 pt-[env(safe-area-inset-top)]">
+    <div class="max-w-[1480px] mx-auto px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
+
+      <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 grid place-items-center shadow-lg shadow-brand-500/25 shrink-0">
+          <i class="ph-bold ph-lightning keep-white text-white text-lg sm:text-xl" aria-hidden="true"></i>
         </div>
-        <div class="min-w-0 hidden sm:block">
-          <span class="font-bold text-sm sm:text-base tracking-tight text-white flex items-center gap-2 truncate">
-            VibhaConnect <span class="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/20 text-brand-500 font-mono">v5.4 Standard</span>
-          </span>
-          <p class="text-[11px] text-slate-400 truncate">Cloud Firestore & Anti-Collision Engine</p>
+        <div class="min-w-0">
+          <div class="flex items-center gap-2 min-w-0">
+            <span class="font-display font-bold text-[15px] sm:text-base tracking-tight text-white truncate">VibhaConnect</span>
+            <span class="hidden sm:inline-block text-[11px] px-2 py-0.5 rounded-full bg-brand-500/15 text-brand-500 font-mono shrink-0">v5.4</span>
+          </div>
+          <p class="hidden xl:block text-xs text-slate-400 leading-tight">Cloud Firestore &amp; Anti-Collision Engine</p>
         </div>
       </div>
 
-      <div class="flex items-center bg-dark-bg p-1 rounded-xl border border-dark-border shrink-0">
-        <button id="tab-scanner" onclick="switchMainTab('scanner')" class="flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-white bg-brand-600 shadow-md">
-          <i class="ph-bold ph-viewfinder text-base sm:text-lg"></i>
-          <span class="hidden md:inline">Live Scanner</span>
+      <!-- Main navigation: bottom bar (phones/tablets) -> pill in header (desktop) -->
+      <nav id="main-nav" role="tablist" aria-label="Sections"
+           class="fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-dark-border bg-dark-card/95 backdrop-blur-md pb-[env(safe-area-inset-bottom)]
+                  lg:static lg:inset-auto lg:flex lg:gap-1 lg:p-1 lg:border lg:rounded-xl lg:bg-dark-bg lg:backdrop-blur-none lg:pb-1 lg:shrink-0">
+        <button id="tab-scanner" role="tab" aria-selected="true" onclick="switchMainTab('scanner')" class="tab-btn">
+          <i class="ph-bold ph-viewfinder" aria-hidden="true"></i><span>Live Scanner</span>
         </button>
-        <button id="tab-register" onclick="switchMainTab('register')" class="flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white">
-          <i class="ph-bold ph-user-plus text-base sm:text-lg"></i>
-          <span class="hidden md:inline">Enrollment</span>
+        <button id="tab-register" role="tab" aria-selected="false" onclick="switchMainTab('register')" class="tab-btn">
+          <i class="ph-bold ph-user-plus" aria-hidden="true"></i><span>Enrollment</span>
         </button>
-        <button id="tab-mapping" onclick="switchMainTab('mapping')" class="flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white">
-          <i class="ph-bold ph-tree-structure text-base sm:text-lg"></i>
-          <span class="hidden md:inline">Mapping</span>
+        <button id="tab-mapping" role="tab" aria-selected="false" onclick="switchMainTab('mapping')" class="tab-btn">
+          <i class="ph-bold ph-tree-structure" aria-hidden="true"></i><span>Mapping</span>
         </button>
-      </div>
+      </nav>
 
-      <div class="flex items-center space-x-2 shrink-0">
-        <button id="btn-toggle-cam" onclick="toggleCameraStream()" class="px-2.5 sm:px-3.5 py-2 rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md">
-          <i id="btn-cam-icon" class="ph-bold ph-video-camera-slash text-base"></i>
-          <span class="hidden lg:inline" id="btn-cam-text">Stop Camera</span>
-        </button>
-
-        <div class="hidden xl:flex items-center space-x-2 text-xs font-mono bg-dark-bg px-2.5 py-1.5 rounded-lg border border-dark-border">
+      <div class="flex items-center gap-2 shrink-0">
+        <div class="flex items-center gap-2 text-xs font-mono bg-dark-bg px-2.5 py-2 rounded-xl border border-dark-border" aria-live="polite">
           <span id="status-indicator" class="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-          <span id="status-text" class="text-slate-300 truncate max-w-[120px]">Connecting...</span>
-          <span class="text-dark-border">|</span>
-          <span class="text-slate-400">FPS: <strong id="live-fps" class="text-brand-500">0</strong></span>
+          <span id="status-text" class="hidden sm:inline lg:hidden xl:inline text-slate-300 truncate max-w-[140px]">Connecting...</span>
+          <span class="hidden xl:inline text-dark-border">|</span>
+          <span class="hidden xl:inline text-slate-400">FPS <strong id="live-fps" class="text-brand-500">0</strong></span>
         </div>
+
+        <button id="btn-theme" onclick="toggleTheme()" aria-label="Switch light / dark theme"
+                class="w-10 h-10 grid place-items-center rounded-xl border border-dark-border bg-dark-bg text-slate-300 hover:bg-dark-accent transition shrink-0">
+          <i id="theme-icon" class="ph-bold ph-moon text-lg" aria-hidden="true"></i>
+        </button>
+
+        <button id="btn-toggle-cam" onclick="toggleCameraStream()" aria-label="Start or stop camera" class="px-3 py-2 min-h-[40px] rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md">
+          <i id="btn-cam-icon" class="ph-bold ph-video-camera-slash text-base" aria-hidden="true"></i>
+          <span class="hidden xl:inline" id="btn-cam-text">Stop Camera</span>
+        </button>
       </div>
     </div>
   </header>
 
   <!-- Workspace -->
-  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-5 lg:p-8 flex flex-col gap-5">
+  <main class="flex-1 max-w-[1480px] w-full mx-auto p-3 sm:p-5 lg:p-8 flex flex-col gap-5">
 
     <!-- MODE 1: LIVE IDENTIFICATION & ATTENDANCE -->
     <div id="mode-scanner" class="grid grid-cols-1 lg:grid-cols-12 gap-5 flex-1 items-start">
       <div class="lg:col-span-7 flex flex-col gap-4 min-w-0">
-        <div class="relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center aspect-video w-full">
+        <div class="relative bg-dark-card border border-dark-border rounded-2xl overflow-hidden shadow-2xl flex items-center justify-center cam-frame">
           <div id="scan-line-el" class="scan-line hidden"></div>
           <video id="video-scanner" class="w-full h-full object-cover mirror rounded-2xl" autoplay muted playsinline></video>
           <canvas id="canvas-scanner" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
 
           <div id="scanner-loader" class="absolute inset-0 bg-dark-bg/95 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center space-y-3 z-20">
-            <div class="w-10 h-10 border-3 border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div>
+            <div class="w-10 h-10 border-[3px] border-brand-500/30 border-t-brand-500 rounded-full animate-spin"></div>
             <div>
               <h3 class="text-sm font-semibold text-white">Loading Neural Vision</h3>
               <p class="text-xs text-slate-400 max-w-xs mt-0.5">Initializing SSDMobileNet & syncing Firestore...</p>
@@ -156,7 +297,7 @@
               <label class="block text-[11px] font-mono text-slate-400 mb-1 truncate flex items-center gap-1">
                 <i class="ph-bold ph-funnel text-brand-500"></i> Department Filter:
               </label>
-              <select id="filter-dept" onchange="applyCohortFilter()" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 truncate">
+              <select aria-label="Department filter" id="filter-dept" onchange="applyCohortFilter()" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 truncate">
                 <option value="ALL">All Departments</option>
                 <option value="CSE">CSE</option>
                 <option value="CSE-AIML">CSE (AI&ML)</option>
@@ -169,7 +310,7 @@
               <label class="block text-[11px] font-mono text-slate-400 mb-1 truncate flex items-center gap-1">
                 <i class="ph-bold ph-graduation-cap text-brand-500"></i> Cohort Filter:
               </label>
-              <select id="filter-year" onchange="applyCohortFilter()" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 truncate">
+              <select aria-label="Cohort filter" id="filter-year" onchange="applyCohortFilter()" class="w-full bg-dark-bg border border-dark-border rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 truncate">
                 <option value="ALL">All Sections</option>
                 <option value="4-A" selected>4th Year - Sec A</option>
                 <option value="4-B">4th Year - Sec B</option>
@@ -192,38 +333,38 @@
 
           <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <label class="cursor-pointer min-w-0">
-              <input type="radio" name="scan-mode" value="continuous" checked onchange="setScanMode('continuous')" class="peer hidden" />
-              <div class="p-2 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
+              <input type="radio" name="scan-mode" value="continuous" checked onchange="setScanMode('continuous')" class="peer sr-only" />
+              <div class="mode-card p-2.5 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
                 <i class="ph-bold ph-arrows-clockwise text-sm text-slate-400 peer-checked:text-brand-500 mb-0.5"></i>
                 <span class="text-[11px] font-medium text-slate-200 truncate">Continuous</span>
-                <span class="text-[9px] text-slate-500 truncate">Throttled</span>
+                <span class="text-[11px] text-slate-500 truncate">Throttled</span>
               </div>
             </label>
 
             <label class="cursor-pointer min-w-0">
-              <input type="radio" name="scan-mode" value="5s" onchange="setScanMode('5s')" class="peer hidden" />
-              <div class="p-2 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
+              <input type="radio" name="scan-mode" value="5s" onchange="setScanMode('5s')" class="peer sr-only" />
+              <div class="mode-card p-2.5 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
                 <i class="ph-bold ph-timer text-sm text-slate-400 peer-checked:text-brand-500 mb-0.5"></i>
                 <span class="text-[11px] font-medium text-slate-200 truncate">5s Interval</span>
-                <span class="text-[9px] text-slate-500 truncate">Low CPU</span>
+                <span class="text-[11px] text-slate-500 truncate">Low CPU</span>
               </div>
             </label>
 
             <label class="cursor-pointer min-w-0">
-              <input type="radio" name="scan-mode" value="10s" onchange="setScanMode('10s')" class="peer hidden" />
-              <div class="p-2 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
+              <input type="radio" name="scan-mode" value="10s" onchange="setScanMode('10s')" class="peer sr-only" />
+              <div class="mode-card p-2.5 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
                 <i class="ph-bold ph-clock-afternoon text-sm text-slate-400 peer-checked:text-brand-500 mb-0.5"></i>
                 <span class="text-[11px] font-medium text-slate-200 truncate">10s Interval</span>
-                <span class="text-[9px] text-slate-500 truncate">Minimal</span>
+                <span class="text-[11px] text-slate-500 truncate">Minimal</span>
               </div>
             </label>
 
             <label class="cursor-pointer min-w-0">
-              <input type="radio" name="scan-mode" value="manual" onchange="setScanMode('manual')" class="peer hidden" />
-              <div class="p-2 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
+              <input type="radio" name="scan-mode" value="manual" onchange="setScanMode('manual')" class="peer sr-only" />
+              <div class="mode-card p-2.5 rounded-xl border border-dark-border bg-dark-bg peer-checked:border-brand-500 peer-checked:bg-brand-500/10 transition text-center flex flex-col items-center">
                 <i class="ph-bold ph-hand-tap text-sm text-slate-400 peer-checked:text-brand-500 mb-0.5"></i>
                 <span class="text-[11px] font-medium text-slate-200 truncate">Manual</span>
-                <span class="text-[9px] text-slate-500 truncate">On-Demand</span>
+                <span class="text-[11px] text-slate-500 truncate">On-Demand</span>
               </div>
             </label>
           </div>
@@ -231,12 +372,12 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-dark-border text-xs font-mono">
             <div class="min-w-0">
               <label class="text-slate-400 block mb-1 truncate">FPS Cap: <strong id="fps-limit-val" class="text-brand-500">15 FPS</strong></label>
-              <input type="range" id="fps-slider" min="5" max="30" step="5" value="15" oninput="updateFPSLimit(this.value)" class="w-full h-1.5 bg-dark-bg rounded-lg appearance-none cursor-pointer accent-brand-500" />
+              <input type="range" id="fps-slider" min="5" max="30" step="5" value="15" oninput="updateFPSLimit(this.value)" class="w-full h-6 cursor-pointer accent-brand-500" aria-label="Frames per second cap" />
             </div>
 
             <div class="min-w-0">
               <label class="text-slate-400 block mb-1 truncate">Resolution:</label>
-              <select id="cam-resolution" onchange="changeResolution()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-brand-500 truncate">
+              <select aria-label="Camera resolution" id="cam-resolution" onchange="changeResolution()" class="w-full bg-dark-bg border border-dark-border rounded-lg px-2 py-1 text-slate-200 focus:outline-none focus:border-brand-500 truncate">
                 <option value="1080">1080p (FHD)</option>
                 <option value="720" selected>720p (HD)</option>
                 <option value="480">480p (Fast)</option>
@@ -262,7 +403,7 @@
             </span>
           </div>
 
-          <div id="attendance-log-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[260px] sm:max-h-[320px]">
+          <div id="attendance-log-container" class="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[280px] sm:max-h-[340px] lg:max-h-[400px]">
             <div class="text-center py-12 text-slate-500 text-xs">
               <i class="ph-bold ph-user-focus text-3xl mb-1 block opacity-40"></i>
               No students identified in current session.
@@ -282,12 +423,12 @@
           </div>
         </div>
 
-        <div class="bg-dark-card border border-dark-border rounded-2xl p-3.5 shadow-xl h-[140px] flex flex-col shrink-0 min-w-0">
+        <div class="bg-dark-card border border-dark-border rounded-2xl p-3.5 shadow-xl h-[180px] flex flex-col shrink-0 min-w-0">
           <div class="flex items-center justify-between mb-2 pb-1.5 border-b border-dark-border">
             <span class="text-xs font-semibold text-slate-300 flex items-center gap-1.5 truncate">
               <i class="ph-bold ph-list-dashes text-slate-400 shrink-0"></i> Event Stream
             </span>
-            <button onclick="clearLogs()" class="text-[10px] text-slate-500 hover:text-slate-300 shrink-0">Clear</button>
+            <button onclick="clearLogs()" class="text-[11px] text-slate-500 hover:text-slate-300 shrink-0">Clear</button>
           </div>
           <div id="activity-log" class="flex-1 overflow-y-auto space-y-1.5 pr-1 text-[11px] font-mono">
             <div class="text-slate-500 text-center py-2 font-sans">Awaiting system events...</div>
@@ -303,7 +444,7 @@
           <div class="flex items-center justify-between pb-3 border-b border-dark-border gap-2 min-w-0">
             <div class="min-w-0">
               <h2 class="font-semibold text-white text-sm sm:text-base truncate">Enrollment Frame</h2>
-              <p class="text-xs text-slate-400 truncate">Position face in frame for 128D extraction.</p>
+              <p class="text-xs text-slate-400">Position face in frame for 128D extraction.</p>
             </div>
             <div id="quality-indicator" class="px-2.5 py-1 rounded-full text-xs font-mono bg-slate-800 text-slate-400 border border-dark-border flex items-center gap-1.5 shrink-0">
               <span id="quality-dot" class="w-2 h-2 rounded-full bg-slate-500 shrink-0"></span>
@@ -311,12 +452,12 @@
             </div>
           </div>
 
-          <div class="relative bg-dark-bg border border-dark-border rounded-xl overflow-hidden aspect-video flex items-center justify-center w-full">
+          <div class="relative bg-dark-bg border border-dark-border rounded-xl overflow-hidden flex items-center justify-center cam-frame">
             <video id="video-register" class="w-full h-full object-cover mirror rounded-xl" autoplay muted playsinline></video>
             <canvas id="canvas-register" class="absolute inset-0 w-full h-full pointer-events-none"></canvas>
             
             <div class="absolute inset-0 pointer-events-none flex items-center justify-center">
-              <div class="w-40 h-52 sm:w-48 sm:h-60 border-2 border-dashed border-brand-500/40 rounded-full flex items-center justify-center">
+              <div class="h-[82%] aspect-[4/5] border-2 border-dashed border-brand-500/40 rounded-full flex items-center justify-center">
                 <div class="w-2 h-2 rounded-full bg-brand-500/50"></div>
               </div>
             </div>
@@ -353,7 +494,7 @@
 
           <div class="space-y-3">
             <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Role Type</label>
+              <label for="reg-role" class="block text-xs font-medium text-slate-300 mb-1">Role Type</label>
               <select id="reg-role" onchange="toggleRoleFields()" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white focus:outline-none focus:border-brand-500">
                 <option value="student">Student</option>
                 <option value="faculty">Faculty Member</option>
@@ -361,17 +502,17 @@
             </div>
 
             <div>
-              <label class="block text-xs font-medium text-slate-300 mb-1">Full Person Name <span class="text-rose-500">*</span></label>
+              <label for="reg-name" class="block text-xs font-medium text-slate-300 mb-1">Full Person Name <span class="text-rose-500">*</span></label>
               <input type="text" id="reg-name" placeholder="e.g. Boya Pavan Kumar" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white focus:outline-none focus:border-brand-500" />
             </div>
 
             <div id="group-roll">
-              <label class="block text-xs font-medium text-slate-300 mb-1">Roll Number <span class="text-rose-500">*</span></label>
+              <label for="reg-roll" class="block text-xs font-medium text-slate-300 mb-1">Roll Number <span class="text-rose-500">*</span></label>
               <input type="text" id="reg-roll" placeholder="e.g. 21091A0501" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white font-mono focus:outline-none focus:border-brand-500" />
             </div>
 
             <div id="group-facid" class="hidden">
-              <label class="block text-xs font-medium text-slate-300 mb-1">Faculty ID <span class="text-rose-500">*</span></label>
+              <label for="reg-facid" class="block text-xs font-medium text-slate-300 mb-1">Faculty ID <span class="text-rose-500">*</span></label>
               <input type="text" id="reg-facid" placeholder="e.g. FAC-CSE-012" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white font-mono focus:outline-none focus:border-brand-500" />
             </div>
           </div>
@@ -385,7 +526,7 @@
         <div class="bg-dark-card border border-dark-border rounded-2xl p-4 shadow-xl flex items-center justify-between gap-3 min-w-0">
           <div class="min-w-0">
             <h4 class="text-xs sm:text-sm font-semibold text-white truncate">Anti-Collision Security</h4>
-            <p class="text-[11px] text-slate-400 truncate">Euclidean distance matching active</p>
+            <p class="text-[11px] text-slate-400">Euclidean distance matching active</p>
           </div>
           <span id="registered-badge-count" class="px-2.5 py-1 rounded-full text-xs font-mono bg-brand-500/10 text-brand-500 border border-brand-500/20 shrink-0">0 Profiles</span>
         </div>
@@ -401,15 +542,15 @@
               <i class="ph-bold ph-tree-structure text-brand-500 shrink-0"></i>
               <span class="truncate">Academic Mapping & Records</span>
             </h2>
-            <p class="text-xs text-slate-400 truncate mt-0.5">Assign department, year, and section metadata across your student profiles.</p>
+            <p class="text-xs text-slate-400 mt-0.5">Assign department, year, and section metadata across your student profiles.</p>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0 flex-wrap">
-            <button onclick="exportJSONDatabase()" class="py-2 px-3 bg-dark-bg border border-dark-border hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-1.5">
+          <div class="grid grid-cols-2 md:flex items-center gap-2 md:shrink-0 w-full md:w-auto">
+            <button onclick="exportJSONDatabase()" class="py-2 px-3 bg-dark-bg border border-dark-border hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5">
               <i class="ph-bold ph-download-simple text-sm"></i>
               <span>Export JSON</span>
             </button>
-            <button onclick="document.getElementById('import-file-input').click()" class="py-2 px-3 bg-dark-bg border border-dark-border hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition flex items-center gap-1.5">
+            <button onclick="document.getElementById('import-file-input').click()" class="py-2 px-3 bg-dark-bg border border-dark-border hover:bg-slate-800 text-slate-300 rounded-xl text-xs font-medium transition flex items-center justify-center gap-1.5">
               <i class="ph-bold ph-upload-simple text-sm"></i>
               <span>Import JSON</span>
             </button>
@@ -417,37 +558,63 @@
           </div>
         </div>
 
-        <div id="enrolled-list" class="flex-1 overflow-y-auto space-y-2.5 my-3 pr-1 min-h-[300px]"></div>
+        <div id="enrolled-list" class="flex-1 overflow-y-auto space-y-2.5 my-3 pr-1 min-h-[300px] max-h-[65vh]"></div>
       </div>
     </div>
 
   </main>
 
-  <footer class="border-t border-dark-border py-4 bg-dark-card/50 text-center text-xs text-slate-500 px-4">
-    <p class="truncate">VibhaConnect Engine v5.4 • Firestore Path: <code class="text-brand-400">artifacts/a-face-test</code></p>
+  <footer class="border-t border-dark-border py-4 pb-[calc(5.5rem+env(safe-area-inset-bottom))] lg:pb-4 bg-dark-card/50 text-center text-xs text-slate-500 px-4">
+    <p>VibhaConnect Engine v5.4 • Firestore Path: <code class="text-brand-400">artifacts/a-face-test</code></p>
   </footer>
+
+  <!-- Mapping dialog (replaces browser prompt()) -->
+  <dialog id="map-dialog" aria-labelledby="map-title" onclick="if(event.target===this)this.close()">
+    <div class="p-5 sm:p-6 space-y-4">
+      <div>
+        <h3 id="map-title" class="font-semibold text-white text-lg">Map to cohort</h3>
+        <p class="text-xs text-slate-400 mt-1">Assign department and year-section for <strong id="map-user" class="text-slate-200"></strong>.</p>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label for="map-dept" class="block text-xs font-medium text-slate-300 mb-1">Department</label>
+          <input id="map-dept" list="dept-options" placeholder="e.g. CSE-AIML" autocomplete="off" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white uppercase focus:outline-none focus:border-brand-500" />
+          <datalist id="dept-options"><option value="CSE"><option value="CSE-AIML"><option value="ECE"><option value="EEE"><option value="MECH"></datalist>
+        </div>
+        <div>
+          <label for="map-year" class="block text-xs font-medium text-slate-300 mb-1">Year &amp; Section</label>
+          <input id="map-year" list="year-options" placeholder="e.g. 4-A" autocomplete="off" class="w-full px-3 py-2.5 bg-dark-bg border border-dark-border rounded-xl text-sm text-white uppercase focus:outline-none focus:border-brand-500" />
+          <datalist id="year-options"><option value="4-A"><option value="4-B"><option value="3-A"><option value="3-B"></datalist>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2 pt-1">
+        <button onclick="closeMapDialog()" class="py-2.5 px-4 bg-dark-bg border border-dark-border hover:bg-slate-800 text-slate-300 rounded-xl text-sm font-medium transition">Cancel</button>
+        <button onclick="saveMapping()" class="py-2.5 px-4 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-semibold transition shadow-lg shadow-brand-500/20">Save mapping</button>
+      </div>
+    </div>
+  </dialog>
 
   <!-- Application Logic -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
     import { getFirestore, collection, doc, setDoc, deleteDoc, addDoc, onSnapshot, updateDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-
     const APP_PATH = 'artifacts/a-face-test';
     function getCollectionName(base) { return `${APP_PATH}/${base}`; }
+    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
     const firebaseConfig = {
-        apiKey: "AIzaSyAyE2Ej8xSEii5nc5n4m7MHfVLvMt5gafQ",
-        authDomain: "vibha-c142a.firebaseapp.com",
-        projectId: "vibha-c142a",
-        storageBucket: "vibha-c142a.firebasestorage.app",
-        messagingSenderId: "898626486155",
-        appId: "1:898626486155:web:1daef139f6163667baf98e"
-      };
-
+      apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+      authDomain: "stuattnd.firebaseapp.com",
+      projectId: "stuattnd",
+      storageBucket: "stuattnd.firebasestorage.app",
+      messagingSenderId: "511533506488",
+      appId: "1:511533506488:web:aca4de3d513915d012f94d",
+      measurementId: "G-9PZZM5LFKX"
+    };
 
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app,"default");
+    const db = getFirestore(app);
 
     const MODEL_URL = 'https://justadudewhohacks.github.io/face-api.js/models';
     const DUPLICATE_THRESHOLD = 0.42;
@@ -527,6 +694,17 @@
       registeredBadgeCount: document.getElementById('registered-badge-count')
     };
 
+    // Match each camera frame's shape to the real video so overlay boxes line up (no cropping)
+    function fitFrame(video) {
+      const frame = video.closest('.cam-frame');
+      if (!frame || !video.videoWidth) return;
+      const r = video.videoWidth / video.videoHeight;
+      frame.style.aspectRatio = r;
+      frame.style.maxWidth = `calc(72vh * ${r})`;
+      frame.style.marginInline = 'auto';
+    }
+    [elements.videoScanner, elements.videoRegister].forEach(v => v.addEventListener('loadedmetadata', () => fitFrame(v)));
+
     function getFormattedTimestamp(dateObj = new Date()) {
       const dd = String(dateObj.getDate()).padStart(2, '0');
       const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
@@ -557,8 +735,8 @@
       toast.className = `pointer-events-auto flex items-center space-x-3 p-3 rounded-2xl border shadow-2xl backdrop-blur-md toast-anim text-xs ${bgClass}`;
       toast.innerHTML = `
         <i class="ph-bold ${icon} text-lg shrink-0"></i>
-        <span class="flex-1 truncate">${msg}</span>
-        <button onclick="this.parentElement.remove()" class="text-slate-400 hover:text-white shrink-0"><i class="ph-bold ph-x"></i></button>
+        <span class="flex-1 break-words">${esc(msg)}</span>
+        <button onclick="this.parentElement.remove()" aria-label="Dismiss" class="text-slate-400 hover:text-white shrink-0 p-1"><i class="ph-bold ph-x"></i></button>
       `;
 
       container.appendChild(toast);
@@ -707,12 +885,12 @@
 
     function updateCameraUI(active) {
       if (active) {
-        elements.btnToggleCam.className = "px-2.5 sm:px-3.5 py-2 rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md";
+        elements.btnToggleCam.className = "px-3 py-2 min-h-[40px] rounded-xl bg-rose-600/20 text-rose-400 border border-rose-500/30 hover:bg-rose-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md";
         elements.btnCamIcon.className = "ph-bold ph-video-camera-slash text-base";
         elements.btnCamText.innerText = "Stop Camera";
         elements.hudStatusBadge.classList.remove('opacity-50');
       } else {
-        elements.btnToggleCam.className = "px-2.5 sm:px-3.5 py-2 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md";
+        elements.btnToggleCam.className = "px-3 py-2 min-h-[40px] rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 hover:bg-emerald-600 hover:text-white text-xs font-semibold font-mono flex items-center gap-1.5 transition-all shadow-md";
         elements.btnCamIcon.className = "ph-bold ph-video-camera text-base";
         elements.btnCamText.innerText = "Start Camera";
         elements.hudStatusBadge.classList.add('opacity-50');
@@ -861,7 +1039,7 @@
           ctx.lineWidth = 2.5;
           ctx.strokeRect(mirroredBoxX, box.y, box.width, box.height);
 
-          ctx.font = '600 11px Inter, sans-serif';
+          ctx.font = '600 12px "Plus Jakarta Sans", sans-serif';
           const badgeText = `${labelText} (${confidenceScore}%)`;
           const textWidth = ctx.measureText(badgeText).width;
           const badgeWidth = textWidth + 10;
@@ -923,11 +1101,11 @@
           <div class="flex items-center space-x-2.5 min-w-0 flex-1">
             <div class="w-7 h-7 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 font-bold"><i class="ph-bold ph-check"></i></div>
             <div class="min-w-0 flex-1">
-              <div class="font-sans font-semibold text-white truncate">${entry.name}</div>
-              <div class="text-[10px] text-slate-400 truncate"><span class="text-emerald-400">${entry.rollNo}</span> | ${entry.dept} (${entry.yearSec})</div>
+              <div class="font-sans font-semibold text-white truncate">${esc(entry.name)}</div>
+              <div class="text-[11px] text-slate-400 truncate"><span class="text-emerald-400">${esc(entry.rollNo)}</span> | ${esc(entry.dept)} (${esc(entry.yearSec)})</div>
             </div>
           </div>
-          <span class="px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20 text-[10px] font-bold shrink-0">${entry.timestampStr}</span>
+          <span class="px-2 py-0.5 rounded bg-brand-500/10 text-brand-400 border border-brand-500/20 text-[11px] font-bold shrink-0">${esc(entry.timestampStr)}</span>
         </div>
       `).join('');
     }
@@ -974,7 +1152,7 @@
           currentRegisterDetection = det;
           const resized = faceapi.resizeResults(det, displaySize);
           
-          ctx.fillStyle = '#3b82f6';
+          ctx.fillStyle = '#F4A460';
           resized.landmarks.positions.forEach(pt => {
             ctx.beginPath(); ctx.arc(displaySize.width - pt.x, pt.y, 2, 0, 2 * Math.PI); ctx.fill();
           });
@@ -1098,9 +1276,9 @@
 
     window.switchMainTab = function(tab) {
       currentMainTab = tab;
-      elements.tabScanner.className = tab === 'scanner' ? "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-white bg-brand-600 shadow-md" : "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white";
-      elements.tabRegister.className = tab === 'register' ? "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-white bg-brand-600 shadow-md" : "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white";
-      elements.tabMapping.className = tab === 'mapping' ? "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-white bg-brand-600 shadow-md" : "flex items-center space-x-1.5 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all text-slate-400 hover:text-white";
+      [['scanner', elements.tabScanner], ['register', elements.tabRegister], ['mapping', elements.tabMapping]]
+        .forEach(([name, el]) => el.setAttribute('aria-selected', String(tab === name)));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
 
       elements.modeScanner.classList.toggle('hidden', tab !== 'scanner'); elements.modeScanner.classList.toggle('grid', tab === 'scanner');
       elements.modeRegister.classList.toggle('hidden', tab !== 'register'); elements.modeRegister.classList.toggle('grid', tab === 'register');
@@ -1115,40 +1293,44 @@
         elements.enrolledList.innerHTML = `<div class="text-center py-12 text-slate-500 text-xs">No registered profiles found in Firestore.</div>`;
         return;
       }
-      elements.enrolledList.innerHTML = dbProfiles.map((p, idx) => `
-        <div class="p-3 bg-dark-bg border border-dark-border rounded-xl flex items-center justify-between gap-3 min-w-0">
+      elements.enrolledList.innerHTML = dbProfiles.map(p => `
+        <div class="p-3 bg-dark-bg border border-dark-border rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 min-w-0">
           <div class="min-w-0 flex-1">
-            <div class="flex items-center gap-2 min-w-0">
-              <h4 class="text-sm font-semibold text-white truncate">${p.name}</h4>
-              <span class="px-2 py-0.5 rounded text-[10px] font-mono font-bold shrink-0 ${p.role === 'student' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">
-                ${p.role.toUpperCase()}
-              </span>
+            <div class="flex items-center flex-wrap gap-x-2 gap-y-1 min-w-0">
+              <h4 class="text-sm font-semibold text-white break-words">${esc(p.name)}</h4>
+              <span class="px-2 py-0.5 rounded text-[11px] font-mono font-bold shrink-0 ${p.role === 'student' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'}">${esc(String(p.role).toUpperCase())}</span>
             </div>
-            <p class="text-xs font-mono text-slate-400 mt-0.5 truncate">ID: ${p.identifier} | Dept: <span class="text-brand-400">${p.dept}</span> | Cohort: <span class="text-brand-400">${p.yearSec}</span></p>
+            <p class="text-xs font-mono text-slate-400 mt-1 break-words">ID: ${esc(p.identifier)} · Dept: <span class="text-brand-400">${esc(p.dept)}</span> · Cohort: <span class="text-brand-400">${esc(p.yearSec)}</span></p>
           </div>
-          <div class="flex items-center gap-2 shrink-0">
-            <button onclick="window.mapProfileCohort('${p.uid}')" class="px-2.5 py-1.5 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 rounded-lg text-xs font-medium transition">Map</button>
-            <button onclick="window.deleteFirestoreProfile('${p.uid}')" class="p-1.5 text-slate-500 hover:text-rose-400 transition text-base"><i class="ph-bold ph-trash"></i></button>
+          <div class="flex items-center gap-2 shrink-0 self-end sm:self-auto">
+            <button data-uid="${esc(p.uid)}" onclick="window.mapProfileCohort(this.dataset.uid)" class="px-3 py-2 bg-brand-600/20 hover:bg-brand-600 text-brand-300 hover:text-white border border-brand-500/30 rounded-lg text-xs font-semibold transition">Map</button>
+            <button data-uid="${esc(p.uid)}" onclick="window.deleteFirestoreProfile(this.dataset.uid)" aria-label="Delete ${esc(p.name)}" class="p-2 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition text-lg"><i class="ph-bold ph-trash"></i></button>
           </div>
         </div>
       `).join('');
     }
 
-    window.mapProfileCohort = async function(docId) {
+    let mapTargetId = null;
+    window.mapProfileCohort = function(docId) {
       const user = dbProfiles.find(u => u.uid === docId);
       if (!user) return;
-
-      const dept = prompt(`Assign Department for ${user.name}:`, user.dept !== 'UNMAPPED' ? user.dept : 'CSE-AIML');
-      if (dept === null) return;
-      const yearSec = prompt(`Assign Year & Section (e.g. 4-A):`, user.yearSec !== 'UNMAPPED' ? user.yearSec : '4-A');
-      if (yearSec === null) return;
-
+      mapTargetId = docId;
+      document.getElementById('map-user').textContent = user.name;
+      document.getElementById('map-dept').value = user.dept !== 'UNMAPPED' ? user.dept : '';
+      document.getElementById('map-year').value = user.yearSec !== 'UNMAPPED' ? user.yearSec : '';
+      document.getElementById('map-dialog').showModal();
+    };
+    window.closeMapDialog = function() { document.getElementById('map-dialog').close(); };
+    window.saveMapping = async function() {
+      const user = dbProfiles.find(u => u.uid === mapTargetId);
+      if (!user) return closeMapDialog();
+      const dept = document.getElementById('map-dept').value.trim().toUpperCase();
+      const yearSec = document.getElementById('map-year').value.trim().toUpperCase();
+      if (!dept || !yearSec) return showToast("Enter both department and year-section.", "warning");
       try {
-        await updateDoc(doc(db, getCollectionName('students'), docId), {
-          dept: dept.toUpperCase(),
-          yearSec: yearSec.toUpperCase()
-        });
+        await updateDoc(doc(db, getCollectionName('students'), mapTargetId), { dept, yearSec });
         showToast(`Updated mapping for ${user.name} in Firestore!`, "success");
+        closeMapDialog();
       } catch (err) {
         showToast("Update Error: " + err.message, "error");
       }
@@ -1230,8 +1412,8 @@
       logItem.innerHTML = `
         <i class="ph-bold ${icon} text-sm mt-0.5 shrink-0"></i>
         <div class="min-w-0 flex-1">
-          <span class="text-[10px] text-slate-500 block">${time}</span>
-          <span class="truncate block">${text}</span>
+          <span class="text-[11px] text-slate-500 block">${time}</span>
+          <span class="block break-words">${esc(text)}</span>
         </div>
       `;
       if (elements.activityLog.children.length === 1 && elements.activityLog.children[0].classList.contains('text-center')) {
