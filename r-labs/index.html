@@ -703,7 +703,7 @@
       collection, onSnapshot, runTransaction 
     } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'aims-exam-shield-v1';
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'aims-exam-shield-v1-1stYr';
     const PROCTOR_PASS_SHA256 = "53eb746858b8c660b0cda7bdefea45e9b01c90a07590127cd348715070018ecf";
     
     async function sha256Hex(t){
@@ -782,43 +782,175 @@
     let currentUser = null;
 
     const DEFAULT_QUESTION_POOL = [
-      {
-        id: "Q1",
-        title: "Explain prompt components: System Persona, Context, Delimiters, and Task Directives.",
-        maxMarks: 10,
-        rubricKeywords: ["System Persona", "Context", "Delimiters", "Task Directives", "Input Markers", "Constraints"]
-      },
-      {
-        id: "Q2",
-        title: "Differentiate between Zero-Shot, Few-Shot, and Chain-of-Thought (CoT) prompting with practical examples.",
-        maxMarks: 10,
-        rubricKeywords: ["Zero-Shot", "Few-Shot", "Chain-of-Thought", "Reasoning Steps", "Exemplars", "In-Context Learning"]
-      },
-      {
-        id: "Q3",
-        title: "Describe techniques to mitigate Prompt Injection attacks and ensure strict output schema validation.",
-        maxMarks: 10,
-        rubricKeywords: ["Prompt Injection", "Delimiters", "XML Fencing", "JSON Schema", "Adversarial Robustness", "Sanitization"]
-      },
-      {
-        id: "Q4",
-        title: "Analyze the role of Temperature, Top_p, and Top_k parameters in model response determinism.",
-        maxMarks: 10,
-        rubricKeywords: ["Temperature", "Top_p", "Top_k", "Nucleus Sampling", "Determinism", "Stochasticity", "Token Probability"]
-      },
-      {
-        id: "Q5",
-        title: "Explain the architecture of Retrieval-Augmented Generation (RAG) and how chunking strategies prevent hallucination.",
-        maxMarks: 10,
-        rubricKeywords: ["RAG", "Embeddings", "Vector Search", "Chunking Strategy", "Context Window", "Hallucination Mitigation"]
-      },
-      {
-        id: "Q6",
-        title: "Discuss Directional Stimulus Prompting and Policy Model steering in automated workflows.",
-        maxMarks: 10,
-        rubricKeywords: ["Directional Stimulus", "Policy Model", "Steering", "Reinforcement", "Intermediate Hints", "Task Alignment"]
-      }
-    ];
+	  {
+		id: "Q1_a",
+		title: "What is Artificial Intelligence (AI)?",
+		maxMarks: 1,
+		rubricKeywords: ["Artificial Intelligence", "AI", "Intelligence", "Automation"]
+	  },
+	  {
+		id: "Q1_b",
+		title: "What is Machine Learning (ML)?",
+		maxMarks: 1,
+		rubricKeywords: ["Machine Learning", "ML", "Algorithms", "Data Training"]
+	  },
+	  {
+		id: "Q2_a",
+		title: "What is Deep Learning?",
+		maxMarks: 1,
+		rubricKeywords: ["Deep Learning", "Neural Networks", "Representation Learning"]
+	  },
+	  {
+		id: "Q2_b",
+		title: "What is Generative AI?",
+		maxMarks: 1,
+		rubricKeywords: ["Generative AI", "Content Generation", "LLM", "Synthesis"]
+	  },
+	  {
+		id: "Q3_a",
+		title: "What is Gamma.app?",
+		maxMarks: 1,
+		rubricKeywords: ["Gamma.app", "Presentations", "AI Slides", "Visual Design"]
+	  },
+	  {
+		id: "Q3_b",
+		title: "What is Canva AI?",
+		maxMarks: 1,
+		rubricKeywords: ["Canva AI", "Graphic Design", "Visual Content", "Templates"]
+	  },
+	  {
+		id: "Q4_a",
+		title: "What is Microsoft Copilot in Word?",
+		maxMarks: 1,
+		rubricKeywords: ["Microsoft Copilot", "Word", "Document Drafting", "AI Writer"]
+	  },
+	  {
+		id: "Q4_b",
+		title: "What is Gemini in Google Docs?",
+		maxMarks: 1,
+		rubricKeywords: ["Gemini", "Google Docs", "Workspace AI", "Document Writing"]
+	  },
+	  {
+		id: "Q5_a",
+		title: "What is Grammarly?",
+		maxMarks: 1,
+		rubricKeywords: ["Grammarly", "Grammar Check", "Writing Assistance", "Tone"]
+	  },
+	  {
+		id: "Q5_b",
+		title: "What is academic integrity?",
+		maxMarks: 1,
+		rubricKeywords: ["Academic Integrity", "Ethics", "Plagiarism", "Authenticity"]
+	  },
+	  {
+		id: "Q6_a",
+		title: "What is NotebookLM?",
+		maxMarks: 1,
+		rubricKeywords: ["NotebookLM", "Google", "Source Grounding", "Note Taking"]
+	  },
+	  {
+		id: "Q6_b",
+		title: "What is a source-grounded answer?",
+		maxMarks: 1,
+		rubricKeywords: ["Source-Grounded", "Citation", "Factual Accuracy", "Verification"]
+	  },
+	  {
+		id: "Q7_a",
+		title: "What is Perplexity AI?",
+		maxMarks: 1,
+		rubricKeywords: ["Perplexity AI", "Search Engine", "Citations", "Research"]
+	  },
+	  {
+		id: "Q7_b",
+		title: "What is Google Scholar?",
+		maxMarks: 1,
+		rubricKeywords: ["Google Scholar", "Academic Papers", "Citations", "Research Literature"]
+	  },
+	  {
+		id: "Q8_a",
+		title: "What is prompt engineering?",
+		maxMarks: 1,
+		rubricKeywords: ["Prompt Engineering", "Instructions", "LLM Guidance", "Optimization"]
+	  },
+	  {
+		id: "Q8_b",
+		title: "What is a prompt?",
+		maxMarks: 1,
+		rubricKeywords: ["Prompt", "Input Text", "User Query", "LLM Context"]
+	  },
+	  {
+		id: "Q9_a",
+		title: "What is zero-shot prompting?",
+		maxMarks: 1,
+		rubricKeywords: ["Zero-Shot", "No Examples", "Direct Query"]
+	  },
+	  {
+		id: "Q9_b",
+		title: "What is few-shot prompting?",
+		maxMarks: 1,
+		rubricKeywords: ["Few-Shot", "Exemplars", "In-Context Examples"]
+	  },
+	  {
+		id: "Q10_a",
+		title: "What is Microsoft Copilot in Excel?",
+		maxMarks: 1,
+		rubricKeywords: ["Microsoft Copilot", "Excel", "Spreadsheet AI", "Data Analysis"]
+	  },
+	  {
+		id: "Q10_b",
+		title: "What is VLOOKUP in Excel?",
+		maxMarks: 1,
+		rubricKeywords: ["VLOOKUP", "Vertical Lookup", "Data Search", "Excel Formula"]
+	  },
+	  {
+		id: "Q11_a",
+		title: "What is the IF function in Excel?",
+		maxMarks: 1,
+		rubricKeywords: ["IF Function", "Logical Test", "Conditional Logic"]
+	  },
+	  {
+		id: "Q11_b",
+		title: "What is the COUNTIF function in Excel?",
+		maxMarks: 1,
+		rubricKeywords: ["COUNTIF", "Conditional Counting", "Criteria Search"]
+	  },
+	  {
+		id: "Q12_a",
+		title: "What is a pivot table?",
+		maxMarks: 1,
+		rubricKeywords: ["Pivot Table", "Data Summarization", "Aggregation", "Analysis"]
+	  },
+	  {
+		id: "Q12_b",
+		title: "What is a CSV file?",
+		maxMarks: 1,
+		rubricKeywords: ["CSV File", "Comma-Separated Values", "Data Format", "Tabular Data"]
+	  },
+	  {
+		id: "Q13_a",
+		title: "What is data visualization?",
+		maxMarks: 1,
+		rubricKeywords: ["Data Visualization", "Charts", "Graphs", "Visual Insights"]
+	  },
+	  {
+		id: "Q13_b",
+		title: "What is data analysis?",
+		maxMarks: 1,
+		rubricKeywords: ["Data Analysis", "Insights", "Interpretation", "Data Processing"]
+	  },
+	  {
+		id: "Q14_a",
+		title: "What is Julius AI?",
+		maxMarks: 1,
+		rubricKeywords: ["Julius AI", "Data Analysis", "Automated Insights", "Statistical Modeling"]
+	  },
+	  {
+		id: "Q14_b",
+		title: "Why should AI-generated data analysis results be checked?",
+		maxMarks: 1,
+		rubricKeywords: ["Validation", "Hallucinations", "Accuracy Check", "Quality Assurance"]
+	  }
+	];
 
     window.AppState = {
       activePortal: 'student',
