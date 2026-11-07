@@ -1,0 +1,1759 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Academic Timetable Studio • Executive Suite & Room Manager</title>
+  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            oxford: {
+              50: '#F8FAFC',
+              100: '#F1F5F9',
+              200: '#E2E8F0',
+              300: '#CBD5E1',
+              700: '#334155',
+              800: '#1E293B',
+              900: '#0F172A',
+              950: '#020617'
+            },
+            cerulean: {
+              DEFAULT: '#0284C7',
+              light: '#E0F2FE',
+              hover: '#0369A1',
+              accent: '#38BDF8'
+            },
+            emeraldAccent: {
+              DEFAULT: '#10B981',
+              light: '#ECFDF5',
+              hover: '#059669'
+            },
+            crimsonLab: {
+              DEFAULT: '#E11D48',
+              light: '#FFF1F2',
+              dark: '#9F1239'
+            }
+          },
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    .a4-portrait-sheet {
+      width: 210mm;
+      height: 288mm;
+      max-height: 288mm;
+      padding: 5mm 7mm;
+      background: #ffffff;
+      box-shadow: 0 12px 36px -6px rgba(15, 23, 42, 0.22), 0 4px 12px -2px rgba(0, 0, 0, 0.06);
+      margin: 0 auto 20px auto;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      page-break-after: always;
+      page-break-inside: avoid;
+      box-sizing: border-box;
+    }
+
+    .tt-table {
+      border-collapse: collapse;
+      width: 100%;
+      table-layout: fixed;
+    }
+    .tt-table th,
+    .tt-table td {
+      border: 1.2px solid #0f172a;
+      padding: 0;
+      vertical-align: middle;
+      text-align: center;
+    }
+
+    @page {
+      size: A4 portrait;
+      margin: 3mm 4mm;
+    }
+
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .app-layout-wrapper {
+        display: block !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+      }
+      .a4-portrait-sheet {
+        width: 100% !important;
+        height: 285mm !important;
+        max-height: 285mm !important;
+        padding: 3mm 5mm !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        border: none !important;
+        page-break-after: always !important;
+        page-break-inside: avoid !important;
+        transform: none !important;
+      }
+      .tt-table th, .tt-table td {
+        border-color: #000000 !important;
+      }
+    }
+
+    @keyframes toastSlideIn {
+      from { transform: translateY(100%) scale(0.92); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .animate-toast {
+      animation: toastSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+  </style>
+</head>
+<body class="bg-oxford-100 text-oxford-900 antialiased min-h-screen flex flex-col relative selection:bg-cerulean selection:text-white">
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastStack" class="no-print fixed bottom-5 right-5 z-[100] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none"></div>
+
+  <!-- TOP HEADER -->
+  <header class="no-print bg-oxford-950 text-white border-b border-oxford-800 sticky top-0 z-50 shadow-lg">
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-cerulean to-cerulean-accent flex items-center justify-center font-black text-oxford-950 text-sm shadow-md shadow-cerulean/30">
+          A4
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h1 class="text-sm md:text-base font-black tracking-tight text-white">CSE(AI&ML) Academic Timetable Studio</h1>
+            <span class="text-[10px] font-mono bg-oxford-800 px-2 py-0.5 rounded-full text-cerulean-accent font-bold border border-cerulean/30">Executive Suite</span>
+          </div>
+          <p class="text-[11px] text-oxford-300">Room Availability &amp; Infrastructure Engine • Sem 1 &amp; 2 • Single A4 Portrait</p>
+        </div>
+      </div>
+
+      <!-- Action Suite -->
+      <div class="flex items-center flex-wrap gap-2">
+        
+        <!-- Room Manager Modal Trigger -->
+        <button onclick="openRoomManagerModal()" class="px-2.5 py-1.5 bg-oxford-900 hover:bg-oxford-800 text-cerulean-accent border border-oxford-700 text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+          <span id="roomCountBadge">10 Venues</span>
+        </button>
+
+        <!-- Room Utilization View Toggle -->
+        <button onclick="toggleRoomUtilizationModal()" class="px-2.5 py-1.5 bg-oxford-900 hover:bg-oxford-800 text-emeraldAccent border border-oxford-700 text-xs font-bold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          <span>Room Matrix</span>
+        </button>
+
+        <!-- Semester Switcher in Navbar -->
+        <div class="flex items-center bg-oxford-900 rounded-lg p-0.5 border border-oxford-700 shadow-inner">
+          <button onclick="setSemester('I-SEM')" id="btnSem1Nav" class="px-2.5 py-1 text-xs font-bold rounded-md bg-cerulean text-white transition shadow-sm">Sem 1</button>
+          <button onclick="setSemester('II-SEM')" id="btnSem2Nav" class="px-2.5 py-1 text-xs font-bold rounded-md text-oxford-300 hover:text-white transition">Sem 2</button>
+        </div>
+
+        <button onclick="openCsvModal()" class="px-2.5 py-1.5 bg-oxford-800 hover:bg-oxford-700 text-white border border-oxford-700 text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5 text-cerulean-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          Import CSV
+        </button>
+
+        <button onclick="solveGlobalSchedule(true)" class="px-3 py-1.5 bg-emeraldAccent hover:bg-emeraldAccent-hover text-oxford-950 font-bold text-xs rounded-lg shadow-md shadow-emeraldAccent/20 flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+          Re-Solve All
+        </button>
+
+        <button onclick="printCurrentActiveSection()" class="px-3 py-1.5 bg-cerulean hover:bg-cerulean-hover text-white font-bold text-xs rounded-lg shadow-md shadow-cerulean/25 flex items-center gap-1.5 transition">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          Print Active (A4)
+        </button>
+
+        <button onclick="printAllSectionsBatch()" class="px-3 py-1.5 bg-oxford-700 hover:bg-oxford-800 text-white font-bold text-xs rounded-lg shadow flex items-center gap-1.5 transition border border-oxford-600">
+          <svg class="w-3.5 h-3.5 text-cerulean-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"/></svg>
+          Batch Print All
+        </button>
+
+        <button onclick="toggleSidebar()" class="p-1.5 bg-oxford-800 text-oxford-300 hover:text-white rounded-lg border border-oxford-700 transition" title="Toggle Sidebar">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Multi-Year Dynamic Navigation Bar -->
+    <div class="bg-oxford-900 border-t border-oxford-800 px-4 py-1.5 overflow-x-auto">
+      <div class="max-w-7xl mx-auto flex items-center justify-between gap-4">
+        <div class="flex items-center gap-2 shrink-0" id="sectionTabsContainer"></div>
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="flex items-center bg-oxford-950 rounded-lg p-0.5 border border-oxford-800 text-[10px]">
+            <span class="text-oxford-400 px-1.5 font-bold">Zoom:</span>
+            <button onclick="setZoom(0.65)" class="px-1.5 py-0.5 rounded text-oxford-300 hover:text-white hover:bg-oxford-800 font-mono">65%</button>
+            <button onclick="setZoom(0.85)" class="px-1.5 py-0.5 rounded text-oxford-300 hover:text-white hover:bg-oxford-800 font-mono">85%</button>
+            <button onclick="setZoom(1.0)" class="px-1.5 py-0.5 rounded bg-cerulean text-white font-bold font-mono">100%</button>
+            <button onclick="toggleAutoFit()" id="btnAutoFit" class="px-1.5 py-0.5 rounded text-cerulean-accent hover:bg-oxford-800 font-bold">Auto</button>
+          </div>
+          <div class="text-[11px] text-oxford-300 font-semibold">
+            Active: <span id="activeSectionBadge" class="text-cerulean-accent font-bold uppercase underline">III Year - Sec D (I-SEM)</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- APP LAYOUT -->
+  <div class="app-layout-wrapper flex-1 max-w-7xl w-full mx-auto p-4 flex flex-col lg:flex-row gap-5 items-start">
+    
+    <!-- SIDEBAR: Controls & Sliders -->
+    <aside id="configSidebar" class="no-print w-full lg:w-96 bg-white rounded-2xl shadow-sm border border-oxford-200 p-4 space-y-4 shrink-0">
+      
+      <!-- Student Intake & Dynamic Section Sizing Module -->
+      <div class="bg-oxford-50 border border-oxford-200 rounded-xl p-3 space-y-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <span class="w-2.5 h-2.5 rounded-full bg-cerulean"></span>
+            <h3 class="text-xs font-black uppercase tracking-wider text-oxford-900">Student Intake &amp; Sizing</h3>
+          </div>
+          <span class="text-[10px] font-bold text-oxford-700 font-mono">Rule: 70/sec (max 75)</span>
+        </div>
+
+        <div class="grid grid-cols-3 gap-2">
+          <div>
+            <label class="block text-[10px] font-bold text-oxford-700">II Year Intake</label>
+            <input type="number" id="intakeYr2" value="280" min="20" max="600" onchange="recalculateSections(true)" class="w-full mt-0.5 px-2 py-1 text-xs font-mono font-bold border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none text-center bg-white">
+            <div id="badgeYr2" class="text-[9px] font-extrabold text-cerulean mt-0.5 text-center">4 Sec (70 ea)</div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-oxford-700">III Year Intake</label>
+            <input type="number" id="intakeYr3" value="275" min="20" max="600" onchange="recalculateSections(true)" class="w-full mt-0.5 px-2 py-1 text-xs font-mono font-bold border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none text-center bg-white">
+            <div id="badgeYr3" class="text-[9px] font-extrabold text-cerulean mt-0.5 text-center">4 Sec (69 ea)</div>
+          </div>
+          <div>
+            <label class="block text-[10px] font-bold text-oxford-700">IV Year Intake</label>
+            <input type="number" id="intakeYr4" value="210" min="20" max="600" onchange="recalculateSections(true)" class="w-full mt-0.5 px-2 py-1 text-xs font-mono font-bold border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none text-center bg-white">
+            <div id="badgeYr4" class="text-[9px] font-extrabold text-cerulean mt-0.5 text-center">3 Sec (70 ea)</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Real-Time Cross-Section Workload Audit -->
+      <div class="bg-oxford-50 border border-oxford-200 rounded-xl p-3 space-y-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-oxford-800">Department Hour Balance</span>
+          <span id="loadBalanceStatus" class="font-mono text-[11px] font-bold text-emeraldAccent-hover">Clash-Free ✓</span>
+        </div>
+        <div class="w-full bg-oxford-200 rounded-full h-2 overflow-hidden">
+          <div id="capacityProgress" class="bg-emeraldAccent h-2 rounded-full transition-all" style="width: 100%"></div>
+        </div>
+        <div class="flex justify-between text-[10px] text-oxford-700 font-medium">
+          <span>Required Curriculum: <b id="totalRequiredHours" class="text-oxford-900">0 hrs</b></span>
+          <span>Faculty Capacity: <b id="totalFacultyHours" class="text-oxford-900">0 hrs</b></span>
+        </div>
+      </div>
+
+      <!-- Print Sheet Metadata with Semester 1 / 2 Selector -->
+      <div class="space-y-2 text-xs">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-oxford-800 uppercase tracking-wider text-[10px]">Print Sheet Metadata</span>
+          <span class="text-[10px] text-oxford-700">Reference Details</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-oxford-700 text-[10px] font-bold">Academic Semester</label>
+            <select id="metaSemester" onchange="setSemester(this.value)" class="w-full mt-0.5 px-2 py-1 text-xs border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none font-bold bg-white text-cerulean">
+              <option value="I-SEM" selected>I-SEM (Odd Sem)</option>
+              <option value="II-SEM">II-SEM (Even Sem)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-oxford-700 text-[10px]">Academic Year</label>
+            <input type="text" id="metaAcademicYear" value="2026-27" oninput="renderSheetsContainer(); showToast('Metadata updated', 'info');" class="w-full mt-0.5 px-2 py-1 text-xs border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none font-semibold bg-white">
+          </div>
+          <div>
+            <label class="block text-oxford-700 text-[10px]">Admitted Batch</label>
+            <input type="text" id="metaBatch" value="2024 BATCH" oninput="renderSheetsContainer(); showToast('Metadata updated', 'info');" class="w-full mt-0.5 px-2 py-1 text-xs border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none font-semibold bg-white">
+          </div>
+          <div>
+            <label class="block text-oxford-700 text-[10px]">Effective Date (w.e.f)</label>
+            <input type="text" id="metaWef" value="05-08-2026" oninput="renderSheetsContainer(); showToast('Metadata updated', 'info');" class="w-full mt-0.5 px-2 py-1 text-xs border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none font-semibold bg-white">
+          </div>
+          <div class="col-span-2">
+            <label class="block text-oxford-700 text-[10px]">Active Room Code</label>
+            <input type="text" id="metaDefaultRoom" value="ET-3080" oninput="renderSheetsContainer(); showToast('Room code updated', 'info');" class="w-full mt-0.5 px-2 py-1 text-xs border border-oxford-200 rounded-md focus:border-cerulean focus:outline-none font-mono uppercase font-bold text-cerulean bg-white">
+          </div>
+        </div>
+      </div>
+
+      <!-- Faculty List with Sliders, 9 AM Caps & Free Day Toggles -->
+      <div class="space-y-2">
+        <div class="flex items-center justify-between">
+          <span class="font-bold text-oxford-800 uppercase tracking-wider text-[10px]">Faculty Roster &amp; Constraints</span>
+          <span id="facultyCountBadge" class="text-[9px] font-mono font-bold text-cerulean bg-cerulean-light px-2 py-0.5 rounded-full">18 Members</span>
+        </div>
+        <div id="facultyCardsContainer" class="space-y-2 max-h-72 overflow-y-auto pr-1"></div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="pt-2 border-t border-oxford-100 flex gap-2">
+        <button onclick="openCsvModal()" class="flex-1 py-1.5 px-2 bg-cerulean-light hover:bg-cerulean/20 text-cerulean border border-cerulean/30 rounded-lg text-xs font-bold transition">
+          CSV Config
+        </button>
+        <button onclick="exportCurrentJSON()" class="py-1.5 px-3 bg-oxford-100 hover:bg-oxford-200 text-oxford-800 rounded-lg text-xs font-semibold transition border border-oxford-200">
+          Export JSON
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN VIEWPORT: A4 Sheet Canvas -->
+    <main class="flex-1 w-full flex flex-col items-center overflow-x-auto pb-10">
+      <div id="zoomViewport" class="transition-transform duration-200 origin-top flex flex-col items-center">
+        <div id="printSheetsContainer" class="w-full flex flex-col items-center"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- MODAL 1: Room & Physical Infrastructure Manager -->
+  <div id="roomModal" class="fixed inset-0 bg-oxford-950/70 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-5 border border-oxford-200 space-y-4">
+      <div class="flex items-center justify-between pb-2 border-b border-oxford-100">
+        <div>
+          <h3 class="text-base font-extrabold text-oxford-900 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-cerulean"></span>
+            Campus Venues &amp; Room Infrastructure
+          </h3>
+          <p class="text-xs text-oxford-700 mt-0.5">Manage lecture halls, specialized computing labs, and capacities</p>
+        </div>
+        <button onclick="closeRoomManagerModal()" class="text-oxford-700 hover:text-oxford-900 text-xl font-bold leading-none">&times;</button>
+      </div>
+
+      <!-- Room Creation Form -->
+      <div class="bg-oxford-50 p-3 rounded-xl border border-oxford-200 flex gap-2 items-end">
+        <div class="flex-1">
+          <label class="block text-[10px] font-bold text-oxford-700">Room Code / Banner</label>
+          <input type="text" id="newRoomCode" placeholder="e.g. ET-3060" class="w-full mt-0.5 p-1.5 border border-oxford-200 rounded font-mono text-xs uppercase font-bold bg-white">
+        </div>
+        <div class="w-32">
+          <label class="block text-[10px] font-bold text-oxford-700">Type</label>
+          <select id="newRoomType" class="w-full mt-0.5 p-1.5 border border-oxford-200 rounded text-xs bg-white">
+            <option value="THEORY">Lecture Hall</option>
+            <option value="LAB">Specialized Lab</option>
+          </select>
+        </div>
+        <div class="w-20">
+          <label class="block text-[10px] font-bold text-oxford-700">Cap</label>
+          <input type="number" id="newRoomCap" value="75" class="w-full mt-0.5 p-1.5 border border-oxford-200 rounded text-xs text-center font-bold bg-white">
+        </div>
+        <button onclick="addNewRoom()" class="px-3 py-1.5 bg-cerulean hover:bg-cerulean-hover text-white rounded text-xs font-bold transition">Add</button>
+      </div>
+
+      <!-- Current Room Roster -->
+      <div class="space-y-1.5 max-h-60 overflow-y-auto pr-1" id="roomsListContainer"></div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-oxford-100">
+        <button onclick="closeRoomManagerModal()" class="px-4 py-1.5 text-xs bg-oxford-900 text-white font-bold rounded-lg shadow">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: Room Utilization / Occupancy Grid Matrix -->
+  <div id="roomUtilizationModal" class="fixed inset-0 bg-oxford-950/70 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full p-5 border border-oxford-200 space-y-4 max-h-[90vh] flex flex-col">
+      <div class="flex items-center justify-between pb-2 border-b border-oxford-100">
+        <div>
+          <h3 class="text-base font-extrabold text-oxford-900 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-emeraldAccent"></span>
+            Room Occupancy &amp; Clash Matrix
+          </h3>
+          <p class="text-xs text-oxford-700 mt-0.5">Live venue allocation view across all years &amp; sections</p>
+        </div>
+        <div class="flex items-center gap-3">
+          <select id="roomMatrixDayFilter" onchange="renderRoomOccupancyMatrix()" class="p-1 border rounded text-xs font-bold bg-oxford-50">
+            <option value="0">Monday Matrix</option>
+            <option value="1">Tuesday Matrix</option>
+            <option value="2">Wednesday Matrix</option>
+            <option value="3">Thursday Matrix</option>
+            <option value="4">Friday Matrix</option>
+            <option value="5">Saturday Matrix</option>
+          </select>
+          <button onclick="toggleRoomUtilizationModal()" class="text-oxford-700 hover:text-oxford-900 text-xl font-bold leading-none">&times;</button>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-auto border border-oxford-200 rounded-xl" id="roomMatrixTableContainer"></div>
+
+      <div class="flex justify-between items-center pt-2 border-t border-oxford-100 text-xs">
+        <span class="text-oxford-700 font-medium">Vacant cells represent available venues for remedial or elective allocations.</span>
+        <button onclick="toggleRoomUtilizationModal()" class="px-4 py-1.5 text-xs bg-oxford-900 text-white font-bold rounded-lg shadow">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 3: CSV Ingestion Engine -->
+  <div id="csvModal" class="fixed inset-0 bg-oxford-950/70 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-5 border border-oxford-200 space-y-3">
+      <div class="flex items-center justify-between pb-2 border-b border-oxford-100">
+        <div>
+          <h3 class="text-base font-extrabold text-oxford-900 flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full bg-cerulean"></span>
+            Department CSV Ingestion
+          </h3>
+          <p class="text-xs text-oxford-700 mt-0.5">Supports: <code class="bg-oxford-100 text-cerulean px-1 py-0.5 rounded font-mono font-bold">ID,name,mobile,sub1,sub2</code></p>
+        </div>
+        <button onclick="closeCsvModal()" class="text-oxford-700 hover:text-oxford-900 text-xl font-bold leading-none">&times;</button>
+      </div>
+
+      <div class="bg-cerulean-light/50 border border-cerulean/30 rounded-xl p-3 text-xs text-oxford-800">
+        <p class="font-bold text-cerulean mb-1">Semester &amp; Room-Aware Parser:</p>
+        <p class="text-[11px] text-oxford-700">Prefix subjects with <code class="font-bold text-oxford-900">S1:</code> or <code class="font-bold text-oxford-900">S2:</code>. Subjects and labs route automatically to assigned base rooms and specialized labs.</p>
+      </div>
+
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-oxford-700">Quick Presets:</span>
+        <button onclick="loadUser18FacultySample()" class="px-3 py-1 text-xs font-bold rounded-lg bg-cerulean text-white hover:bg-cerulean-hover transition shadow-sm">
+          Load 18-Faculty Dataset
+        </button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-oxford-700 mb-1">Paste CSV Lines:</label>
+        <textarea id="csvTextarea" rows="7" class="w-full font-mono text-xs p-2.5 border border-oxford-200 rounded-xl focus:ring-2 focus:ring-cerulean focus:outline-none"></textarea>
+      </div>
+
+      <div id="csvParseError" class="hidden p-2.5 rounded-lg bg-crimsonLab-light border border-crimsonLab/30 text-crimsonLab-dark text-xs font-bold"></div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-oxford-100">
+        <button onclick="closeCsvModal()" class="px-3 py-1.5 text-xs font-semibold text-oxford-700 hover:bg-oxford-100 rounded-lg">Cancel</button>
+        <button onclick="processAndLoadCsv()" class="px-4 py-1.5 text-xs bg-oxford-900 hover:bg-oxford-950 text-white font-bold rounded-lg shadow transition">
+          Parse &amp; Apply Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL 4: Slot Edit Modal -->
+  <div id="slotEditModal" class="fixed inset-0 bg-oxford-950/70 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-4 border border-oxford-200">
+      <div class="flex items-center justify-between pb-2 border-b border-oxford-100">
+        <div>
+          <h3 class="text-sm font-extrabold text-oxford-900" id="modalSlotTitle">Edit Slot Assignment</h3>
+          <p class="text-[11px] text-oxford-700" id="modalSlotSubtitle">Monday • Period 1</p>
+        </div>
+        <button onclick="closeSlotModal()" class="text-oxford-700 hover:text-oxford-900 text-lg leading-none font-bold">&times;</button>
+      </div>
+
+      <div class="py-3 space-y-2.5 text-xs">
+        <div>
+          <label class="block text-oxford-700 mb-1 font-bold">Assigned Subject</label>
+          <select id="modalSubjectSelect" class="w-full p-1.5 border border-oxford-200 rounded-lg text-xs focus:ring-1 focus:ring-cerulean focus:outline-none font-semibold bg-white"></select>
+        </div>
+
+        <div>
+          <label class="block text-oxford-700 mb-1 font-bold">Physical Room Code</label>
+          <select id="modalRoomSelect" class="w-full p-1.5 border border-oxford-200 rounded-lg text-xs focus:ring-1 focus:ring-cerulean focus:outline-none font-mono uppercase font-bold text-cerulean bg-white"></select>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 pt-2 border-t border-oxford-100">
+        <button onclick="closeSlotModal()" class="px-3 py-1 text-xs text-oxford-700 hover:bg-oxford-100 rounded-lg font-semibold">Cancel</button>
+        <button onclick="saveSlotModal()" class="px-3.5 py-1 text-xs bg-cerulean hover:bg-cerulean-hover text-white font-bold rounded-lg shadow">Save Slot</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC ENGINE -->
+  <script>
+    const DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+    const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+
+    let currentSemester = 'I-SEM';
+    let yearSections = {
+      '2': ['A', 'B', 'C', 'D'],
+      '3': ['A', 'B', 'C', 'D'],
+      '4': ['A', 'B', 'C']
+    };
+    let currentActiveSection = '3D';
+    let isBatchPrintingMode = false;
+    let globalFaculty = [];
+    let sectionSubjects = {};
+    let sectionSchedules = {};
+    let editingCellCoordinates = null;
+    let currentZoom = 1.0;
+
+    // Infrastructure Venue Pool
+    let departmentRooms = [
+      { code: 'ET-3080', type: 'THEORY', capacity: 75, baseFor: '3D' },
+      { code: 'ET-3050', type: 'THEORY', capacity: 75, baseFor: '3A' },
+      { code: 'ET-3070', type: 'THEORY', capacity: 75, baseFor: '3C' },
+      { code: 'ET-3090', type: 'THEORY', capacity: 75, baseFor: '3B' },
+      { code: 'ET-2010', type: 'THEORY', capacity: 75, baseFor: '2A' },
+      { code: 'ET-2020', type: 'THEORY', capacity: 75, baseFor: '2B' },
+      { code: 'ET-2030', type: 'THEORY', capacity: 75, baseFor: '2C' },
+      { code: 'ET-2040', type: 'THEORY', capacity: 75, baseFor: '2D' },
+      { code: 'ET-4010', type: 'THEORY', capacity: 75, baseFor: '4A' },
+      { code: 'ET-4020', type: 'THEORY', capacity: 75, baseFor: '4B' },
+      { code: 'ET-4030', type: 'THEORY', capacity: 75, baseFor: '4C' },
+      { code: 'LAB-1', type: 'LAB', capacity: 75, labSpecialty: 'AI & Speech Lab' },
+      { code: 'LAB-2', type: 'LAB', capacity: 75, labSpecialty: 'CV & Machine Learning Lab' },
+      { code: 'LAB-3', type: 'LAB', capacity: 75, labSpecialty: 'Tinkering Innovation Lab' },
+      { code: 'LAB-4', type: 'LAB', capacity: 75, labSpecialty: 'Cloud & Big Data Lab' }
+    ];
+
+    const DEFAULT_USER_CSV = `ID,name,mobile,sub1,sub2
+FAC001,Dr. Kola Sekhar,9848012341,S1:MACHINE LEARNING,S1:MACHINE LEARNING Lab,S2:DEEP LEARNING,S2:DEEP LEARNING Lab
+FAC002,Dr. B. Subba Rao,9848012342,S1:DATABASE MANAGEMENT SYSTEMS,S1:DATABASE MANAGEMENT SYSTEMS Lab,S2:ADVANCED DBMS,S2:DATA WAREHOUSING LAB
+FAC003,C. Vidyullatha,9848012343,S1:Python,S1:Python Lab,S2:R PROGRAMMING,S2:R LAB
+FAC004,M. Moulali,9848012344,S1:OOPS Java,S1:OOPS Java Lab,S2:WEB TECHNOLOGIES,S2:WEB TECHNOLOGIES LAB
+FAC005,K. Lalitha,9848012345,S1:ADSA,S1:ADSA Lab,S2:DATA STRUCTURES USING C++,S2:ALGORITHMS LAB
+FAC006,N. Y. Swamy,9848012346,S1:AI Tools,S1:UHV,S2:CYBER SECURITY,S2:ENVIRONMENTAL SCIENCE
+FAC007,Dr. N. Narasimhulu,9848012347,S1:CLOUD COMPUTING FOR AI,S1:BIG DATA & CLOUD COMPUTING LAB,S2:INTERNET OF THINGS,S2:IOT & SENSORS LAB
+FAC008,Dr. V. Ravi Sankar,9848012348,S1:BIG DATA ANALYTICS & AI APPLICATIONS,S1:BIG DATA & CLOUD COMPUTING LAB,S2:DATA MINING,S2:ANALYTICS LAB
+FAC009,Dr. G. V. Ratnakar,9848012349,S1:FULL STACK AI DEVELOPMENT,S1:AI-DRIVEN ROBOTIC SYSTEMS WITH ROS AND FULL STACK AI LAB,S2:ENTERPRISE CLOUD ARCHITECTURE,S2:CLOUD LAB
+FAC010,Dr. K. Srinivasulu,9848012350,S1:ROBOT OPERATING SYSTEM,S1:AI-DRIVEN ROBOTIC SYSTEMS WITH ROS AND FULL STACK AI LAB,S2:GENERATIVE AI,S2:GENAI RESEARCH LAB
+FAC011,Dr. P. Ramakrishna,9848012351,S1:DESIGN THINKING AND INNOVATION,S1:AI Tools,S2:BLOCKCHAIN TECHNOLOGY,S2:INNOVATION LAB
+FAC012,Dr. M. Venkata Reddy,9848012352,S1:MACHINE LEARNING,S1:Python,S2:STATISTICS FOR AI,S2:DATA SCIENCE
+FAC013,Dr. S. Appa Rao,9848012353,S1:DATABASE MANAGEMENT SYSTEMS,S1:ADSA,S2:NOSQL DATABASES,S2:BIG DATA LAB
+FAC014,Dr. T. Venugopal,9848012354,S1:OOPS Java,S1:Python Lab,S2:JAVA ENTERPRISE,S2:FULL STACK LAB
+FAC015,Dr. R. Chandrasekhar,9848012355,S1:CLOUD COMPUTING FOR AI,S1:BIG DATA ANALYTICS & AI APPLICATIONS,S2:KUBERNETES & DEVOPS,S2:MICROSERVICES LAB
+FAC016,Dr. A. Lakshmi Narayana,9848012356,S1:FULL STACK AI DEVELOPMENT,S1:ROBOT OPERATING SYSTEM,S2:REINFORCEMENT LEARNING,S2:AUTONOMOUS SYSTEMS
+FAC017,Dr. Ch. Satyanarayana,9848012357,S1:ADSA Lab,S1:OOPS Java Lab,S2:OPERATING SYSTEMS LAB,S2:COMPUTER NETWORKS LAB
+FAC018,Dr. B. Devender,9848012358,S1:UHV,S1:DESIGN THINKING AND INNOVATION,S2:INTELLECTUAL PROPERTY RIGHTS,S2:ENTREPRENEURSHIP`;
+
+    function showToast(message, type = 'success') {
+      const stack = document.getElementById('toastStack');
+      if (!stack) return;
+
+      const toast = document.createElement('div');
+      toast.className = 'pointer-events-auto flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl shadow-lg text-xs font-semibold border backdrop-blur-md animate-toast transition-all duration-300';
+
+      let icon = '';
+      let styleClasses = '';
+
+      if (type === 'success') {
+        styleClasses = 'bg-white/95 text-oxford-900 border-emeraldAccent/80 shadow-emeraldAccent/20';
+        icon = `<span class="w-5 h-5 rounded-full bg-emeraldAccent text-oxford-950 flex items-center justify-center font-bold text-[10px]">✓</span>`;
+      } else if (type === 'error') {
+        styleClasses = 'bg-crimsonLab-light/95 text-crimsonLab-dark border-crimsonLab/30 shadow-crimsonLab/20';
+        icon = `<span class="w-5 h-5 rounded-full bg-crimsonLab text-white flex items-center justify-center font-bold text-[10px]">✕</span>`;
+      } else if (type === 'warning') {
+        styleClasses = 'bg-amber-50/95 text-amber-900 border-amber-300 shadow-amber-200/50';
+        icon = `<span class="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center font-bold text-[10px]">!</span>`;
+      } else {
+        styleClasses = 'bg-oxford-900/95 text-white border-oxford-700 shadow-oxford-950/40';
+        icon = `<span class="w-5 h-5 rounded-full bg-cerulean text-white flex items-center justify-center font-bold text-[10px]">i</span>`;
+      }
+
+      toast.className += ` ${styleClasses}`;
+      toast.innerHTML = `
+        ${icon}
+        <span class="flex-1">${message}</span>
+        <button onclick="this.parentElement.remove()" class="text-oxford-700 hover:text-oxford-900 font-bold ml-1 text-sm leading-none">&times;</button>
+      `;
+
+      stack.appendChild(toast);
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(8px) scale(0.95)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function getBaseRoomForSection(secKey) {
+      const match = departmentRooms.find(r => r.baseFor === secKey);
+      if (match) return match.code;
+      const y = secKey[0];
+      const s = secKey[1];
+      const sIdx = LETTERS.indexOf(s);
+      const baseNum = (parseInt(y, 10) * 1000) + ((sIdx + 1) * 10);
+      return `ET-${baseNum + (y === '3' && s === 'D' ? 70 : 0)}`;
+    }
+
+    function openRoomManagerModal() {
+      renderRoomsList();
+      document.getElementById('roomModal').classList.remove('hidden');
+    }
+
+    function closeRoomManagerModal() {
+      document.getElementById('roomModal').classList.add('hidden');
+    }
+
+    function renderRoomsList() {
+      const c = document.getElementById('roomsListContainer');
+      c.innerHTML = '';
+      departmentRooms.forEach((r, idx) => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 bg-oxford-50 rounded-lg border border-oxford-200 text-xs';
+        item.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="font-mono font-bold text-cerulean">${r.code}</span>
+            <span class="text-[9px] px-1.5 py-0.5 rounded font-bold ${r.type === 'LAB' ? 'bg-crimsonLab-light text-crimsonLab' : 'bg-oxford-200 text-oxford-800'}">${r.type}</span>
+            <span class="text-[10px] text-oxford-700">Cap: ${r.capacity}</span>
+            ${r.baseFor ? `<span class="text-[9px] bg-emeraldAccent-light text-emeraldAccent-hover px-1 rounded font-bold">Base: ${r.baseFor}</span>` : ''}
+          </div>
+          <button onclick="deleteRoom(${idx})" class="text-oxford-700 hover:text-crimsonLab font-bold text-sm leading-none px-1">&times;</button>
+        `;
+        c.appendChild(item);
+      });
+      document.getElementById('roomCountBadge').textContent = `${departmentRooms.length} Venues`;
+    }
+
+    function addNewRoom() {
+      const code = document.getElementById('newRoomCode').value.trim().toUpperCase();
+      const type = document.getElementById('newRoomType').value;
+      const cap = parseInt(document.getElementById('newRoomCap').value, 10) || 75;
+
+      if (!code) {
+        showToast('Room code cannot be empty', 'error');
+        return;
+      }
+
+      if (departmentRooms.some(r => r.code === code)) {
+        showToast('Room code already exists', 'error');
+        return;
+      }
+
+      departmentRooms.push({ code, type, capacity: cap });
+      document.getElementById('newRoomCode').value = '';
+      renderRoomsList();
+      showToast(`Added ${code} (${type})`, 'success');
+      solveGlobalSchedule();
+    }
+
+    function deleteRoom(idx) {
+      const r = departmentRooms[idx];
+      departmentRooms.splice(idx, 1);
+      renderRoomsList();
+      showToast(`Removed venue ${r.code}`, 'info');
+      solveGlobalSchedule();
+    }
+
+    // Room Occupancy Matrix View
+    function toggleRoomUtilizationModal() {
+      const el = document.getElementById('roomUtilizationModal');
+      if (el.classList.contains('hidden')) {
+        renderRoomOccupancyMatrix();
+        el.classList.remove('hidden');
+      } else {
+        el.classList.add('hidden');
+      }
+    }
+
+    function renderRoomOccupancyMatrix() {
+      const dayIdx = parseInt(document.getElementById('roomMatrixDayFilter').value, 10) || 0;
+      const dayName = DAYS[dayIdx];
+      const container = document.getElementById('roomMatrixTableContainer');
+      
+      const periods = ['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7'];
+      const periodNames = ['9.00-9.50', '9.50-10.40', '11.00-11.50', '11.50-12.40', '1.50-2.40', '2.40-3.30', '3.30-4.20'];
+
+      // Build occupancy lookup: roomCode -> period -> allocation details
+      const grid = {};
+      departmentRooms.forEach(r => {
+        grid[r.code] = { p1: null, p2: null, p3: null, p4: null, p5: null, p6: null, p7: null };
+      });
+
+      getAllSectionKeys().forEach(secKey => {
+        const sched = sectionSchedules[secKey];
+        if (!sched) return;
+        const row = sched[dayIdx];
+        if (!row) return;
+
+        periods.forEach(p => {
+          if (row[p] && row[p].room && grid[row[p].room]) {
+            grid[row[p].room][p] = { sec: secKey, sub: row[p].code };
+          }
+        });
+
+        if (row.afternoonLab && row.afternoonLab.room && grid[row.afternoonLab.room]) {
+          grid[row.afternoonLab.room]['p5'] = { sec: secKey, sub: row.afternoonLab.title };
+          grid[row.afternoonLab.room]['p6'] = { sec: secKey, sub: row.afternoonLab.title };
+          grid[row.afternoonLab.room]['p7'] = { sec: secKey, sub: row.afternoonLab.title };
+        }
+      });
+
+      let html = `
+        <table class="w-full text-left border-collapse text-xs">
+          <thead>
+            <tr class="bg-oxford-900 text-white font-mono text-[10px]">
+              <th class="p-2 border border-oxford-800">ROOM</th>
+              <th class="p-2 border border-oxford-800">TYPE</th>
+              ${periodNames.map(pn => `<th class="p-2 border border-oxford-800 text-center">${pn}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      departmentRooms.forEach(r => {
+        html += `
+          <tr class="border-b border-oxford-200 hover:bg-oxford-50 font-sans">
+            <td class="p-2 font-mono font-bold text-cerulean border border-oxford-200">${r.code}</td>
+            <td class="p-2 text-[9px] font-bold border border-oxford-200">${r.type}</td>
+        `;
+
+        periods.forEach(p => {
+          const occ = grid[r.code][p];
+          if (occ) {
+            html += `
+              <td class="p-1 border border-oxford-200 text-center bg-cerulean-light/40">
+                <div class="font-extrabold text-[10px] text-oxford-900">${occ.sec}</div>
+                <div class="text-[8.5px] text-cerulean font-mono font-semibold">${occ.sub}</div>
+              </td>
+            `;
+          } else {
+            html += `<td class="p-1 border border-oxford-200 text-center text-oxford-700 italic text-[9px]">idle</td>`;
+          }
+        });
+
+        html += `</tr>`;
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    }
+
+    function setSemester(sem) {
+      currentSemester = sem;
+      const select = document.getElementById('metaSemester');
+      if (select) select.value = sem;
+
+      const btn1 = document.getElementById('btnSem1Nav');
+      const btn2 = document.getElementById('btnSem2Nav');
+      if (btn1 && btn2) {
+        if (sem === 'I-SEM') {
+          btn1.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-cerulean text-white transition shadow-sm';
+          btn2.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-oxford-300 hover:text-white transition';
+        } else {
+          btn2.className = 'px-2.5 py-1 text-xs font-bold rounded-md bg-cerulean text-white transition shadow-sm';
+          btn1.className = 'px-2.5 py-1 text-xs font-bold rounded-md text-oxford-300 hover:text-white transition';
+        }
+      }
+
+      solveGlobalSchedule(false);
+      showToast(`Activated ${sem === 'I-SEM' ? 'Semester 1 (Odd)' : 'Semester 2 (Even)'} curriculum`, 'info');
+    }
+
+    function getSubjectAcronym(fullName) {
+      if (!fullName) return 'TBD';
+      let clean = fullName.trim().toUpperCase();
+      clean = clean.replace(/^(S1:|S2:|SEM1:|SEM2:)\s*/i, '');
+
+      if (clean === 'PYTHON') return 'PYTHON';
+      if (clean === 'PYTHON LAB') return 'PY LAB';
+      if (clean === 'OOPS JAVA') return 'JAVA';
+      if (clean === 'OOPS JAVA LAB') return 'JAVA LAB';
+      if (clean === 'UHV') return 'UHV';
+      if (clean === 'AI TOOLS') return 'AI TOOLS';
+      if (clean === 'ADSA') return 'ADSA';
+      if (clean === 'ADSA LAB') return 'ADSA LAB';
+      if (clean.includes('ROBOT OPERATING SYSTEM')) return 'ROS';
+      if (clean.includes('CLOUD COMPUTING')) return 'CCAI';
+      if (clean.includes('BIG DATA ANALYTICS')) return 'BDA&AI';
+      if (clean.includes('FULL STACK AI')) return 'FSAI';
+      if (clean.includes('DESIGN THINKING')) return 'DTI';
+      if (clean.includes('MACHINE LEARNING LAB')) return 'ML LAB';
+      if (clean.includes('MACHINE LEARNING')) return 'ML';
+      if (clean.includes('DEEP LEARNING LAB')) return 'DL LAB';
+      if (clean.includes('DEEP LEARNING')) return 'DL';
+      if (clean.includes('DATABASE MANAGEMENT SYSTEMS LAB')) return 'DBMS LAB';
+      if (clean.includes('DATABASE MANAGEMENT SYSTEMS')) return 'DBMS';
+      if (clean.includes('BIG DATA & CLOUD COMPUTING LAB')) return 'BD&CC LAB';
+      if (clean.includes('AI-DRIVEN ROBOTIC SYSTEMS')) return 'ROS&FSAI LAB';
+      
+      const words = clean.split(/\s+/);
+      if (words.length === 1) return words[0].slice(0, 5);
+      return words.map(w => w[0]).join('').slice(0, 6);
+    }
+
+    function calculateSectionsFromIntake(intake) {
+      if (!intake || intake <= 0) return { count: 1, perSec: 0 };
+      let count = Math.floor(intake / 70);
+      if (count === 0) count = 1;
+      
+      let perSec = Math.ceil(intake / count);
+      if (perSec > 75) {
+        count = Math.ceil(intake / 70);
+        perSec = Math.ceil(intake / count);
+      }
+      return { count, perSec };
+    }
+
+    function recalculateSections(notify = false) {
+      const intakeYr2 = parseInt(document.getElementById('intakeYr2').value, 10) || 280;
+      const intakeYr3 = parseInt(document.getElementById('intakeYr3').value, 10) || 275;
+      const intakeYr4 = parseInt(document.getElementById('intakeYr4').value, 10) || 210;
+
+      const res2 = calculateSectionsFromIntake(intakeYr2);
+      const res3 = calculateSectionsFromIntake(intakeYr3);
+      const res4 = calculateSectionsFromIntake(intakeYr4);
+
+      document.getElementById('badgeYr2').textContent = `${res2.count} Sec (${res2.perSec} ea)`;
+      document.getElementById('badgeYr3').textContent = `${res3.count} Sec (${res3.perSec} ea)`;
+      document.getElementById('badgeYr4').textContent = `${res4.count} Sec (${res4.perSec} ea)`;
+
+      yearSections['2'] = LETTERS.slice(0, res2.count);
+      yearSections['3'] = LETTERS.slice(0, res3.count);
+      yearSections['4'] = LETTERS.slice(0, res4.count);
+
+      const activeYr = currentActiveSection[0];
+      const activeSec = currentActiveSection[1];
+      if (!yearSections[activeYr] || !yearSections[activeYr].includes(activeSec)) {
+        currentActiveSection = `3${yearSections['3'][0] || 'A'}`;
+      }
+
+      solveGlobalSchedule();
+      if (notify) {
+        showToast(`Intake updated: ${res2.count + res3.count + res4.count} total sections configured`, 'info');
+      }
+    }
+
+    function getAllSectionKeys() {
+      const keys = [];
+      ['2', '3', '4'].forEach(y => {
+        (yearSections[y] || []).forEach(s => {
+          keys.push(`${y}${s}`);
+        });
+      });
+      return keys;
+    }
+
+    function parseAdaptiveCSV(text) {
+      const lines = text.trim().split(/\r?\n/).filter(l => l.trim().length > 0);
+      if (lines.length < 2) return [];
+
+      const parsedFaculty = [];
+      const headerTokens = lines[0].split(',').map(t => t.trim().toLowerCase());
+      const hasExplicitPhone = headerTokens.includes('mobile') || headerTokens.includes('phone');
+
+      for (let i = 1; i < lines.length; i++) {
+        const tokens = lines[i].split(',').map(t => t.trim());
+        if (tokens.length < 2) continue;
+
+        const fid = tokens[0];
+        const name = tokens[1];
+        let phone = '+91 98480 00000';
+        let subjectTokens = [];
+
+        if (tokens.length >= 3 && (/^\+?\d{8,15}$/.test(tokens[2]) || hasExplicitPhone)) {
+          phone = tokens[2].startsWith('+') ? tokens[2] : `+91 ${tokens[2]}`;
+          subjectTokens = tokens.slice(3);
+        } else {
+          subjectTokens = tokens.slice(2);
+        }
+
+        const subjects = [];
+        subjectTokens.forEach(item => {
+          if (!item) return;
+
+          let rawItem = item.trim();
+          let targetSem = null;
+
+          if (/^s1:/i.test(rawItem)) {
+            targetSem = 'I-SEM';
+            rawItem = rawItem.replace(/^s1:\s*/i, '');
+          } else if (/^s2:/i.test(rawItem)) {
+            targetSem = 'II-SEM';
+            rawItem = rawItem.replace(/^s2:\s*/i, '');
+          }
+
+          if (!targetSem) {
+            const up = rawItem.toUpperCase();
+            if (up.includes('DEEP LEARNING') || up.includes('IOT') || up.includes('WEB TECH') || up.includes('R PROG') || up.includes('CYBER') || up.includes('DATA MINING') || up.includes('BLOCKCHAIN')) {
+              targetSem = 'II-SEM';
+            } else {
+              targetSem = 'I-SEM';
+            }
+          }
+
+          const matchHyphen = rawItem.match(/^([A-Za-z0-9_& ]+)-(\d+)-(\d+)$/);
+          if (matchHyphen) {
+            const subTitle = matchHyphen[1].trim();
+            const th = parseInt(matchHyphen[2], 10);
+            const lb = parseInt(matchHyphen[3], 10);
+            const isLab = lb > 0 || /lab/i.test(subTitle);
+            subjects.push({
+              title: subTitle,
+              code: getSubjectAcronym(subTitle),
+              semester: targetSem,
+              isLab: isLab,
+              theoryHrs: th,
+              labSessions: lb
+            });
+          } else {
+            const isLab = /lab/i.test(rawItem);
+            subjects.push({
+              title: rawItem,
+              code: getSubjectAcronym(rawItem),
+              semester: targetSem,
+              isLab: isLab,
+              theoryHrs: isLab ? 0 : 4,
+              labSessions: isLab ? 1 : 0
+            });
+          }
+        });
+
+        parsedFaculty.push({
+          id: fid,
+          name: name,
+          phone: phone,
+          subjects: subjects,
+          maxHours: 16,
+          assignedHours: 0,
+          freeDays: i % 2 === 0 ? ['SAT'] : ['FRI'],
+          morningCap: 2,
+          morningCount: 0
+        });
+      }
+
+      return parsedFaculty;
+    }
+
+    function buildCurriculumPools() {
+      const yearMap = { '2': [], '3': [], '4': [] };
+
+      globalFaculty.forEach(fac => {
+        const activeSemesterSubjects = fac.subjects.filter(s => s.semester === currentSemester);
+
+        activeSemesterSubjects.forEach(sub => {
+          const sObj = {
+            code: sub.code,
+            name: sub.title,
+            facultyId: fac.id,
+            facultyName: fac.name,
+            facultyPhone: fac.phone,
+            isLab: sub.isLab,
+            hours: sub.isLab ? 2 : (sub.theoryHrs || 4),
+            type: sub.isLab ? 'LAB' : 'THEORY'
+          };
+
+          const upper = sub.title.toUpperCase();
+          if (upper.includes('PYTHON') || upper.includes('JAVA') || upper.includes('ADSA') || upper.includes('UHV') || upper.includes('AI TOOLS') || upper.includes('DATA STRUCTURES') || upper.includes('R PROGRAMMING')) {
+            yearMap['2'].push(sObj);
+          } else if (upper.includes('MACHINE LEARNING') || upper.includes('DATABASE') || upper.includes('CLOUD COMPUTING') || upper.includes('BIG DATA') || upper.includes('QT&A') || upper.includes('CV&IP') || upper.includes('NLP') || upper.includes('DEEP LEARNING') || upper.includes('DATA MINING')) {
+            yearMap['3'].push(sObj);
+          } else if (upper.includes('ROBOT') || upper.includes('FULL STACK AI') || upper.includes('DESIGN THINKING') || upper.includes('GENERATIVE AI') || upper.includes('BLOCKCHAIN')) {
+            yearMap['4'].push(sObj);
+          } else {
+            yearMap['3'].push(sObj);
+          }
+        });
+      });
+
+      ['2', '3', '4'].forEach(yr => {
+        if (yearMap[yr].length === 0) {
+          yearMap[yr] = globalFaculty.slice(0, 6).map((f, i) => {
+            const sub = f.subjects[0];
+            return {
+              code: sub ? sub.code : `SUB${i+1}`,
+              name: sub ? sub.title : `Department Course ${i+1}`,
+              facultyId: f.id,
+              facultyName: f.name,
+              facultyPhone: f.phone,
+              isLab: i === 5,
+              hours: i === 5 ? 2 : 4,
+              type: i === 5 ? 'LAB' : 'THEORY'
+            };
+          });
+        }
+      });
+
+      return yearMap;
+    }
+
+    // Global Constraint Solver with Venue Invariant
+    function solveGlobalSchedule(notify = false) {
+      if (!globalFaculty || globalFaculty.length === 0) return;
+
+      const allSecKeys = getAllSectionKeys();
+      const curriculumPools = buildCurriculumPools();
+
+      allSecKeys.forEach(secKey => {
+        sectionSubjects[secKey] = [];
+        sectionSchedules[secKey] = [];
+        for (let d = 0; d < 6; d++) {
+          sectionSchedules[secKey].push({
+            p1: null, p2: null, p3: null, p4: null, p5: null, p6: null, p7: null,
+            morningLab: null, afternoonLab: null
+          });
+        }
+      });
+
+      globalFaculty.forEach(f => {
+        f.assignedHours = 0;
+        f.morningCount = 0;
+      });
+
+      // Track both Faculty and Room Occupancy
+      const facultyOccupancy = {};
+      const roomOccupancy = {};
+
+      for (let d = 0; d < 6; d++) {
+        facultyOccupancy[d] = {
+          'p1': new Set(), 'p2': new Set(), 'morningLab': new Set(),
+          'p3': new Set(), 'p4': new Set(),
+          'p5': new Set(), 'p6': new Set(), 'p7': new Set(), 'afternoonLab': new Set()
+        };
+        roomOccupancy[d] = {
+          'p1': new Set(), 'p2': new Set(), 'morningLab': new Set(),
+          'p3': new Set(), 'p4': new Set(),
+          'p5': new Set(), 'p6': new Set(), 'p7': new Set(), 'afternoonLab': new Set()
+        };
+      }
+
+      // Assign Base Classroom per section
+      allSecKeys.forEach(secKey => {
+        const yr = secKey[0];
+        const secBaseRoom = getBaseRoomForSection(secKey);
+        const pool = curriculumPools[yr];
+
+        sectionSubjects[secKey] = pool.map(item => ({
+          ...item,
+          room: secBaseRoom
+        }));
+      });
+
+      const labVenues = departmentRooms.filter(r => r.type === 'LAB');
+
+      // Schedule Each Section
+      allSecKeys.forEach((secKey, secIdx) => {
+        const yr = secKey[0];
+        const secBaseRoom = getBaseRoomForSection(secKey);
+        const subs = sectionSubjects[secKey] || [];
+        const labs = subs.filter(s => s.type === 'LAB');
+        const theories = subs.filter(s => s.type !== 'LAB');
+        const sched = sectionSchedules[secKey];
+
+        // 1. Assign Afternoon Labs
+        const targetLabCount = yr === '4' ? 1 : Math.min(labs.length, 3);
+        let labsPlaced = 0;
+
+        const labDays = [4, 5, 2, 3, 1, 0];
+        labDays.forEach(day => {
+          if (labsPlaced < targetLabCount && labs.length > 0) {
+            const lab = labs[labsPlaced % labs.length];
+            const fac = globalFaculty.find(f => f.id === lab.facultyId);
+            const dayName = DAYS[day];
+
+            // Pick a free lab venue
+            const freeLabVenue = labVenues.find(lv => !roomOccupancy[day]['p5'].has(lv.code)) || { code: 'LAB-1' };
+
+            const freeDayClash = fac && fac.freeDays && fac.freeDays.includes(dayName);
+            const facClash = fac && (facultyOccupancy[day]['p5'].has(fac.id) || facultyOccupancy[day]['p6'].has(fac.id));
+            const roomClash = roomOccupancy[day]['p5'].has(freeLabVenue.code);
+
+            if (!sched[day].afternoonLab && !freeDayClash && !facClash && !roomClash) {
+              sched[day].afternoonLab = {
+                ...lab,
+                title: lab.code.includes('LAB') ? lab.code : lab.code + ' LAB',
+                room: freeLabVenue.code
+              };
+
+              if (fac) {
+                facultyOccupancy[day]['p5'].add(fac.id);
+                facultyOccupancy[day]['p6'].add(fac.id);
+                facultyOccupancy[day]['p7'].add(fac.id);
+                fac.assignedHours += 2;
+              }
+
+              roomOccupancy[day]['p5'].add(freeLabVenue.code);
+              roomOccupancy[day]['p6'].add(freeLabVenue.code);
+              roomOccupancy[day]['p7'].add(freeLabVenue.code);
+
+              labsPlaced++;
+            }
+          }
+        });
+
+        // 2. Assign Theory Slots into Section's Base Classroom
+        for (let day = 0; day < 6; day++) {
+          const dayName = DAYS[day];
+          const row = sched[day];
+          const assignedDaily = new Set();
+
+          const regularSlots = [];
+          regularSlots.push({ slot: 'p1', is9AM: true }, { slot: 'p2', is9AM: false });
+          regularSlots.push({ slot: 'p3', is9AM: false }, { slot: 'p4', is9AM: false });
+          if (!row.afternoonLab) {
+            regularSlots.push({ slot: 'p5', is9AM: false }, { slot: 'p6', is9AM: false }, { slot: 'p7', is9AM: false });
+          }
+
+          regularSlots.forEach(({ slot, is9AM }) => {
+            if (row[slot]) return;
+
+            const candidates = theories.filter(sub => {
+              if (assignedDaily.has(sub.code) && theories.length >= 4) return false;
+              const fac = globalFaculty.find(f => f.id === sub.facultyId);
+              if (!fac) return true;
+
+              if (fac.freeDays && fac.freeDays.includes(dayName)) return false;
+              if (facultyOccupancy[day][slot].has(fac.id)) return false;
+              if (roomOccupancy[day][slot].has(secBaseRoom)) return false;
+              if (is9AM && fac.morningCount >= fac.morningCap) return false;
+              if (fac.assignedHours >= fac.maxHours + 2) return false;
+
+              return true;
+            });
+
+            candidates.sort((a, b) => {
+              const fA = globalFaculty.find(f => f.id === a.facultyId);
+              const fB = globalFaculty.find(f => f.id === b.facultyId);
+              if (is9AM && fA && fB) return fA.morningCount - fB.morningCount;
+              return 0;
+            });
+
+            const chosen = candidates[0] || theories[(day + secIdx) % theories.length];
+            if (chosen) {
+              row[slot] = {
+                ...chosen,
+                room: secBaseRoom
+              };
+
+              assignedDaily.add(chosen.code);
+              const fac = globalFaculty.find(f => f.id === chosen.facultyId);
+              if (fac) {
+                facultyOccupancy[day][slot].add(fac.id);
+                fac.assignedHours += 1;
+                if (is9AM) fac.morningCount += 1;
+              }
+              roomOccupancy[day][slot].add(secBaseRoom);
+            }
+          });
+        }
+      });
+
+      renderAll();
+
+      if (notify) {
+        showToast(`Schedule & Room Allocations Resolved Successfully ✓`, 'success');
+      }
+    }
+
+    function renderDualSubCell(subObj, secKey, dayIdx, slotKey, defaultRoom) {
+      if (!subObj) {
+        return `
+          <div class="h-[44px] flex flex-col justify-center items-center cursor-pointer hover:bg-oxford-50 select-none" onclick="openSlotModal('${secKey}', ${dayIdx}, '${slotKey}')">
+            <span class="text-[8px] text-oxford-700 italic">- free -</span>
+          </div>
+        `;
+      }
+
+      const roomText = subObj.room || defaultRoom || 'ET-3080';
+      return `
+        <div class="h-[44px] flex flex-col cursor-pointer transition select-none" onclick="openSlotModal('${secKey}', ${dayIdx}, '${slotKey}')">
+          <div class="bg-oxford-200 text-oxford-800 font-extrabold text-[8px] py-0.5 tracking-wider border-b border-oxford-900 text-center leading-none">
+            ${roomText}
+          </div>
+          <div class="flex-1 flex items-center justify-center font-black text-[9.5px] text-oxford-950 leading-tight px-0.5">
+            ${subObj.code}
+          </div>
+        </div>
+      `;
+    }
+
+    function renderMergedTheoryDualCell(subObj, secKey, dayIdx, startSlot, endSlot, defaultRoom) {
+      const roomText = subObj.room || defaultRoom || 'ET-3080';
+      return `
+        <td colspan="2" class="p-0 border border-oxford-900 align-top">
+          <div class="h-[44px] flex flex-col cursor-pointer select-none" onclick="openSlotModal('${secKey}', ${dayIdx}, '${startSlot}')">
+            <div class="bg-oxford-200 text-oxford-800 font-extrabold text-[8px] py-0.5 tracking-wider border-b border-oxford-900 text-center leading-none">
+              ${roomText}
+            </div>
+            <div class="flex-1 flex items-center justify-center font-black text-[10px] text-oxford-950 leading-tight px-1">
+              ${subObj.code}
+            </div>
+          </div>
+        </td>
+      `;
+    }
+
+    function renderLabBlockCell(labObj, secKey, dayIdx, colspan, slotKey) {
+      return `
+        <td colspan="${colspan}" class="p-0 border border-oxford-900 align-middle bg-crimsonLab-light/40">
+          <div class="h-[44px] flex items-center justify-center cursor-pointer select-none px-1 text-center" onclick="openSlotModal('${secKey}', ${dayIdx}, '${slotKey}')">
+            <span class="font-black text-[10.5px] text-crimsonLab tracking-wider uppercase">
+              ${labObj.title || labObj.code}
+            </span>
+          </div>
+        </td>
+      `;
+    }
+
+    function buildA4SheetHTML(secKey) {
+      const year = secKey[0];
+      const secLetter = secKey[1];
+      const roomDefault = getBaseRoomForSection(secKey);
+      const sched = sectionSchedules[secKey] || [];
+      const subjects = sectionSubjects[secKey] || [];
+
+      const academicYear = document.getElementById('metaAcademicYear')?.value || '2026-27';
+      const batchYear = document.getElementById('metaBatch')?.value || '2024 BATCH';
+      const wefDate = document.getElementById('metaWef')?.value || '05-08-2026';
+      const romanYear = year === '2' ? 'II' : (year === '3' ? 'III' : 'IV');
+
+      let tableRowsHTML = '';
+      DAYS.forEach((dayName, dIdx) => {
+        const row = sched[dIdx] || {};
+
+        let morningBreakHTML = '';
+        if (dIdx === 0) {
+          morningBreakHTML = `
+            <td rowspan="6" class="bg-white p-0 text-center font-black text-oxford-950 border-x-2 border-oxford-950 select-none align-middle">
+              <div class="flex flex-col items-center justify-center font-black text-[9px] tracking-widest text-oxford-800 leading-4">
+                <span>B</span><span>R</span><span>E</span><span>A</span><span>K</span>
+              </div>
+            </td>
+          `;
+        }
+
+        let lunchBreakHTML = '';
+        if (dIdx === 0) {
+          lunchBreakHTML = `
+            <td rowspan="6" class="bg-white p-0 text-center font-black text-oxford-950 border-x-2 border-oxford-950 select-none align-middle">
+              <div class="flex flex-col items-center justify-center font-black text-[8px] tracking-widest text-oxford-800 leading-3.5">
+                <span>L</span><span>U</span><span>N</span><span>C</span><span>H</span>
+                <span class="h-1.5"></span>
+                <span>B</span><span>R</span><span>E</span><span>A</span><span>K</span>
+              </div>
+            </td>
+          `;
+        }
+
+        let p1p2HTML = '';
+        if (row.morningLab) {
+          p1p2HTML = renderLabBlockCell(row.morningLab, secKey, dIdx, 2, 'morningLab');
+        } else if (row.p1 && row.p2 && row.p1.code === row.p2.code) {
+          p1p2HTML = renderMergedTheoryDualCell(row.p1, secKey, dIdx, 'p1', 'p2', roomDefault);
+        } else {
+          p1p2HTML = `
+            <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p1, secKey, dIdx, 'p1', roomDefault)}</td>
+            <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p2, secKey, dIdx, 'p2', roomDefault)}</td>
+          `;
+        }
+
+        let p3p4HTML = '';
+        if (row.p3 && row.p4 && row.p3.code === row.p4.code) {
+          p3p4HTML = renderMergedTheoryDualCell(row.p3, secKey, dIdx, 'p3', 'p4', roomDefault);
+        } else {
+          p3p4HTML = `
+            <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p3, secKey, dIdx, 'p3', roomDefault)}</td>
+            <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p4, secKey, dIdx, 'p4', roomDefault)}</td>
+          `;
+        }
+
+        let afternoonHTML = '';
+        if (row.afternoonLab) {
+          afternoonHTML = renderLabBlockCell(row.afternoonLab, secKey, dIdx, 3, 'afternoonLab');
+        } else {
+          let p5HTML = `<td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p5, secKey, dIdx, 'p5', roomDefault)}</td>`;
+          let p6p7HTML = '';
+          if (row.p6 && row.p7 && row.p6.code === row.p7.code) {
+            p6p7HTML = renderMergedTheoryDualCell(row.p6, secKey, dIdx, 'p6', 'p7', roomDefault);
+          } else {
+            p6p7HTML = `
+              <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p6, secKey, dIdx, 'p6', roomDefault)}</td>
+              <td class="p-0 border border-oxford-900 align-top">${renderDualSubCell(row.p7, secKey, dIdx, 'p7', roomDefault)}</td>
+            `;
+          }
+          afternoonHTML = p5HTML + p6p7HTML;
+        }
+
+        tableRowsHTML += `
+          <tr class="h-[44px]">
+            <td class="font-black bg-oxford-100 text-oxford-950 text-[10px] border-r-2 border-oxford-950 select-none">${dayName}</td>
+            ${p1p2HTML}
+            ${morningBreakHTML}
+            ${p3p4HTML}
+            ${lunchBreakHTML}
+            ${afternoonHTML}
+          </tr>
+        `;
+      });
+
+      let facultyDetailsRowsHTML = '';
+      const uniqueSubs = [];
+      const seen = new Set();
+      subjects.forEach(s => {
+        if (!seen.has(s.code)) {
+          seen.add(s.code);
+          uniqueSubs.push(s);
+        }
+      });
+
+      uniqueSubs.forEach(sub => {
+        const fac = globalFaculty.find(f => f.id === sub.facultyId);
+        facultyDetailsRowsHTML += `
+          <tr class="text-[9px] h-[21px]">
+            <td class="text-left px-2 py-0.5 font-bold text-oxford-950 border border-oxford-900">${sub.name} <span class="font-mono text-cerulean font-semibold">(${sub.code})</span></td>
+            <td class="text-left px-2 py-0.5 font-semibold text-oxford-900 border border-oxford-900">${fac ? fac.name : 'TBA'}</td>
+            <td class="text-center px-1 py-0.5 font-mono text-oxford-700 border border-oxford-900">${fac ? fac.phone : '-'}</td>
+          </tr>
+        `;
+      });
+
+      return `
+        <div class="a4-portrait-sheet border border-oxford-300" id="sheet_${secKey}">
+          
+          <!-- HEADER -->
+          <div class="text-center pt-0 pb-1">
+            <h2 class="text-[13px] font-black uppercase tracking-tight text-oxford-950 border-b-2 border-oxford-950 pb-1 inline-block">
+              TIMETABLE FOR. B.TECH - ${romanYear} YEAR ${currentSemester} - ${secLetter} -SECTION (${academicYear}) :: ${batchYear}
+            </h2>
+            <div class="text-right text-[10px] italic font-bold text-oxford-800 mt-0.5 mr-1">
+              w.e.f: ${wefDate}
+            </div>
+          </div>
+
+          <!-- MASTER GRID -->
+          <div class="my-0.5">
+            <table class="tt-table">
+              <colgroup>
+                <col style="width: 8%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+                <col style="width: 4%;">
+                <col style="width: 13%;">
+                <col style="width: 13%;">
+                <col style="width: 4%;">
+                <col style="width: 10.66%;">
+                <col style="width: 10.66%;">
+                <col style="width: 10.66%;">
+              </colgroup>
+              <thead>
+                <tr class="bg-oxford-50 font-black text-oxford-950 text-[9px] h-[34px]">
+                  <th class="py-1 border border-oxford-900 font-black bg-oxford-100">DAY</th>
+                  <th class="py-1">9.00-<br>9.50</th>
+                  <th class="py-1">9.50-<br>10.40</th>
+                  <th class="p-0 font-bold text-[7.5px] bg-oxford-100">10.40-<br>11.00</th>
+                  <th class="py-1">11.00-<br>11.50</th>
+                  <th class="py-1">11.50-<br>12.40</th>
+                  <th class="p-0 font-bold text-[7.5px] bg-oxford-100">12.40<br>-1.50</th>
+                  <th class="py-1">1.50-<br>2.40</th>
+                  <th class="py-1">2.40-<br>3.30</th>
+                  <th class="py-1">3.30-<br>4.20</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${tableRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- FACULTY DETAILS -->
+          <div class="mt-1 mb-0.5">
+            <div class="text-left font-black text-[10.5px] text-oxford-950 mb-0.5 underline">
+              Faculty details:
+            </div>
+            <table class="tt-table">
+              <colgroup>
+                <col style="width: 52%;">
+                <col style="width: 30%;">
+                <col style="width: 18%;">
+              </colgroup>
+              <thead>
+                <tr class="bg-oxford-100 font-extrabold text-oxford-950 text-[9px] h-[22px]">
+                  <th class="text-left px-2 py-0.5">Subject Name</th>
+                  <th class="text-left px-2 py-0.5">Faculty Name</th>
+                  <th class="text-center px-1 py-0.5 font-mono">Phone No.</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${facultyDetailsRowsHTML}
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 4-COLUMN SIGNATURE BLOCK -->
+          <div class="border-t-2 border-oxford-950 pt-2 pb-0.5 mt-auto">
+            <div class="grid grid-cols-4 text-center text-[9px] font-bold text-oxford-900">
+              <div><p>Class Teacher</p></div>
+              <div><p>Timetable Coordinator</p></div>
+              <div><p>Head of Department (HOD)</p></div>
+              <div><p>Principal / Dean</p></div>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    function renderSectionTabs() {
+      const container = document.getElementById('sectionTabsContainer');
+      container.innerHTML = '';
+
+      ['2', '3', '4'].forEach(y => {
+        const secs = yearSections[y] || [];
+        const group = document.createElement('div');
+        group.className = 'flex items-center bg-oxford-950 p-1 rounded-xl border border-oxford-800';
+
+        const label = document.createElement('span');
+        label.className = 'text-[10px] font-extrabold text-cerulean-accent px-2 uppercase';
+        label.textContent = `Yr ${y}:`;
+        group.appendChild(label);
+
+        secs.forEach(s => {
+          const secKey = `${y}${s}`;
+          const btn = document.createElement('button');
+          const isActive = (currentActiveSection === secKey);
+
+          btn.className = `px-2 py-0.5 rounded-lg text-[11px] font-bold transition ${
+            isActive 
+              ? 'bg-cerulean text-white shadow-sm' 
+              : 'text-oxford-300 hover:text-white hover:bg-oxford-800'
+          }`;
+          btn.textContent = `Sec ${s}`;
+          btn.onclick = () => switchSection(secKey);
+          group.appendChild(btn);
+        });
+
+        container.appendChild(group);
+      });
+    }
+
+    function switchSection(secKey) {
+      currentActiveSection = secKey;
+      isBatchPrintingMode = false;
+      document.getElementById('activeSectionBadge').textContent = `${secKey[0]} Year - Sec ${secKey[1]} (${currentSemester})`;
+      document.getElementById('metaDefaultRoom').value = getBaseRoomForSection(secKey);
+      renderSectionTabs();
+      renderSheetsContainer();
+      showToast(`Switched view to Year ${secKey[0]} - Section ${secKey[1]}`, 'info');
+    }
+
+    function renderSheetsContainer() {
+      const container = document.getElementById('printSheetsContainer');
+      container.innerHTML = '';
+
+      if (isBatchPrintingMode) {
+        getAllSectionKeys().forEach(secKey => {
+          container.innerHTML += buildA4SheetHTML(secKey);
+        });
+      } else {
+        container.innerHTML = buildA4SheetHTML(currentActiveSection);
+      }
+    }
+
+    function renderSidebar() {
+      let totalReq = 0;
+      getAllSectionKeys().forEach(k => {
+        const subs = sectionSubjects[k] || [];
+        totalReq += subs.reduce((sum, s) => sum + (s.hours || 0), 0);
+      });
+
+      const totalFacultyCap = globalFaculty.reduce((sum, f) => sum + (f.maxHours || 0), 0);
+
+      document.getElementById('totalRequiredHours').textContent = `${totalReq} hrs`;
+      document.getElementById('totalFacultyHours').textContent = `${totalFacultyCap} hrs`;
+      document.getElementById('facultyCountBadge').textContent = `${globalFaculty.length} Members`;
+
+      const ratio = totalReq > 0 ? Math.min(100, Math.round((totalFacultyCap / totalReq) * 100)) : 100;
+      const prog = document.getElementById('capacityProgress');
+      prog.style.width = `${ratio}%`;
+
+      const status = document.getElementById('loadBalanceStatus');
+      if (totalFacultyCap >= totalReq) {
+        status.textContent = 'Balanced ✓';
+        status.className = 'font-mono text-[11px] font-bold text-emeraldAccent-hover';
+        prog.className = 'bg-emeraldAccent h-2 rounded-full transition-all';
+      } else {
+        status.textContent = `Deficit (-${totalReq - totalFacultyCap}h)`;
+        status.className = 'font-mono text-[11px] font-bold text-crimsonLab';
+        prog.className = 'bg-crimsonLab h-2 rounded-full transition-all';
+      }
+
+      const cardsContainer = document.getElementById('facultyCardsContainer');
+      cardsContainer.innerHTML = '';
+
+      globalFaculty.forEach((fac, idx) => {
+        const card = document.createElement('div');
+        card.className = 'bg-oxford-50 border border-oxford-200 rounded-xl p-2.5 text-xs space-y-1.5 transition hover:border-cerulean/40';
+        card.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-extrabold text-oxford-900 text-[11px]">${fac.name}</span>
+            <span class="font-mono text-[10px] font-bold bg-white px-2 py-0.5 rounded-full border border-oxford-200 text-cerulean">${fac.maxHours}h/wk</span>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-[10px] text-oxford-700 mb-0.5">
+              <span>Weekly Workload Slider</span>
+              <span class="font-bold text-oxford-800">${fac.maxHours} hrs</span>
+            </div>
+            <input type="range" min="6" max="24" step="1" value="${fac.maxHours}" 
+              oninput="updateFacultySlider(${idx}, this.value)" 
+              class="w-full h-1 bg-oxford-200 rounded-lg appearance-none cursor-pointer accent-cerulean">
+          </div>
+
+          <div class="pt-1 border-t border-oxford-200 flex items-center justify-between text-[10px]">
+            <div class="flex items-center gap-1">
+              <span class="text-oxford-700">9 AM Cap:</span>
+              <select onchange="updateMorningCap(${idx}, this.value)" class="bg-white border border-oxford-200 rounded px-1 font-mono text-[9px] text-oxford-900">
+                <option value="1" ${fac.morningCap === 1 ? 'selected' : ''}>1</option>
+                <option value="2" ${fac.morningCap === 2 ? 'selected' : ''}>2</option>
+                <option value="3" ${fac.morningCap === 3 ? 'selected' : ''}>3</option>
+              </select>
+            </div>
+
+            <div class="flex gap-0.5 items-center">
+              <span class="text-oxford-700 text-[9px] mr-0.5">Free:</span>
+              ${DAYS.map(day => `
+                <button onclick="toggleFacultyFreeDay(${idx}, '${day}')" 
+                  class="px-1 py-0.5 rounded text-[8px] font-black transition ${
+                    fac.freeDays.includes(day) 
+                      ? 'bg-cerulean text-white' 
+                      : 'bg-oxford-200 text-oxford-700 hover:bg-oxford-300'
+                  }">
+                  ${day[0]}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+        cardsContainer.appendChild(card);
+      });
+    }
+
+    function updateFacultySlider(index, val) {
+      globalFaculty[index].maxHours = parseInt(val, 10);
+      renderSidebar();
+    }
+
+    function updateMorningCap(index, val) {
+      globalFaculty[index].morningCap = parseInt(val, 10);
+      renderSidebar();
+      showToast(`${globalFaculty[index].name}: 9 AM Cap set to ${val}d/wk`, 'info');
+    }
+
+    function toggleFacultyFreeDay(facIndex, day) {
+      const fac = globalFaculty[facIndex];
+      const i = fac.freeDays.indexOf(day);
+      if (i > -1) {
+        fac.freeDays.splice(i, 1);
+        showToast(`${fac.name}: Removed free day (${day})`, 'info');
+      } else {
+        if (fac.freeDays.length >= 2) fac.freeDays.shift();
+        fac.freeDays.push(day);
+        showToast(`${fac.name}: Locked free day (${day})`, 'success');
+      }
+      renderSidebar();
+      renderSheetsContainer();
+    }
+
+    function openSlotModal(secKey, dayIdx, slotKey) {
+      editingCellCoordinates = { secKey, dayIdx, slotKey };
+      const dayName = DAYS[dayIdx];
+      const currentVal = sectionSchedules[secKey][dayIdx][slotKey];
+
+      document.getElementById('modalSlotTitle').textContent = `Reassign Slot (${secKey})`;
+      document.getElementById('modalSlotSubtitle').textContent = `${dayName} • ${slotKey.toUpperCase()}`;
+
+      const roomSelect = document.getElementById('modalRoomSelect');
+      roomSelect.innerHTML = '';
+      departmentRooms.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.code;
+        opt.textContent = `${r.code} (${r.type} - ${r.capacity})`;
+        if (currentVal && currentVal.room === r.code) opt.selected = true;
+        roomSelect.appendChild(opt);
+      });
+
+      const select = document.getElementById('modalSubjectSelect');
+      select.innerHTML = '<option value="">-- Free / Vacant Slot --</option>';
+
+      const subjects = sectionSubjects[secKey] || [];
+      subjects.forEach(sub => {
+        const fac = globalFaculty.find(f => f.id === sub.facultyId);
+        const opt = document.createElement('option');
+        opt.value = sub.code;
+        opt.textContent = `${sub.code} - ${sub.name} (${fac ? fac.name : 'TBA'})`;
+        if (currentVal && currentVal.code === sub.code) opt.selected = true;
+        select.appendChild(opt);
+      });
+
+      document.getElementById('slotEditModal').classList.remove('hidden');
+    }
+
+    function closeSlotModal() {
+      document.getElementById('slotEditModal').classList.add('hidden');
+      editingCellCoordinates = null;
+    }
+
+    function saveSlotModal() {
+      if (!editingCellCoordinates) return;
+      const { secKey, dayIdx, slotKey } = editingCellCoordinates;
+      const select = document.getElementById('modalSubjectSelect');
+      const roomSelect = document.getElementById('modalRoomSelect');
+
+      const chosenCode = select.value;
+      const chosenRoom = roomSelect.value;
+
+      const subjects = sectionSubjects[secKey] || [];
+      const sub = subjects.find(s => s.code === chosenCode);
+
+      if (sub) {
+        sectionSchedules[secKey][dayIdx][slotKey] = {
+          ...sub,
+          room: chosenRoom
+        };
+        showToast(`Slot updated to ${sub.code} in [${chosenRoom}]`, 'success');
+      } else {
+        sectionSchedules[secKey][dayIdx][slotKey] = null;
+        showToast('Slot cleared', 'warning');
+      }
+
+      closeSlotModal();
+      renderSheetsContainer();
+    }
+
+    function openCsvModal() {
+      document.getElementById('csvParseError').classList.add('hidden');
+      document.getElementById('csvModal').classList.remove('hidden');
+    }
+
+    function closeCsvModal() {
+      document.getElementById('csvModal').classList.add('hidden');
+    }
+
+    function loadUser18FacultySample() {
+      document.getElementById('csvTextarea').value = DEFAULT_USER_CSV;
+      showToast('Loaded 18-Faculty CSV with Sem 1 & Sem 2 subjects', 'info');
+    }
+
+    function processAndLoadCsv() {
+      const text = document.getElementById('csvTextarea').value.trim();
+      const errBox = document.getElementById('csvParseError');
+
+      if (!text) {
+        errBox.textContent = 'Please enter or paste CSV content first.';
+        errBox.classList.remove('hidden');
+        showToast('Empty CSV provided', 'error');
+        return;
+      }
+
+      try {
+        const parsed = parseAdaptiveCSV(text);
+        if (parsed.length === 0) {
+          throw new Error('No valid faculty records recognized. Check format.');
+        }
+
+        globalFaculty = parsed;
+        closeCsvModal();
+        recalculateSections();
+        solveGlobalSchedule();
+        showToast(`Successfully ingested ${parsed.length} faculty across Sem 1 & 2!`, 'success');
+      } catch (err) {
+        errBox.textContent = err.message || 'Error parsing CSV string.';
+        errBox.classList.remove('hidden');
+        showToast('CSV Parsing Failed', 'error');
+      }
+    }
+
+    function printCurrentActiveSection() {
+      isBatchPrintingMode = false;
+      renderSheetsContainer();
+      showToast(`Preparing A4 portrait print for ${currentActiveSection} (${currentSemester})...`, 'info');
+      setTimeout(() => { window.print(); }, 120);
+    }
+
+    function printAllSectionsBatch() {
+      isBatchPrintingMode = true;
+      renderSheetsContainer();
+      const totalSheets = getAllSectionKeys().length;
+      showToast(`Generating ${totalSheets}-page department booklet for ${currentSemester}...`, 'info');
+      setTimeout(() => { window.print(); }, 150);
+    }
+
+    function toggleSidebar() {
+      const sb = document.getElementById('configSidebar');
+      sb.classList.toggle('hidden');
+    }
+
+    function setZoom(val) {
+      currentZoom = val;
+      const vp = document.getElementById('zoomViewport');
+      vp.style.transform = `scale(${val})`;
+      showToast(`Zoom scale set to ${Math.round(val * 100)}%`, 'info');
+    }
+
+    function toggleAutoFit() {
+      const availWidth = window.innerWidth - 32;
+      if (availWidth < 794) {
+        const factor = Math.max(0.45, Math.min(1.0, availWidth / 794));
+        setZoom(factor);
+        showToast(`Auto-fitted to screen (${Math.round(factor * 100)}%)`, 'info');
+      } else {
+        setZoom(1.0);
+        showToast('Reset zoom to 100%', 'info');
+      }
+    }
+
+    function exportCurrentJSON() {
+      const payload = {
+        semester: currentSemester,
+        academicYear: document.getElementById('metaAcademicYear').value,
+        batch: document.getElementById('metaBatch').value,
+        wef: document.getElementById('metaWef').value,
+        rooms: departmentRooms,
+        intakes: {
+          yr2: document.getElementById('intakeYr2').value,
+          yr3: document.getElementById('intakeYr3').value,
+          yr4: document.getElementById('intakeYr4').value
+        },
+        faculty: globalFaculty,
+        sectionSubjects: sectionSubjects,
+        sectionSchedules: sectionSchedules
+      };
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(payload, null, 2));
+      const a = document.createElement('a');
+      a.setAttribute("href", dataStr);
+      a.setAttribute("download", `academic_timetable_${currentSemester}_with_rooms.json`);
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      showToast('Exported timetable and room matrix to JSON', 'success');
+    }
+
+    function renderAll() {
+      renderSectionTabs();
+      renderSidebar();
+      renderSheetsContainer();
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      globalFaculty = parseAdaptiveCSV(DEFAULT_USER_CSV);
+      recalculateSections();
+      if (window.innerWidth < 820) {
+        toggleAutoFit();
+      }
+    });
+
+    window.addEventListener('resize', () => {
+      if (window.innerWidth < 820) {
+        toggleAutoFit();
+      }
+    });
+  </script>
+</body>
+</html>
