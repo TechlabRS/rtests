@@ -91,7 +91,7 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
-        const selectionsCol = collection(db, "question_picks");
+        const selectionsCol = collection(db, "question_picks_ai");
         const configDocRef = doc(db, "config", "shuffled_mapping");
 
         let currentStudent = { roll: '', name: '' };
