@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pick Your Question</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen p-4 sm:p-6 antialiased">
+
+    <!-- LOGIN MODAL (Roll & Name Entry) -->
+    <div id="student-login-modal" class="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 w-full max-w-md shadow-2xl space-y-6">
+            <div class="w-16 h-16 mx-auto bg-indigo-500/10 border border-indigo-500/30 rounded-2xl flex items-center justify-center text-indigo-400">
+                <i data-lucide="user-check" class="w-8 h-8"></i>
+            </div>
+            <div class="text-center">
+                <h2 class="text-2xl font-bold text-white">Student Registration</h2>
+                <p class="text-xs text-slate-400 mt-1">Enter your details. Your device will be locked to this Roll Number.</p>
+            </div>
+            <form id="student-form" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Roll Number</label>
+                    <input type="text" id="input-roll" required placeholder="e.g. 21091A0501" class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition uppercase">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1">Full Name</label>
+                    <input type="text" id="input-name" required placeholder="e.g. John Doe" class="w-full bg-slate-800/90 border border-slate-700 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-indigo-500 transition">
+                </div>
+                <p id="login-error-msg" class="hidden text-xs text-rose-400 font-medium text-center"></p>
+                <button type="submit" id="btn-login-submit" class="w-full py-3.5 bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] transition rounded-xl font-semibold text-white shadow-lg shadow-indigo-900/30 flex items-center justify-center space-x-2">
+                    <span>Continue to Questions</span>
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MAIN SELECTION AREA -->
+    <div id="main-content" class="hidden max-w-6xl mx-auto space-y-6">
+        <!-- Header -->
+        <header class="bg-slate-800/60 border border-slate-700/60 rounded-2xl p-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-indigo-600/20 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+                    <i data-lucide="help-circle" class="w-5 h-5"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-white text-base sm:text-lg">Pick Your Question Card</h1>
+                    <p id="student-info-display" class="text-xs text-slate-400">Logged in as: --</p>
+                </div>
+            </div>
+        </header>
+
+        <!-- Picked Status Banner -->
+        <div id="picked-banner" class="hidden bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-6 text-center space-y-2">
+            <div class="w-12 h-12 mx-auto bg-emerald-500/20 text-emerald-400 rounded-full flex items-center justify-center">
+                <i data-lucide="check-circle-2" class="w-6 h-6"></i>
+            </div>
+            <h2 id="picked-q-title" class="text-xl font-bold text-emerald-400">You Picked Card #--</h2>
+            <p id="picked-q-text" class="text-sm text-slate-300 max-w-xl mx-auto bg-slate-900/60 p-4 rounded-xl border border-slate-800 mt-2">Loading question...</p>
+        </div>
+
+        <!-- 70 Cards Grid (Card Serial Numbers 1 to 70) -->
+        <div id="cards-grid" class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 lg:grid-cols-10 gap-3">
+            <!-- Dynamically populated -->
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, setDoc, onSnapshot, runTransaction } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const QUESTIONS_BANK = Array.from({ length: 70 }, (_, i) => `Sample Question #${i + 1}: Explain the core concepts and implementation details of topic ${i + 1}.`);
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+  authDomain: "stuattnd.firebaseapp.com",
+  projectId: "stuattnd",
+  storageBucket: "stuattnd.firebasestorage.app",
+  messagingSenderId: "511533506488",
+  appId: "1:511533506488:web:aca4de3d513915d012f94d",
+  measurementId: "G-9PZZM5LFKX"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const selectionsCol = collection(db, "question_picks");
+        const configDocRef = doc(db, "config", "shuffled_mapping");
+
+        let currentStudent = { roll: '', name: '' };
+        let shuffledMapping = []; // Maps Card Index (0-69) -> Real Question Number (1-70)
+        let pickedMap = {};
+
+        // On Page Load: Check device lock
+        window.addEventListener('DOMContentLoaded', async () => {
+            const savedRoll = localStorage.getItem('locked_student_roll');
+            const savedName = localStorage.getItem('locked_student_name');
+
+            // Load or initialize the shared shuffled mapping so all students see the exact same randomized deck
+            await loadOrInitShuffledMapping();
+
+            if (savedRoll && savedName) {
+                currentStudent = { roll: savedRoll, name: savedName };
+                initializePortalSession();
+            }
+            lucide.createIcons();
+        });
+
+        async function loadOrInitShuffledMapping() {
+            const docSnap = await getDoc(configDocRef);
+            if (docSnap.exists()) {
+                shuffledMapping = docSnap.data().mapping;
+            } else {
+                // Generate a randomized array of numbers from 1 to 70 (Fisher-Yates Shuffle)
+                let arr = Array.from({ length: 70 }, (_, i) => i + 1);
+                for (let i = arr.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [arr[i], arr[j]] = [arr[j], arr[i]];
+                }
+                // Save to Firestore so all clients share this exact random layout
+                await setDoc(configDocRef, { mapping: arr });
+                shuffledMapping = arr;
+            }
+        }
+
+        // Form Submit Handler with Anti-Spoofing
+        document.getElementById('student-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const rollInput = document.getElementById('input-roll').value.trim().toUpperCase();
+            const nameInput = document.getElementById('input-name').value.trim();
+            const errorMsg = document.getElementById('login-error-msg');
+            const submitBtn = document.getElementById('btn-login-submit');
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = "Verifying...";
+            errorMsg.classList.add('hidden');
+
+            try {
+                const snapshot = await new Promise((resolve) => {
+                    onSnapshot(selectionsCol, (snap) => resolve(snap), { once: true });
+                });
+
+                let existingPick = null;
+                snapshot.forEach(docSnap => {
+                    const data = docSnap.data();
+                    if (data.roll === rollInput) {
+                        existingPick = data;
+                    }
+                });
+
+                if (existingPick && existingPick.name.toLowerCase() !== nameInput.toLowerCase()) {
+                    errorMsg.textContent = `Error: Roll number ${rollInput} is already registered under "${existingPick.name}".`;
+                    errorMsg.classList.remove('hidden');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>Continue to Questions</span> <i data-lucide="arrow-right" class="w-4 h-4"></i>`;
+                    lucide.createIcons();
+                    return;
+                }
+
+                localStorage.setItem('locked_student_roll', rollInput);
+                localStorage.setItem('locked_student_name', nameInput);
+
+                currentStudent = { roll: rollInput, name: nameInput };
+                initializePortalSession();
+
+            } catch (err) {
+                console.error(err);
+                errorMsg.textContent = "Connection error. Please try again.";
+                errorMsg.classList.remove('hidden');
+                submitBtn.disabled = false;
+                submitBtn.textContent = "Continue to Questions";
+            }
+        });
+
+        function initializePortalSession() {
+            document.getElementById('student-info-display').textContent = `Logged in: ${currentStudent.name} (${currentStudent.roll})`;
+            document.getElementById('student-login-modal').classList.add('hidden');
+            document.getElementById('main-content').classList.remove('hidden');
+            subscribeToSelections();
+        }
+
+        function subscribeToSelections() {
+            onSnapshot(selectionsCol, (snapshot) => {
+                pickedMap = {};
+                let userPickedCardNo = null;
+
+                snapshot.docs.forEach(docSnap => {
+                    const data = docSnap.data();
+                    const cardNo = parseInt(docSnap.id); // Firestore doc ID represents the Card Serial Number (1-70)
+                    pickedMap[cardNo] = data;
+
+                    if (data.roll === currentStudent.roll) {
+                        userPickedCardNo = cardNo;
+                    }
+                });
+
+                if (userPickedCardNo) {
+                    const actualQNo = shuffledMapping[userPickedCardNo - 1];
+                    document.getElementById('picked-banner').classList.remove('hidden');
+                    document.getElementById('picked-q-title').textContent = `You Picked Card #${userPickedCardNo} (Question #${actualQNo})`;
+                    document.getElementById('picked-q-text').textContent = QUESTIONS_BANK[actualQNo - 1];
+                }
+
+                renderCards(userPickedCardNo);
+            });
+        }
+
+        function renderCards(userPickedCardNo) {
+            const grid = document.getElementById('cards-grid');
+            grid.innerHTML = '';
+
+            // Render Serial Cards 1 to 70
+            for (let cardNo = 1; cardNo <= 70; cardNo++) {
+                const pickData = pickedMap[cardNo];
+                const isRevealed = !!pickData;
+                const isMine = pickData && pickData.roll === currentStudent.roll;
+
+                const card = document.createElement('div');
+                card.className = `p-4 rounded-2xl border text-center transition flex flex-col items-center justify-center space-y-2 select-none ${
+                    isMine 
+                        ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-300 ring-2 ring-emerald-500/50' 
+                        : isRevealed 
+                            ? 'bg-slate-800/30 border-slate-800 text-slate-600 cursor-not-allowed opacity-60' 
+                            : 'bg-slate-800/80 hover:bg-slate-700/80 border-slate-700/60 text-slate-200 cursor-pointer active:scale-95 shadow-md hover:border-indigo-500/50'
+                }`;
+
+                if (isMine) {
+                    const actualQNo = shuffledMapping[cardNo - 1];
+                    card.innerHTML = `
+                        <span class="text-xs font-semibold text-emerald-400">Card #${cardNo}</span>
+                        <i data-lucide="check-circle-2" class="w-6 h-6 text-emerald-400"></i>
+                        <span class="text-[10px] font-medium text-emerald-400/80">Your Pick (Q #${actualQNo})</span>
+                    `;
+                } else if (isRevealed) {
+                    card.innerHTML = `
+                        <span class="text-xs font-semibold text-slate-500">Card #${cardNo}</span>
+                        <i data-lucide="lock" class="w-5 h-5 text-slate-600"></i>
+                        <span class="text-[10px] font-bold tracking-wider text-rose-400/80 uppercase">Revealed</span>
+                    `;
+                } else {
+                    card.innerHTML = `
+                        <span class="text-xs font-semibold text-slate-400">Card #${cardNo}</span>
+                        <i data-lucide="help-circle" class="w-6 h-6 text-indigo-400"></i>
+                        <span class="text-[10px] text-slate-400 font-medium">Pick Card</span>
+                    `;
+                    
+                    if (!userPickedCardNo) {
+                        card.onclick = () => pickCard(cardNo);
+                    }
+                }
+
+                grid.appendChild(card);
+            }
+            lucide.createIcons();
+        }
+
+        async function pickCard(cardNo) {
+            // Get the actual question number mapped behind this card
+            const actualQNo = shuffledMapping[cardNo - 1];
+            const docRef = doc(db, "question_picks", String(cardNo));
+
+            try {
+                await runTransaction(db, async (transaction) => {
+                    const sfDoc = await transaction.get(docRef);
+                    if (sfDoc.exists()) {
+                        throw "This card was just picked by someone else!";
+                    }
+                    
+                    transaction.set(docRef, {
+                        roll: currentStudent.roll,
+                        name: currentStudent.name,
+                        cardNo: cardNo,
+                        questionNo: actualQNo, // The actual question number saved for CSV export
+                        questionText: QUESTIONS_BANK[actualQNo - 1],
+                        timestamp: new Date()
+                    });
+                });
+            } catch (e) {
+                alert(e);
+            }
+        }
+
+        lucide.createIcons();
+    </script>
+</body>
+</html>
