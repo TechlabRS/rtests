@@ -264,7 +264,7 @@
         async function pickCard(cardNo) {
             // Get the actual question number mapped behind this card
             const actualQNo = shuffledMapping[cardNo - 1];
-            const docRef = doc(db, "question_picks", String(cardNo));
+            const docRef = doc(db, "question_picks_ai", String(cardNo));
 
             try {
                 await runTransaction(db, async (transaction) => {
