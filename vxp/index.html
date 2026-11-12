@@ -1,1 +1,1475 @@
-Hi Welcome 
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VXP Pro — Voiceprint-Signed Ultrasonic FSK Attendance Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #05070b;
+      --bg-panel: #0b0f17;
+      --border-subtle: rgba(148, 163, 184, 0.12);
+      --accent-cyan: #00e5ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-violet: #a855f7;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      background-color: var(--bg-void);
+      color: #e2e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-image: 
+        radial-gradient(circle at 12% 15%, rgba(0, 229, 255, 0.045) 0%, transparent 42%),
+        radial-gradient(circle at 88% 85%, rgba(16, 185, 129, 0.045) 0%, transparent 42%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .mono { font-family: 'JetBrains Mono', monospace; }
+
+    .hw-panel {
+      background: linear-gradient(180deg, rgba(15, 21, 34, 0.92) 0%, rgba(9, 13, 22, 0.96) 100%);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+    }
+
+    .hw-subpanel {
+      background: rgba(6, 9, 15, 0.78);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .hw-input {
+      background: #04060a;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hw-input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+    }
+
+    .toggle-track {
+      width: 40px;
+      height: 22px;
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .toggle-track.active {
+      background: rgba(0, 229, 255, 0.18);
+      border-color: var(--accent-cyan);
+    }
+    .toggle-thumb {
+      width: 16px;
+      height: 16px;
+      background: #64748b;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .toggle-track.active .toggle-thumb {
+      transform: translateX(18px);
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+
+    .led-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .led-cyan { background: var(--accent-cyan); box-shadow: 0 0 10px var(--accent-cyan); }
+    .led-emerald { background: var(--accent-emerald); box-shadow: 0 0 10px var(--accent-emerald); }
+    .led-amber { background: var(--accent-amber); box-shadow: 0 0 10px var(--accent-amber); }
+    .led-violet { background: var(--accent-violet); box-shadow: 0 0 10px var(--accent-violet); }
+    .led-off { background: #334155; }
+
+    .crt-overlay {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: #05070b; }
+    ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-5 lg:p-6">
+
+  <div class="max-w-[1540px] w-full mx-auto space-y-5">
+
+    <!-- TOP ENGINEERING TELEMETRY BAR -->
+    <header class="hw-panel rounded-2xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 via-violet-500/15 to-emerald-500/10 border border-cyan-400/30 flex items-center justify-center shadow-inner">
+          <i data-lucide="radio" class="w-5 h-5 text-cyan-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">VXP <span class="text-cyan-400 font-semibold">Pro</span></h1>
+            <span class="text-[10px] mono uppercase tracking-widest px-2 py-0.5 rounded bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">
+              Voice-Keyed FSK Engine v3.2
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">One-Time Voiceprint Key Binding &amp; 1-Tap Ultrasonic FSK Session Broadcaster</p>
+        </div>
+      </div>
+
+      <!-- Live Hardware Metrics Pill Strip -->
+      <div class="flex flex-wrap items-center gap-2.5 sm:gap-4 text-xs mono">
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">VOICE KEY</span>
+          <span id="headerVoiceStatus" class="text-amber-400 font-semibold">UNENROLLED</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">FS</span>
+          <span id="sampleRateDisplay" class="text-slate-200 font-semibold">48.0 kHz</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">CARRIERS</span>
+          <span id="carrierBandDisplay" class="text-emerald-400 font-semibold">18.2 / 18.8 / 19.4 kHz</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="led-dot led-emerald animate-pulse"></span>
+          <span id="utcClock" class="text-slate-300">00:00:00 UTC</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN 3-STAGE PIPELINE WORKBENCH -->
+    <main class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+      <!-- STAGE 1: ONE-TIME FACULTY VOICEPRINT KEY CEREMONY (4 Cols) -->
+      <section class="xl:col-span-4 hw-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/90 pb-3">
+            <div class="flex items-center gap-2.5">
+              <span id="bioLed" class="led-dot led-amber"></span>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-200">BIO-01 // One-Time Voiceprint Key</h2>
+            </div>
+            <button id="clearModelBtn" title="Revoke & Reset Voice Key" class="text-[10px] mono text-slate-500 hover:text-rose-400 transition">
+              REVOKE KEY
+            </button>
+          </div>
+
+          <!-- Faculty Identity & Key ID -->
+          <div class="grid grid-cols-12 gap-2.5">
+            <div class="col-span-7">
+              <label class="block text-[10px] mono uppercase tracking-wider text-slate-400 mb-1">Faculty Name / Dept</label>
+              <input id="facultyNameInput" type="text" value="Prof. Sharma (CSE-AI)"
+                class="w-full hw-input rounded-xl px-3 py-2 text-xs text-white font-medium" />
+            </div>
+            <div class="col-span-5">
+              <label class="block text-[10px] mono uppercase tracking-wider text-slate-400 mb-1">Bound Key ID</label>
+              <div id="boundKeyIdDisplay" class="hw-input rounded-xl px-2.5 py-2 text-xs mono text-violet-300 font-bold text-center truncate">
+                UNBOUND
+              </div>
+            </div>
+          </div>
+
+          <!-- 3-Sample Calibration Stepper -->
+          <div class="hw-subpanel rounded-xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] mono uppercase tracking-wider text-slate-300">Enrollment Calibration</span>
+              <span id="sampleCounterBadge" class="text-[11px] mono text-violet-400 font-bold">0 / 3 PASSES</span>
+            </div>
+
+            <!-- 3 Visual Sample Slots -->
+            <div class="grid grid-cols-3 gap-2 text-center mono text-[10px]">
+              <div id="slot0" class="p-2 rounded-lg border border-slate-800 bg-slate-950/90 text-slate-500">
+                <div class="font-bold">PASS 1</div>
+                <div id="slot0Pitch" class="text-[9px] mt-0.5">-- Hz</div>
+              </div>
+              <div id="slot1" class="p-2 rounded-lg border border-slate-800 bg-slate-950/90 text-slate-500">
+                <div class="font-bold">PASS 2</div>
+                <div id="slot1Pitch" class="text-[9px] mt-0.5">-- Hz</div>
+              </div>
+              <div id="slot2" class="p-2 rounded-lg border border-slate-800 bg-slate-950/90 text-slate-500">
+                <div class="font-bold">PASS 3</div>
+                <div id="slot2Pitch" class="text-[9px] mt-0.5">-- Hz</div>
+              </div>
+            </div>
+
+            <!-- Calibration Prompt Banner -->
+            <div class="bg-slate-950 border border-slate-800/90 rounded-lg p-2.5 text-xs">
+              <div class="text-[10px] mono text-slate-500 uppercase mb-0.5">One-Time Enrollment Utterance (2.5s):</div>
+              <div id="calibrationPrompt" class="text-violet-300 font-medium">
+                "Department of Computer Science, binding acoustic signature."
+              </div>
+            </div>
+
+            <!-- Real-Time Pitch (F0) Contour Canvas -->
+            <div class="relative rounded-lg overflow-hidden border border-slate-800 bg-[#030508]">
+              <canvas id="pitchCanvas" width="420" height="76" class="w-full h-[76px] block"></canvas>
+              <div class="crt-overlay absolute inset-0"></div>
+              <div class="absolute top-1.5 left-2 text-[10px] mono text-violet-400 bg-slate-950/80 px-1.5 py-0.5 rounded">
+                F0 PITCH CONTOUR
+              </div>
+              <div id="livePitchReadout" class="absolute top-1.5 right-2 text-[10px] mono text-slate-300 bg-slate-950/80 px-1.5 py-0.5 rounded">
+                F0: -- Hz
+              </div>
+            </div>
+
+            <!-- Trained 16-Band Acoustic Spectral Fingerprint Vector -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] mono text-slate-500">
+                <span>16-BAND VOCAL TRACT HASH</span>
+                <span id="meanF0Display">MEAN F0: -- Hz</span>
+              </div>
+              <div id="embeddingBars" class="grid grid-cols-16 gap-0.5 h-7 bg-slate-950 p-1 rounded border border-slate-800/80 items-end">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="recordSampleBtn"
+          class="w-full py-3 px-4 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-violet-950/50 flex items-center justify-center gap-2">
+          <i data-lucide="mic" class="w-4 h-4"></i>
+          <span>Enroll Voice Calibration (2.5s)</span>
+        </button>
+      </section>
+
+      <!-- STAGE 2: TX / 1-TAP AUTO-DISPATCH & LIVE AUDIT TRANSMITTER (4 Cols) -->
+      <section class="xl:col-span-4 hw-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/90 pb-3">
+            <div class="flex items-center gap-2.5">
+              <span id="txLed" class="led-dot led-off"></span>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-200">TX-02 // Session Signal Dispatcher</h2>
+            </div>
+            <span id="txStatusBadge" class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+              KEY REQUIRED
+            </span>
+          </div>
+
+          <!-- Session Text Input + Quick Timetable Presets -->
+          <div class="space-y-2">
+            <div class="flex items-center justify-between">
+              <label class="text-[10px] mono uppercase tracking-wider text-slate-400">Session Text (Class • Subject • Slot)</label>
+              <span class="text-[10px] mono text-cyan-400">AUTO-SIGNED</span>
+            </div>
+            <input id="sessionTextInput" type="text" value="AIML-D SSP 9AM" maxlength="20"
+              placeholder="e.g. AIML-D SSP 9AM"
+              class="w-full hw-input rounded-xl px-3.5 py-2.5 text-sm text-white mono font-bold tracking-wide uppercase" />
+            
+            <!-- 1-Tap Schedule Preset Chips -->
+            <div class="flex flex-wrap gap-1.5 pt-0.5">
+              <button type="button" data-preset="AIML-D SSP 9AM" class="preset-chip text-[10px] mono px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition">
+                AIML-D SSP 9AM
+              </button>
+              <button type="button" data-preset="CSE-A CVIP 11AM" class="preset-chip text-[10px] mono px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition">
+                CSE-A CVIP 11AM
+              </button>
+              <button type="button" data-preset="AIML-B DBMS 2PM" class="preset-chip text-[10px] mono px-2 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700/80 transition">
+                AIML-B DBMS 2PM
+              </button>
+            </div>
+          </div>
+
+          <!-- Mode Switcher Tabs: 1-Tap Auto-Dispatch vs Live Vocal Audit -->
+          <div class="hw-subpanel rounded-xl p-3.5 space-y-3">
+            <div class="grid grid-cols-2 gap-1.5 bg-slate-950 p-1 rounded-lg border border-slate-800/90 text-[10px] mono">
+              <button id="modeAutoBtn" type="button"
+                class="py-1.5 px-2 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold transition flex items-center justify-center gap-1.5">
+                <i data-lucide="zap" class="w-3 h-3"></i>
+                <span>1-TAP AUTO MODE</span>
+              </button>
+              <button id="modeAuditBtn" type="button"
+                class="py-1.5 px-2 rounded-md text-slate-400 hover:text-slate-200 font-semibold transition flex items-center justify-center gap-1.5">
+                <i data-lucide="shield-alert" class="w-3 h-3"></i>
+                <span>EXAM AUDIT MODE</span>
+              </button>
+            </div>
+
+            <!-- Panel A: 1-Tap Auto-Dispatch Mode (No Speaking Required) -->
+            <div id="autoModePanel" class="space-y-2.5">
+              <div class="bg-slate-950/90 border border-slate-800/80 rounded-lg p-2.5 space-y-1.5 text-[10px] mono">
+                <div class="flex justify-between text-slate-400">
+                  <span>CRYPTO SIGNING KEY:</span>
+                  <span id="cryptoKeyFingerprint" class="text-emerald-400 font-semibold">WAITING ENROLLMENT</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>ROLLING 4S NONCE:</span>
+                  <span id="rollingNonceDisplay" class="text-cyan-400 font-bold">#0000</span>
+                </div>
+                <div class="flex justify-between text-slate-400">
+                  <span>SIGNED TOKEN HASH:</span>
+                  <span id="signedTokenPreview" class="text-violet-300 truncate max-w-[165px]">--</span>
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-2">
+                <button id="autoDispatchOnceBtn"
+                  class="py-2.5 px-3 bg-gradient-to-r from-cyan-500 to-emerald-500 hover:from-cyan-400 hover:to-emerald-400 text-slate-950 font-bold rounded-xl text-[11px] uppercase tracking-wider transition shadow-lg shadow-cyan-500/15 flex items-center justify-center gap-1.5">
+                  <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                  <span>1-Tap Broadcast</span>
+                </button>
+                <button id="autoDispatchLoopBtn"
+                  class="py-2.5 px-3 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/35 font-semibold rounded-xl text-[11px] uppercase tracking-wider transition flex items-center justify-center gap-1.5">
+                  <i data-lucide="repeat" class="w-3.5 h-3.5"></i>
+                  <span>Continuous TOTP</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Panel B: Exam Audit Mode (Live Vocal Liveness Challenge) -->
+            <div id="auditModePanel" class="space-y-2.5 hidden">
+              <div class="flex items-center justify-between bg-slate-950/90 px-2.5 py-2 rounded-lg border border-slate-800/80 text-[11px]">
+                <span class="text-slate-400">Speak phrase:</span>
+                <span id="auditPhraseText" class="mono text-amber-300 font-semibold">"AIML-D SSP 9AM"</span>
+              </div>
+              <div class="flex items-center justify-between text-[10px] mono px-1">
+                <span class="text-slate-400">LIVE BIOMETRIC MATCH:</span>
+                <span id="similarityScoreBadge" class="text-slate-300 font-bold">--% (REQ &ge; 80%)</span>
+              </div>
+              <button id="verifyAndBroadcastBtn"
+                class="w-full py-2.5 px-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl text-[11px] uppercase tracking-wider transition flex items-center justify-center gap-1.5">
+                <i data-lucide="mic" class="w-3.5 h-3.5"></i>
+                <span>Verify Live Voice &amp; Emit (2.5s)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Packet Structure & Synthesized FSK Waveform -->
+          <div class="hw-subpanel rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[10px] mono">
+              <span class="text-slate-400 uppercase">Signed FSK Air-Frame</span>
+              <span id="frameDurationText" class="text-cyan-400">168 bits • 8.70s</span>
+            </div>
+
+            <div class="grid grid-cols-12 gap-1 text-center mono text-[9px]">
+              <div class="col-span-2 bg-amber-500/15 border border-amber-500/40 text-amber-300 py-1 rounded">SYNC</div>
+              <div class="col-span-2 bg-purple-500/15 border border-purple-500/40 text-purple-300 py-1 rounded">0xAA</div>
+              <div id="pktPayloadBox" class="col-span-5 bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 py-1 rounded truncate px-1">AIML-D SSP 9AM</div>
+              <div id="pktSigBox" class="col-span-2 bg-violet-500/15 border border-violet-500/40 text-violet-300 py-1 rounded">SIG</div>
+              <div class="col-span-1 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 py-1 rounded">CRC</div>
+            </div>
+
+            <div class="relative rounded-lg overflow-hidden border border-slate-800 bg-[#030508]">
+              <canvas id="txWaveformCanvas" width="420" height="54" class="w-full h-[54px] block"></canvas>
+              <div class="crt-overlay absolute inset-0"></div>
+            </div>
+
+            <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800/80">
+              <div id="txProgressBar" class="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full w-0 transition-all duration-75"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Audible Diagnostic Shift Switch -->
+        <div class="flex items-center justify-between bg-slate-950/80 px-3.5 py-2.5 rounded-xl border border-slate-800/80">
+          <div>
+            <div class="text-[11px] font-medium text-slate-200">Audible Monitor Shift (-16 kHz)</div>
+            <div class="text-[10px] text-slate-500">Shifts 18.2–19.4 kHz down to 2.2–3.4 kHz</div>
+          </div>
+          <button id="audibleToggleBtn" type="button" role="switch" aria-checked="false" class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </button>
+        </div>
+      </section>
+
+      <!-- STAGE 3: RX / STUDENT ULTRASONIC SPECTRUM & SIGNATURE VERIFIER (4 Cols) -->
+      <section class="xl:col-span-4 hw-panel rounded-2xl p-5 flex flex-col justify-between space-y-4">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/90 pb-3">
+            <div class="flex items-center gap-2.5">
+              <span id="rxLed" class="led-dot led-off"></span>
+              <h2 class="text-xs font-semibold uppercase tracking-wider text-slate-200">RX-03 // Student Acoustic Receiver</h2>
+            </div>
+            <span id="snrPill" class="text-[10px] mono px-2 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">
+              SNR: -- dB
+            </span>
+          </div>
+
+          <!-- Real-Time Spectrum + Waterfall Canvas -->
+          <div class="hw-subpanel rounded-xl p-3 space-y-2.5">
+            <div class="flex items-center justify-between text-[10px] mono">
+              <span class="text-slate-400 uppercase">17.5 – 20.5 kHz Ultrasonic Band</span>
+              <span id="rxStatusBadge" class="text-slate-500">OFFLINE</span>
+            </div>
+
+            <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-[#030508]">
+              <canvas id="spectrumCanvas" width="420" height="146" class="w-full h-[146px] block"></canvas>
+              <div class="crt-overlay absolute inset-0"></div>
+            </div>
+
+            <!-- Goertzel Carrier Gauges -->
+            <div class="grid grid-cols-3 gap-2 text-[10px] mono">
+              <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-amber-400">SYNC</span>
+                  <span id="magSync" class="text-slate-300">-100dB</span>
+                </div>
+                <div class="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barSync" class="h-full bg-amber-400" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-cyan-400">BIT 0</span>
+                  <span id="magZero" class="text-slate-300">-100dB</span>
+                </div>
+                <div class="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barZero" class="h-full bg-cyan-400" style="width: 0%"></div>
+                </div>
+              </div>
+              <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 space-y-1">
+                <div class="flex justify-between">
+                  <span class="text-emerald-400">BIT 1</span>
+                  <span id="magOne" class="text-slate-300">-100dB</span>
+                </div>
+                <div class="w-full h-1 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barOne" class="h-full bg-emerald-400" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Demodulated Bit-Matrix -->
+          <div class="hw-subpanel rounded-xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[10px] mono">
+              <span class="text-slate-400 uppercase">Demodulated Bit-Matrix</span>
+              <span id="bitCountBadge" class="text-slate-500">0 BITS</span>
+            </div>
+            <div id="bitMatrixGrid" class="flex flex-wrap gap-1 min-h-[46px] max-h-[64px] overflow-y-auto p-1.5 bg-slate-950 rounded-lg border border-slate-800/80 content-start">
+              <span class="text-[10px] mono text-slate-600 self-center mx-auto">Awaiting carrier lock...</span>
+            </div>
+          </div>
+
+          <!-- Student Attendance Verification Card -->
+          <div id="verificationCard" class="hw-subpanel rounded-xl p-3.5 border border-slate-800 space-y-2 transition-all">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] mono uppercase tracking-wider text-slate-400">Student Attendance Ledger</span>
+              <span id="rxStateText" class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-amber-400 border border-amber-500/20">
+                IDLE
+              </span>
+            </div>
+            <div class="flex items-center gap-3">
+              <div id="verdictIcon" class="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-500 shrink-0">
+                <i data-lucide="shield" class="w-4 h-4"></i>
+              </div>
+              <div class="min-w-0">
+                <div id="attendanceVerdict" class="text-sm font-bold text-slate-200 truncate">
+                  Awaiting Broadcast
+                </div>
+                <div id="decodedPayloadDetails" class="text-[10px] mono text-slate-400 truncate">
+                  Signature &amp; CRC-8 check armed
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <button id="toggleMicBtn"
+          class="w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2">
+          <i data-lucide="power" class="w-4 h-4"></i>
+          <span>Engage Student Ultrasonic Receiver</span>
+        </button>
+      </section>
+    </main>
+
+  </div>
+
+  <script>
+    lucide.createIcons();
+
+    /**
+     * VXP PRO — VOICEPRINT-KEYED CRYPTOGRAPHIC SIGNING + ULTRASONIC FSK ENGINE
+     */
+    const MODEM_CONFIG = {
+      FREQ_SYNC: 18200,
+      FREQ_ZERO: 18800,
+      FREQ_ONE:  19400,
+      DEBUG_SHIFT: 16000,
+      BIT_DURATION_SEC: 0.045, // 45ms per bit (~22.2 baud) for crisp multi-field payloads
+      SYNC_DURATION_SEC: 0.300,
+      START_BYTE: 0xAA,
+      MIN_SNR_DB: 9.5,
+      BIOMETRIC_THRESHOLD: 0.80
+    };
+
+    const CALIBRATION_PROMPTS = [
+      '"Department of Computer Science, binding acoustic signature."',
+      '"Classroom attendance session initialized for registered students."',
+      '"Biometric voiceprint key ceremony complete and locked."'
+    ];
+
+    let audioCtx = null;
+    let isTransmitting = false;
+    let isAudibleDebug = false;
+    let continuousTotpTimer = null;
+
+    // Faculty Voiceprint + Derived Cryptographic Signing Key State
+    let voiceModel = {
+      facultyName: 'Prof. Sharma (CSE-AI)',
+      samples: [],
+      centroidVec: null,
+      meanF0: 0,
+      voiceKeyHex: null // 64-bit deterministic cryptographic fingerprint derived from enrolled voiceprint
+    };
+
+    // Receiver State
+    let micStream = null;
+    let scriptProcessor = null;
+    let analyserNode = null;
+    let isListening = false;
+
+    const waterfallBuffer = document.createElement('canvas');
+    waterfallBuffer.width = 420;
+    waterfallBuffer.height = 73;
+    const waterfallCtx = waterfallBuffer.getContext('2d');
+    waterfallCtx.fillStyle = '#030508';
+    waterfallCtx.fillRect(0, 0, waterfallBuffer.width, waterfallBuffer.height);
+
+    // DOM References
+    const headerVoiceStatus = document.getElementById('headerVoiceStatus');
+    const bioLed = document.getElementById('bioLed');
+    const facultyNameInput = document.getElementById('facultyNameInput');
+    const boundKeyIdDisplay = document.getElementById('boundKeyIdDisplay');
+    const sampleCounterBadge = document.getElementById('sampleCounterBadge');
+    const calibrationPrompt = document.getElementById('calibrationPrompt');
+    const recordSampleBtn = document.getElementById('recordSampleBtn');
+    const clearModelBtn = document.getElementById('clearModelBtn');
+    const pitchCanvas = document.getElementById('pitchCanvas');
+    const pitchCtx = pitchCanvas.getContext('2d');
+    const livePitchReadout = document.getElementById('livePitchReadout');
+    const meanF0Display = document.getElementById('meanF0Display');
+    const embeddingBars = document.getElementById('embeddingBars');
+
+    const txLed = document.getElementById('txLed');
+    const txStatusBadge = document.getElementById('txStatusBadge');
+    const sessionTextInput = document.getElementById('sessionTextInput');
+    const modeAutoBtn = document.getElementById('modeAutoBtn');
+    const modeAuditBtn = document.getElementById('modeAuditBtn');
+    const autoModePanel = document.getElementById('autoModePanel');
+    const auditModePanel = document.getElementById('auditModePanel');
+    const cryptoKeyFingerprint = document.getElementById('cryptoKeyFingerprint');
+    const rollingNonceDisplay = document.getElementById('rollingNonceDisplay');
+    const signedTokenPreview = document.getElementById('signedTokenPreview');
+    const autoDispatchOnceBtn = document.getElementById('autoDispatchOnceBtn');
+    const autoDispatchLoopBtn = document.getElementById('autoDispatchLoopBtn');
+    const auditPhraseText = document.getElementById('auditPhraseText');
+    const similarityScoreBadge = document.getElementById('similarityScoreBadge');
+    const verifyAndBroadcastBtn = document.getElementById('verifyAndBroadcastBtn');
+    const audibleToggleBtn = document.getElementById('audibleToggleBtn');
+    const carrierBandDisplay = document.getElementById('carrierBandDisplay');
+    const frameDurationText = document.getElementById('frameDurationText');
+    const pktPayloadBox = document.getElementById('pktPayloadBox');
+    const pktSigBox = document.getElementById('pktSigBox');
+    const txWaveformCanvas = document.getElementById('txWaveformCanvas');
+    const txWaveCtx = txWaveformCanvas.getContext('2d');
+    const txProgressBar = document.getElementById('txProgressBar');
+
+    const rxLed = document.getElementById('rxLed');
+    const rxStatusBadge = document.getElementById('rxStatusBadge');
+    const snrPill = document.getElementById('snrPill');
+    const spectrumCanvas = document.getElementById('spectrumCanvas');
+    const canvasCtx = spectrumCanvas.getContext('2d');
+    const magSyncEl = document.getElementById('magSync');
+    const magZeroEl = document.getElementById('magZero');
+    const magOneEl = document.getElementById('magOne');
+    const barSync = document.getElementById('barSync');
+    const barZero = document.getElementById('barZero');
+    const barOne = document.getElementById('barOne');
+    const bitMatrixGrid = document.getElementById('bitMatrixGrid');
+    const bitCountBadge = document.getElementById('bitCountBadge');
+    const verificationCard = document.getElementById('verificationCard');
+    const rxStateText = document.getElementById('rxStateText');
+    const verdictIcon = document.getElementById('verdictIcon');
+    const attendanceVerdict = document.getElementById('attendanceVerdict');
+    const decodedPayloadDetails = document.getElementById('decodedPayloadDetails');
+    const toggleMicBtn = document.getElementById('toggleMicBtn');
+
+    // Live UTC Clock & Rolling 4-Second Window Indicator
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('utcClock').textContent = now.toISOString().substring(11, 19) + ' UTC';
+      updatePacketPreview();
+    }, 1000);
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass({ sampleRate: 48000 });
+        document.getElementById('sampleRateDisplay').textContent = `${(audioCtx.sampleRate / 1000).toFixed(1)} kHz`;
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    /**
+     * =========================================================================
+     * CRYPTOGRAPHIC VOICEPRINT KEY DERIVATION & HMAC-STYLE PACKET SIGNING
+     * =========================================================================
+     */
+    // FNV-1a 32-bit fast deterministic hash for deriving key & signing air-frames
+    function fnv1aHash(str, seed = 0x811c9dc5) {
+      let h = seed >>> 0;
+      for (let i = 0; i < str.length; i++) {
+        h ^= str.charCodeAt(i);
+        h = Math.imul(h, 0x01000193);
+      }
+      return (h >>> 0).toString(16).toUpperCase().padStart(8, '0');
+    }
+
+    function deriveVoiceprintKey(centroidVec, facultyName) {
+      const quantized = centroidVec.map(v => Math.round(v * 1000)).join(':');
+      const partA = fnv1aHash(`${facultyName}|${quantized}`, 0x811c9dc5);
+      const partB = fnv1aHash(`${quantized}|VXP_PRO_KEY`, 0x9e3779b9);
+      return `${partA}${partB}`; // 16-hex-char (64-bit) Voice-Bound Signing Key
+    }
+
+    function getRolling4SecSlot() {
+      // 4-second rotating time slot (00..99)
+      return Math.floor(Date.now() / 4000) % 100;
+    }
+
+    function signSessionPayload(sessionText, timeSlot, voiceKeyHex) {
+      const canonical = `${voiceKeyHex}|${sessionText}|${timeSlot}`;
+      // 4-hex-char (16-bit) compact MAC signature appended to air-frame
+      return fnv1aHash(canonical).slice(0, 4);
+    }
+
+    /**
+     * =========================================================================
+     * DSP FEATURE EXTRACTION: AUTOCORRELATION PITCH (F0) + 16-BAND MEL SPECTRUM
+     * =========================================================================
+     */
+    function estimatePitchAutocorrelation(frame, sampleRate) {
+      let rms = 0;
+      for (let i = 0; i < frame.length; i++) rms += frame[i] * frame[i];
+      rms = Math.sqrt(rms / frame.length);
+      if (rms < 0.015) return 0;
+
+      const minLag = Math.floor(sampleRate / 350);
+      const maxLag = Math.floor(sampleRate / 75);
+      let bestLag = -1;
+      let bestCorr = 0;
+
+      for (let lag = minLag; lag <= maxLag; lag++) {
+        let corr = 0, normA = 0, normB = 0;
+        for (let i = 0; i < frame.length - lag; i++) {
+          corr += frame[i] * frame[i + lag];
+          normA += frame[i] * frame[i];
+          normB += frame[i + lag] * frame[i + lag];
+        }
+        const r = corr / (Math.sqrt(normA * normB) + 1e-10);
+        if (r > bestCorr) {
+          bestCorr = r;
+          bestLag = lag;
+        }
+      }
+      return (bestCorr > 0.65 && bestLag > 0) ? sampleRate / bestLag : 0;
+    }
+
+    function extractVocalEmbedding(pcmBuffer, sampleRate) {
+      const frameSize = 2048;
+      const hopSize = 1024;
+      const pitchValues = [];
+
+      const bandFreqs = [];
+      for (let b = 0; b < 16; b++) {
+        bandFreqs.push(120 * Math.pow(4200 / 120, b / 15));
+      }
+      const bandEnergies = new Float64Array(16);
+      let voicedFrames = 0;
+
+      for (let offset = 0; offset + frameSize < pcmBuffer.length; offset += hopSize) {
+        const frame = pcmBuffer.subarray(offset, offset + frameSize);
+        const f0 = estimatePitchAutocorrelation(frame, sampleRate);
+        if (f0 > 0) {
+          pitchValues.push(f0);
+          voicedFrames++;
+          for (let b = 0; b < 16; b++) {
+            const k = Math.round((frameSize * bandFreqs[b]) / sampleRate);
+            const omega = (2 * Math.PI * k) / frameSize;
+            const coeff = 2 * Math.cos(omega);
+            let q0 = 0, q1 = 0, q2 = 0;
+            for (let i = 0; i < frameSize; i++) {
+              const w = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (frameSize - 1)));
+              q0 = coeff * q1 - q2 + frame[i] * w;
+              q2 = q1;
+              q1 = q0;
+            }
+            const mag = Math.sqrt(q1 * q1 + q2 * q2 - q1 * q2 * coeff);
+            bandEnergies[b] += Math.log1p(mag);
+          }
+        }
+      }
+
+      if (voicedFrames < 4) return null;
+
+      const meanF0 = pitchValues.reduce((a, b) => a + b, 0) / pitchValues.length;
+      const varianceF0 = pitchValues.reduce((a, b) => a + Math.pow(b - meanF0, 2), 0) / pitchValues.length;
+      const stdF0 = Math.sqrt(varianceF0);
+
+      const rawBands = Array.from(bandEnergies).map(e => e / voicedFrames);
+      const bandMean = rawBands.reduce((a, b) => a + b, 0) / 16;
+      const bandStd = Math.sqrt(rawBands.reduce((a, b) => a + Math.pow(b - bandMean, 2), 0) / 16) + 1e-6;
+      const normBands = rawBands.map(v => (v - bandMean) / bandStd);
+
+      const vec = [(meanF0 - 165) / 55 * 1.4, (stdF0 - 22) / 15 * 0.8, ...normBands];
+      const l2 = Math.sqrt(vec.reduce((acc, v) => acc + v * v, 0)) + 1e-8;
+      const unitVec = vec.map(v => v / l2);
+
+      return { meanF0, stdF0, pitchValues, normBands, unitVec };
+    }
+
+    function cosineSimilarity(vecA, vecB) {
+      if (!vecA || !vecB || vecA.length !== vecB.length) return 0;
+      let dot = 0;
+      for (let i = 0; i < vecA.length; i++) dot += vecA[i] * vecB[i];
+      return Math.max(0, Math.min(1, (dot + 1) / 2 * 0.35 + Math.max(0, dot) * 0.65));
+    }
+
+    function renderPitchContour(pitchValues, color = '#a855f7') {
+      const w = pitchCanvas.width;
+      const h = pitchCanvas.height;
+      pitchCtx.fillStyle = '#030508';
+      pitchCtx.fillRect(0, 0, w, h);
+
+      pitchCtx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+      pitchCtx.lineWidth = 1;
+      for (let y = 16; y < h; y += 16) {
+        pitchCtx.beginPath();
+        pitchCtx.moveTo(0, y);
+        pitchCtx.lineTo(w, y);
+        pitchCtx.stroke();
+      }
+
+      if (!pitchValues || pitchValues.length === 0) return;
+      pitchCtx.strokeStyle = color;
+      pitchCtx.lineWidth = 2;
+      pitchCtx.beginPath();
+      pitchValues.forEach((f0, i) => {
+        const x = (i / Math.max(1, pitchValues.length - 1)) * w;
+        const norm = Math.max(0, Math.min(1, (f0 - 75) / (350 - 75)));
+        const y = h - 10 - norm * (h - 24);
+        if (i === 0) pitchCtx.moveTo(x, y); else pitchCtx.lineTo(x, y);
+      });
+      pitchCtx.stroke();
+    }
+
+    function renderEmbeddingBars(normBands) {
+      embeddingBars.style.gridTemplateColumns = 'repeat(16, minmax(0, 1fr))';
+      if (!normBands) {
+        embeddingBars.innerHTML = Array(16).fill(`<div class="bg-slate-800/60 h-1.5 rounded-t"></div>`).join('');
+        return;
+      }
+      embeddingBars.innerHTML = normBands.map(val => {
+        const pct = Math.max(12, Math.min(100, ((val + 2) / 4) * 100));
+        return `<div class="bg-gradient-to-t from-violet-600 to-cyan-400 rounded-t transition-all duration-300" style="height: ${pct}%"></div>`;
+      }).join('');
+    }
+
+    function updateEnrollmentUI() {
+      const count = voiceModel.samples.length;
+      sampleCounterBadge.textContent = `${count} / 3 PASSES`;
+      calibrationPrompt.textContent = CALIBRATION_PROMPTS[Math.min(count, 2)];
+
+      for (let i = 0; i < 3; i++) {
+        const slotEl = document.getElementById(`slot${i}`);
+        const pitchEl = document.getElementById(`slot${i}Pitch`);
+        if (voiceModel.samples[i]) {
+          slotEl.className = 'p-2 rounded-lg border border-violet-500/50 bg-violet-950/30 text-violet-200';
+          pitchEl.textContent = `${Math.round(voiceModel.samples[i].meanF0)} Hz`;
+        } else {
+          slotEl.className = 'p-2 rounded-lg border border-slate-800 bg-slate-950/90 text-slate-500';
+          pitchEl.textContent = '-- Hz';
+        }
+      }
+
+      if (count >= 3 && voiceModel.voiceKeyHex) {
+        headerVoiceStatus.textContent = `KEY BOUND (${Math.round(voiceModel.meanF0)} Hz)`;
+        headerVoiceStatus.className = 'text-emerald-400 font-semibold';
+        bioLed.className = 'led-dot led-emerald';
+        boundKeyIdDisplay.textContent = `VXP-${voiceModel.voiceKeyHex.slice(0, 6)}`;
+        cryptoKeyFingerprint.textContent = `VXP-${voiceModel.voiceKeyHex.slice(0, 8)}...`;
+        txStatusBadge.textContent = 'KEY ARMED • READY';
+        txStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30';
+        meanF0Display.textContent = `MEAN F0: ${voiceModel.meanF0.toFixed(1)} Hz`;
+      } else {
+        headerVoiceStatus.textContent = `ENROLLING (${count}/3)`;
+        headerVoiceStatus.className = 'text-amber-400 font-semibold';
+        bioLed.className = 'led-dot led-amber';
+        boundKeyIdDisplay.textContent = 'UNBOUND';
+        cryptoKeyFingerprint.textContent = 'ENROLL VOICE FIRST';
+        txStatusBadge.textContent = 'KEY REQUIRED';
+        txStatusBadge.className = 'text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800';
+        meanF0Display.textContent = count > 0
+          ? `MEAN F0: ${(voiceModel.samples.reduce((a, b) => a + b.meanF0, 0) / count).toFixed(1)} Hz`
+          : 'MEAN F0: -- Hz';
+      }
+      updatePacketPreview();
+    }
+
+    async function captureMicSegment(durationMs = 2500) {
+      const ctx = ensureAudioContext();
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false, channelCount: 1 }
+      });
+      const source = ctx.createMediaStreamSource(stream);
+      const processor = ctx.createScriptProcessor(4096, 1, 1);
+      const chunks = [];
+      let totalLen = 0;
+
+      processor.onaudioprocess = (e) => {
+        const data = new Float32Array(e.inputBuffer.getChannelData(0));
+        chunks.push(data);
+        totalLen += data.length;
+      };
+
+      source.connect(processor);
+      processor.connect(ctx.destination);
+      await new Promise(r => setTimeout(r, durationMs));
+
+      processor.disconnect();
+      source.disconnect();
+      stream.getTracks().forEach(t => t.stop());
+
+      const merged = new Float32Array(totalLen);
+      let offset = 0;
+      for (const c of chunks) {
+        merged.set(c, offset);
+        offset += c.length;
+      }
+      return { pcm: merged, sampleRate: ctx.sampleRate };
+    }
+
+    recordSampleBtn.addEventListener('click', async () => {
+      if (voiceModel.samples.length >= 3) {
+        voiceModel.samples = [];
+        voiceModel.centroidVec = null;
+        voiceModel.voiceKeyHex = null;
+      }
+
+      recordSampleBtn.disabled = true;
+      recordSampleBtn.innerHTML = `<i data-lucide="radio" class="w-4 h-4 animate-ping"></i><span>Capturing Vocal Pass (2.5s)...</span>`;
+      lucide.createIcons();
+
+      try {
+        const { pcm, sampleRate } = await captureMicSegment(2500);
+        const features = extractVocalEmbedding(pcm, sampleRate);
+
+        if (!features) {
+          alert('Insufficient voice detected. Speak clearly closer to the microphone.');
+        } else {
+          voiceModel.samples.push(features);
+          livePitchReadout.textContent = `F0: ${features.meanF0.toFixed(1)} Hz`;
+          renderPitchContour(features.pitchValues, '#a855f7');
+          renderEmbeddingBars(features.normBands);
+
+          if (voiceModel.samples.length === 3) {
+            const dim = voiceModel.samples[0].unitVec.length;
+            const centroid = new Array(dim).fill(0);
+            for (const s of voiceModel.samples) {
+              for (let i = 0; i < dim; i++) centroid[i] += s.unitVec[i] / 3;
+            }
+            const l2 = Math.sqrt(centroid.reduce((a, b) => a + b * b, 0)) + 1e-8;
+            voiceModel.centroidVec = centroid.map(v => v / l2);
+            voiceModel.meanF0 = voiceModel.samples.reduce((a, b) => a + b.meanF0, 0) / 3;
+            voiceModel.facultyName = facultyNameInput.value.trim() || 'Faculty';
+            voiceModel.voiceKeyHex = deriveVoiceprintKey(voiceModel.centroidVec, voiceModel.facultyName);
+            localStorage.setItem('vxp_pro_voice_model', JSON.stringify(voiceModel));
+          }
+          updateEnrollmentUI();
+        }
+      } catch (err) {
+        alert('Microphone error: ' + err.message);
+      } finally {
+        recordSampleBtn.disabled = false;
+        recordSampleBtn.innerHTML = `<i data-lucide="mic" class="w-4 h-4"></i><span>${voiceModel.samples.length >= 3 ? 'Re-Enroll Voice Key (3 Passes)' : 'Enroll Voice Calibration (2.5s)'}</span>`;
+        lucide.createIcons();
+      }
+    });
+
+    clearModelBtn.addEventListener('click', () => {
+      localStorage.removeItem('vxp_pro_voice_model');
+      voiceModel.samples = [];
+      voiceModel.centroidVec = null;
+      voiceModel.voiceKeyHex = null;
+      voiceModel.meanF0 = 0;
+      renderPitchContour([]);
+      renderEmbeddingBars(null);
+      updateEnrollmentUI();
+    });
+
+    /**
+     * =========================================================================
+     * MODE SWITCHER & 1-TAP AUTO-DISPATCH WORKFLOW
+     * =========================================================================
+     */
+    modeAutoBtn.addEventListener('click', () => {
+      modeAutoBtn.className = 'py-1.5 px-2 rounded-md bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-bold transition flex items-center justify-center gap-1.5';
+      modeAuditBtn.className = 'py-1.5 px-2 rounded-md text-slate-400 hover:text-slate-200 font-semibold transition flex items-center justify-center gap-1.5';
+      autoModePanel.classList.remove('hidden');
+      auditModePanel.classList.add('hidden');
+    });
+
+    modeAuditBtn.addEventListener('click', () => {
+      modeAuditBtn.className = 'py-1.5 px-2 rounded-md bg-amber-500/20 text-amber-300 border border-amber-500/40 font-bold transition flex items-center justify-center gap-1.5';
+      modeAutoBtn.className = 'py-1.5 px-2 rounded-md text-slate-400 hover:text-slate-200 font-semibold transition flex items-center justify-center gap-1.5';
+      auditModePanel.classList.remove('hidden');
+      autoModePanel.classList.add('hidden');
+    });
+
+    document.querySelectorAll('.preset-chip').forEach(btn => {
+      btn.addEventListener('click', () => {
+        sessionTextInput.value = btn.dataset.preset;
+        updatePacketPreview();
+      });
+    });
+
+    // 1-Tap Auto-Dispatch (Uses enrolled Voiceprint Key without speaking)
+    autoDispatchOnceBtn.addEventListener('click', () => {
+      if (!voiceModel.voiceKeyHex) {
+        alert('Complete One-Time Voice Enrollment in BIO-01 first to bind your cryptographic key!');
+        return;
+      }
+      transmitUltrasonicFrame();
+    });
+
+    autoDispatchLoopBtn.addEventListener('click', () => {
+      if (!voiceModel.voiceKeyHex) {
+        alert('Complete One-Time Voice Enrollment in BIO-01 first to bind your cryptographic key!');
+        return;
+      }
+      if (continuousTotpTimer) {
+        clearInterval(continuousTotpTimer);
+        continuousTotpTimer = null;
+        autoDispatchLoopBtn.innerHTML = `<i data-lucide="repeat" class="w-3.5 h-3.5"></i><span>Continuous TOTP</span>`;
+        autoDispatchLoopBtn.classList.remove('bg-cyan-950/70', 'border-cyan-400');
+        lucide.createIcons();
+      } else {
+        autoDispatchLoopBtn.innerHTML = `<i data-lucide="square" class="w-3.5 h-3.5"></i><span>Stop TOTP</span>`;
+        autoDispatchLoopBtn.classList.add('bg-cyan-950/70', 'border-cyan-400');
+        lucide.createIcons();
+        transmitUltrasonicFrame();
+        continuousTotpTimer = setInterval(() => {
+          if (!isTransmitting) transmitUltrasonicFrame();
+        }, 9200);
+      }
+    });
+
+    // Exam Audit Mode (Live Biometric Voice Liveness Check)
+    verifyAndBroadcastBtn.addEventListener('click', async () => {
+      if (!voiceModel.centroidVec) {
+        alert('Complete One-Time Voice Enrollment in BIO-01 first!');
+        return;
+      }
+      verifyAndBroadcastBtn.disabled = true;
+      verifyAndBroadcastBtn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i><span>Verifying Live Pitch/MFCC...</span>`;
+      lucide.createIcons();
+
+      try {
+        const { pcm, sampleRate } = await captureMicSegment(2500);
+        const liveFeatures = extractVocalEmbedding(pcm, sampleRate);
+        if (!liveFeatures) {
+          similarityScoreBadge.textContent = 'NO VOICE DETECTED';
+          return;
+        }
+        renderPitchContour(liveFeatures.pitchValues, '#00e5ff');
+        livePitchReadout.textContent = `F0: ${liveFeatures.meanF0.toFixed(1)} Hz`;
+
+        const similarity = cosineSimilarity(voiceModel.centroidVec, liveFeatures.unitVec);
+        const pct = (similarity * 100).toFixed(1);
+        similarityScoreBadge.textContent = `${pct}% MATCH`;
+
+        if (similarity >= MODEM_CONFIG.BIOMETRIC_THRESHOLD) {
+          similarityScoreBadge.className = 'text-emerald-400 font-bold';
+          transmitUltrasonicFrame();
+        } else {
+          similarityScoreBadge.className = 'text-rose-400 font-bold';
+        }
+      } finally {
+        verifyAndBroadcastBtn.disabled = false;
+        verifyAndBroadcastBtn.innerHTML = `<i data-lucide="mic" class="w-3.5 h-3.5"></i><span>Verify Live Voice &amp; Emit (2.5s)</span>`;
+        lucide.createIcons();
+      }
+    });
+
+    /**
+     * =========================================================================
+     * ULTRASONIC FSK MODEM (TX + RX GOERTZEL DECODER)
+     * =========================================================================
+     */
+    function computeCRC8(bytes) {
+      let crc = 0x00;
+      for (let b of bytes) {
+        crc ^= b;
+        for (let i = 0; i < 8; i++) {
+          crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) & 0xFF : (crc << 1) & 0xFF;
+        }
+      }
+      return crc;
+    }
+
+    function buildPacketFrame() {
+      const sessionText = (sessionTextInput.value.trim() || 'AIML-D SSP 9AM').toUpperCase();
+      const timeSlot = getRolling4SecSlot().toString().padStart(2, '0');
+      const activeKey = voiceModel.voiceKeyHex || 'UNBOUND000000000';
+      const sig = signSessionPayload(sessionText, timeSlot, activeKey);
+
+      // Compact signed air-payload: "AIML-D SSP 9AM|42|A9F1"
+      const wirePayload = `${sessionText}|${timeSlot}|${sig}`;
+      const payloadBytes = Array.from(new TextEncoder().encode(wirePayload));
+      const crc = computeCRC8(payloadBytes);
+      const frameBytes = [MODEM_CONFIG.START_BYTE, payloadBytes.length, ...payloadBytes, crc];
+      return { sessionText, timeSlot, sig, wirePayload, payloadBytes, frameBytes, crc };
+    }
+
+    function renderTxWaveformPreview(frameBytes) {
+      const w = txWaveformCanvas.width;
+      const h = txWaveformCanvas.height;
+      txWaveCtx.fillStyle = '#030508';
+      txWaveCtx.fillRect(0, 0, w, h);
+
+      const bits = [];
+      for (let byte of frameBytes) {
+        for (let b = 7; b >= 0; b--) bits.push((byte >> b) & 1);
+      }
+
+      const syncWidth = w * 0.14;
+      const bitStep = (w - syncWidth) / Math.max(1, bits.length);
+      txWaveCtx.lineWidth = 1.5;
+      let phase = 0;
+
+      txWaveCtx.strokeStyle = '#f59e0b';
+      txWaveCtx.beginPath();
+      for (let x = 0; x < syncWidth; x++) {
+        phase += 0.45;
+        const y = h / 2 + Math.sin(phase) * (h * 0.34);
+        if (x === 0) txWaveCtx.moveTo(x, y); else txWaveCtx.lineTo(x, y);
+      }
+      txWaveCtx.stroke();
+
+      for (let i = 0; i < bits.length; i++) {
+        const bit = bits[i];
+        const xStart = syncWidth + i * bitStep;
+        const xEnd = xStart + bitStep;
+        txWaveCtx.strokeStyle = bit === 1 ? '#10b981' : '#00e5ff';
+        txWaveCtx.beginPath();
+        const freqStep = bit === 1 ? 0.95 : 0.58;
+        for (let x = xStart; x <= xEnd; x += 0.5) {
+          phase += freqStep * 0.5;
+          const y = h / 2 + Math.sin(phase) * (h * 0.34);
+          if (x === xStart) txWaveCtx.moveTo(x, y); else txWaveCtx.lineTo(x, y);
+        }
+        txWaveCtx.stroke();
+      }
+    }
+
+    function updatePacketPreview() {
+      const { sessionText, timeSlot, sig, wirePayload, frameBytes } = buildPacketFrame();
+      const totalBits = frameBytes.length * 8;
+      const totalDuration = (MODEM_CONFIG.SYNC_DURATION_SEC + totalBits * MODEM_CONFIG.BIT_DURATION_SEC).toFixed(2);
+
+      frameDurationText.textContent = `${totalBits} bits • ${totalDuration}s`;
+      pktPayloadBox.textContent = sessionText;
+      pktSigBox.textContent = sig;
+      rollingNonceDisplay.textContent = `#${timeSlot} (4s window)`;
+      signedTokenPreview.textContent = wirePayload;
+      auditPhraseText.textContent = `"${sessionText}"`;
+      renderTxWaveformPreview(frameBytes);
+    }
+
+    sessionTextInput.addEventListener('input', updatePacketPreview);
+
+    audibleToggleBtn.addEventListener('click', () => {
+      isAudibleDebug = !isAudibleDebug;
+      audibleToggleBtn.classList.toggle('active', isAudibleDebug);
+      carrierBandDisplay.textContent = isAudibleDebug ? '2.2 / 2.8 / 3.4 kHz (DEBUG)' : '18.2 / 18.8 / 19.4 kHz';
+      carrierBandDisplay.className = isAudibleDebug ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold';
+    });
+
+    async function transmitUltrasonicFrame() {
+      if (isTransmitting) return;
+      const ctx = ensureAudioContext();
+      isTransmitting = true;
+
+      const { frameBytes } = buildPacketFrame();
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const fSync = MODEM_CONFIG.FREQ_SYNC - shift;
+      const fZero = MODEM_CONFIG.FREQ_ZERO - shift;
+      const fOne  = MODEM_CONFIG.FREQ_ONE  - shift;
+
+      const bits = [];
+      for (let byte of frameBytes) {
+        for (let b = 7; b >= 0; b--) bits.push((byte >> b) & 1);
+      }
+
+      const now = ctx.currentTime + 0.04;
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      osc.type = 'sine';
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.88, now + 0.018);
+
+      osc.frequency.setValueAtTime(fSync, now);
+      let cursor = now + MODEM_CONFIG.SYNC_DURATION_SEC;
+
+      for (let i = 0; i < bits.length; i++) {
+        osc.frequency.setValueAtTime(bits[i] === 1 ? fOne : fZero, cursor);
+        cursor += MODEM_CONFIG.BIT_DURATION_SEC;
+      }
+
+      gainNode.gain.setValueAtTime(0.88, cursor - 0.015);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, cursor + 0.015);
+
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(cursor + 0.02);
+
+      txLed.className = 'led-dot led-cyan animate-ping';
+      txStatusBadge.textContent = 'BROADCASTING';
+
+      const totalMs = (cursor - now) * 1000;
+      const startTime = performance.now();
+      const progressInterval = setInterval(() => {
+        const pct = Math.min(100, ((performance.now() - startTime) / totalMs) * 100);
+        txProgressBar.style.width = `${pct}%`;
+        if (pct >= 100) clearInterval(progressInterval);
+      }, 25);
+
+      osc.onended = () => {
+        isTransmitting = false;
+        txLed.className = 'led-dot led-off';
+        txStatusBadge.textContent = voiceModel.voiceKeyHex ? 'KEY ARMED • READY' : 'KEY REQUIRED';
+        setTimeout(() => { txProgressBar.style.width = '0%'; }, 400);
+      };
+    }
+
+    // Goertzel Receiver DSP
+    function goertzelMagnitude(samples, targetFreq, sampleRate) {
+      const N = samples.length;
+      const k = Math.round((N * targetFreq) / sampleRate);
+      const omega = (2.0 * Math.PI * k) / N;
+      const coeff = 2.0 * Math.cos(omega);
+      let q0 = 0, q1 = 0, q2 = 0;
+      for (let i = 0; i < N; i++) {
+        const windowVal = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)));
+        q0 = coeff * q1 - q2 + samples[i] * windowVal;
+        q2 = q1;
+        q1 = q0;
+      }
+      const real = q1 - q2 * Math.cos(omega);
+      const imag = q2 * Math.sin(omega);
+      const magnitude = Math.sqrt(real * real + imag * imag) / (N / 2);
+      return 20 * Math.log10(magnitude + 1e-12);
+    }
+
+    const rxMachine = { state: 'IDLE', sampleBuffer: [], bitBuffer: [], syncHoldCount: 0, halfBitToggle: false };
+
+    function resetRxMachine(label = 'IDLE') {
+      rxMachine.state = 'IDLE';
+      rxMachine.bitBuffer = [];
+      rxMachine.syncHoldCount = 0;
+      rxStateText.textContent = label;
+    }
+
+    function renderBitMatrix(bits) {
+      bitCountBadge.textContent = `${bits.length} BITS`;
+      if (bits.length === 0) {
+        bitMatrixGrid.innerHTML = `<span class="text-[10px] mono text-slate-600 self-center mx-auto">Awaiting carrier lock...</span>`;
+        return;
+      }
+      bitMatrixGrid.innerHTML = bits.map((b, idx) => {
+        const isHeader = idx < 16;
+        const colorCls = b === 1
+          ? (isHeader ? 'bg-purple-500/30 border-purple-400/60 text-purple-200' : 'bg-emerald-500/25 border-emerald-400/50 text-emerald-300')
+          : (isHeader ? 'bg-slate-800 border-slate-600 text-slate-400' : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300');
+        return `<span class="w-4 h-4 rounded-[3px] border text-[9px] mono flex items-center justify-center font-bold ${colorCls}">${b}</span>`;
+      }).join('');
+      bitMatrixGrid.scrollTop = bitMatrixGrid.scrollHeight;
+    }
+
+    function dbToPercent(db) {
+      return Math.max(0, Math.min(100, ((db + 95) / 75) * 100));
+    }
+
+    function processAudioChunk(pcmFloat32, sampleRate) {
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const fSync = MODEM_CONFIG.FREQ_SYNC - shift;
+      const fZero = MODEM_CONFIG.FREQ_ZERO - shift;
+      const fOne  = MODEM_CONFIG.FREQ_ONE  - shift;
+      const fNoise = (MODEM_CONFIG.FREQ_SYNC - 600) - shift;
+
+      const sliceSize = Math.floor(sampleRate * (MODEM_CONFIG.BIT_DURATION_SEC / 2));
+      for (let i = 0; i < pcmFloat32.length; i++) rxMachine.sampleBuffer.push(pcmFloat32[i]);
+
+      while (rxMachine.sampleBuffer.length >= sliceSize) {
+        const slice = rxMachine.sampleBuffer.splice(0, sliceSize);
+        const dbSync  = goertzelMagnitude(slice, fSync, sampleRate);
+        const dbZero  = goertzelMagnitude(slice, fZero, sampleRate);
+        const dbOne   = goertzelMagnitude(slice, fOne, sampleRate);
+        const dbNoise = goertzelMagnitude(slice, fNoise, sampleRate);
+
+        const snr = Math.max(dbSync, dbZero, dbOne) - dbNoise;
+        magSyncEl.textContent = `${dbSync.toFixed(0)}dB`;
+        magZeroEl.textContent = `${dbZero.toFixed(0)}dB`;
+        magOneEl.textContent  = `${dbOne.toFixed(0)}dB`;
+        barSync.style.width = `${dbToPercent(dbSync)}%`;
+        barZero.style.width = `${dbToPercent(dbZero)}%`;
+        barOne.style.width  = `${dbToPercent(dbOne)}%`;
+        snrPill.textContent = `SNR: ${snr.toFixed(1)} dB`;
+
+        const isSyncDominant = dbSync > dbZero + 4 && dbSync > dbOne + 4 && snr > MODEM_CONFIG.MIN_SNR_DB;
+
+        if (rxMachine.state === 'IDLE') {
+          if (isSyncDominant) {
+            rxMachine.syncHoldCount++;
+            if (rxMachine.syncHoldCount >= 6) {
+              rxMachine.state = 'SYNC_LOCKED';
+              rxMachine.bitBuffer = [];
+              renderBitMatrix([]);
+              rxStateText.textContent = 'CARRIER LOCK';
+            }
+          } else {
+            rxMachine.syncHoldCount = Math.max(0, rxMachine.syncHoldCount - 1);
+          }
+        } else if (rxMachine.state === 'SYNC_LOCKED') {
+          if (!isSyncDominant && snr > MODEM_CONFIG.MIN_SNR_DB) {
+            rxMachine.state = 'RECEIVING';
+            rxMachine.halfBitToggle = true;
+            rxStateText.textContent = 'DEMODULATING';
+            decodeSymbolSlice(dbZero, dbOne, snr);
+          }
+        } else if (rxMachine.state === 'RECEIVING') {
+          rxMachine.halfBitToggle = !rxMachine.halfBitToggle;
+          if (!rxMachine.halfBitToggle) continue;
+          if (snr < MODEM_CONFIG.MIN_SNR_DB - 3) {
+            resetRxMachine('CARRIER LOST');
+            continue;
+          }
+          decodeSymbolSlice(dbZero, dbOne, snr);
+        }
+      }
+    }
+
+    function decodeSymbolSlice(dbZero, dbOne, snr) {
+      rxMachine.bitBuffer.push(dbOne > dbZero ? 1 : 0);
+      renderBitMatrix(rxMachine.bitBuffer);
+
+      if (rxMachine.bitBuffer.length >= 16) {
+        const startByte = bitsToByte(rxMachine.bitBuffer.slice(0, 8));
+        if (startByte !== MODEM_CONFIG.START_BYTE) {
+          resetRxMachine('SYNC ERR');
+          return;
+        }
+        const payloadLen = bitsToByte(rxMachine.bitBuffer.slice(8, 16));
+        if (payloadLen === 0 || payloadLen > 48) {
+          resetRxMachine('LEN ERR');
+          return;
+        }
+        const expectedTotalBits = (2 + payloadLen + 1) * 8;
+        if (rxMachine.bitBuffer.length >= expectedTotalBits) {
+          finalizeFrameDecode(payloadLen, snr);
+        }
+      }
+    }
+
+    function bitsToByte(eightBits) {
+      let val = 0;
+      for (let i = 0; i < 8; i++) val = (val << 1) | eightBits[i];
+      return val;
+    }
+
+    function finalizeFrameDecode(payloadLen, finalSnr) {
+      const payloadBytes = [];
+      for (let i = 0; i < payloadLen; i++) {
+        const offset = (2 + i) * 8;
+        payloadBytes.push(bitsToByte(rxMachine.bitBuffer.slice(offset, offset + 8)));
+      }
+      const receivedCrc = bitsToByte(rxMachine.bitBuffer.slice((2 + payloadLen) * 8, (3 + payloadLen) * 8));
+      const computedCrc = computeCRC8(payloadBytes);
+      const decodedText = new TextDecoder().decode(new Uint8Array(payloadBytes));
+
+      if (receivedCrc === computedCrc) {
+        const [sessionLabel, slot, sig] = decodedText.split('|');
+        // Verify Voiceprint-Derived Signature if key is enrolled on local verifier
+        let sigVerified = true;
+        if (voiceModel.voiceKeyHex && sessionLabel && slot && sig) {
+          const expectedSig = signSessionPayload(sessionLabel, slot, voiceModel.voiceKeyHex);
+          sigVerified = (sig === expectedSig);
+        }
+
+        if (sigVerified) {
+          verificationCard.className = 'hw-subpanel rounded-xl p-3.5 border border-emerald-500/60 bg-emerald-950/20 space-y-2 transition-all';
+          attendanceVerdict.textContent = `PRESENT // ${sessionLabel || decodedText}`;
+          attendanceVerdict.className = 'text-sm font-bold text-emerald-300 truncate';
+          verdictIcon.className = 'w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shrink-0';
+          verdictIcon.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i>`;
+          decodedPayloadDetails.textContent = `SIG ${sig || 'OK'} • SLOT #${slot || '--'} • SNR ${finalSnr.toFixed(1)}dB`;
+          lucide.createIcons();
+          resetRxMachine('VERIFIED');
+        } else {
+          verificationCard.className = 'hw-subpanel rounded-xl p-3.5 border border-amber-500/60 bg-amber-950/20 space-y-2 transition-all';
+          attendanceVerdict.textContent = `REJECTED // Invalid Voice Key Sig`;
+          attendanceVerdict.className = 'text-sm font-bold text-amber-300 truncate';
+          resetRxMachine('SIG MISMATCH');
+        }
+      } else {
+        verificationCard.className = 'hw-subpanel rounded-xl p-3.5 border border-rose-500/60 bg-rose-950/20 space-y-2 transition-all';
+        attendanceVerdict.textContent = `REJECTED // CRC Fail`;
+        attendanceVerdict.className = 'text-sm font-bold text-rose-300 truncate';
+        resetRxMachine('CRC ERROR');
+      }
+    }
+
+    toggleMicBtn.addEventListener('click', async () => {
+      if (isListening) {
+        isListening = false;
+        if (scriptProcessor) scriptProcessor.disconnect();
+        if (micStream) micStream.getTracks().forEach(t => t.stop());
+        rxLed.className = 'led-dot led-off';
+        rxStatusBadge.textContent = 'OFFLINE';
+        toggleMicBtn.innerHTML = `<i data-lucide="power" class="w-4 h-4"></i><span>Engage Student Ultrasonic Receiver</span>`;
+        toggleMicBtn.className = 'w-full py-3 px-4 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2';
+        lucide.createIcons();
+        resetRxMachine('OFFLINE');
+        return;
+      }
+
+      try {
+        const ctx = ensureAudioContext();
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false, channelCount: 1 }
+        });
+        const source = ctx.createMediaStreamSource(micStream);
+        analyserNode = ctx.createAnalyser();
+        analyserNode.fftSize = 4096;
+        analyserNode.smoothingTimeConstant = 0.25;
+
+        scriptProcessor = ctx.createScriptProcessor(4096, 1, 1);
+        scriptProcessor.onaudioprocess = (event) => {
+          if (isListening) processAudioChunk(event.inputBuffer.getChannelData(0), ctx.sampleRate);
+        };
+
+        source.connect(analyserNode);
+        analyserNode.connect(scriptProcessor);
+        scriptProcessor.connect(ctx.destination);
+
+        isListening = true;
+        resetRxMachine('SCANNING');
+        rxLed.className = 'led-dot led-emerald animate-pulse';
+        rxStatusBadge.textContent = 'ACTIVE';
+        rxStatusBadge.className = 'text-emerald-400 font-bold';
+        toggleMicBtn.innerHTML = `<i data-lucide="power-off" class="w-4 h-4"></i><span>Disengage Student Receiver</span>`;
+        toggleMicBtn.className = 'w-full py-3 px-4 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2';
+        lucide.createIcons();
+
+        drawSpectrumAndWaterfall();
+      } catch (err) {
+        alert('Microphone error: ' + err.message);
+      }
+    });
+
+    function drawSpectrumAndWaterfall() {
+      if (!isListening || !analyserNode || !audioCtx) return;
+      requestAnimationFrame(drawSpectrumAndWaterfall);
+
+      const bufferLength = analyserNode.frequencyBinCount;
+      const freqData = new Uint8Array(bufferLength);
+      analyserNode.getByteFrequencyData(freqData);
+
+      const width = spectrumCanvas.width;
+      const height = spectrumCanvas.height;
+      const topHalfH = 73;
+      const bottomHalfH = 73;
+
+      canvasCtx.fillStyle = '#030508';
+      canvasCtx.fillRect(0, 0, width, topHalfH);
+
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const minFreq = 17500 - shift;
+      const maxFreq = 20500 - shift;
+      const nyquist = audioCtx.sampleRate / 2;
+
+      const startBin = Math.floor((minFreq / nyquist) * bufferLength);
+      const endBin = Math.ceil((maxFreq / nyquist) * bufferLength);
+      const binCount = Math.max(1, endBin - startBin);
+      const sliceWidth = width / binCount;
+
+      waterfallCtx.drawImage(waterfallBuffer, 0, 1);
+
+      canvasCtx.strokeStyle = '#00e5ff';
+      canvasCtx.lineWidth = 1.6;
+      canvasCtx.beginPath();
+
+      for (let i = 0; i <= binCount; i++) {
+        const binIdx = Math.min(bufferLength - 1, startBin + i);
+        const val = freqData[binIdx] / 255;
+        const x = i * sliceWidth;
+        const y = topHalfH - val * (topHalfH - 12);
+        if (i === 0) canvasCtx.moveTo(x, y); else canvasCtx.lineTo(x, y);
+
+        const r = val > 0.65 ? 245 : Math.round(val * 30);
+        const g = Math.round(val * 235);
+        const b = val > 0.2 ? Math.round(120 + val * 135) : 15;
+        waterfallCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        waterfallCtx.fillRect(x, 0, Math.ceil(sliceWidth), 1);
+      }
+      canvasCtx.stroke();
+      canvasCtx.drawImage(waterfallBuffer, 0, topHalfH, width, bottomHalfH);
+
+      const markers = [
+        { freq: MODEM_CONFIG.FREQ_SYNC - shift, color: '#f59e0b', label: 'SYNC' },
+        { freq: MODEM_CONFIG.FREQ_ZERO - shift, color: '#00e5ff', label: '0' },
+        { freq: MODEM_CONFIG.FREQ_ONE  - shift, color: '#10b981', label: '1' }
+      ];
+      canvasCtx.font = '600 9px "JetBrains Mono", monospace';
+      markers.forEach(m => {
+        const mx = ((m.freq - minFreq) / (maxFreq - minFreq)) * width;
+        canvasCtx.strokeStyle = m.color;
+        canvasCtx.setLineDash([3, 3]);
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(mx, 0);
+        canvasCtx.lineTo(mx, height);
+        canvasCtx.stroke();
+        canvasCtx.setLineDash([]);
+        canvasCtx.fillStyle = m.color;
+        canvasCtx.fillText(m.label, mx + 3, 10);
+      });
+    }
+
+    // Boot App & Restore Enrolled Voiceprint Key
+    (function initApp() {
+      const saved = localStorage.getItem('vxp_pro_voice_model');
+      if (saved) {
+        try {
+          voiceModel = JSON.parse(saved);
+          facultyNameInput.value = voiceModel.facultyName || 'Prof. Sharma (CSE-AI)';
+          if (voiceModel.samples && voiceModel.samples.length > 0) {
+            const last = voiceModel.samples[voiceModel.samples.length - 1];
+            renderPitchContour(last.pitchValues, '#a855f7');
+            renderEmbeddingBars(last.normBands);
+          }
+        } catch (_) {}
+      } else {
+        renderPitchContour([]);
+        renderEmbeddingBars(null);
+      }
+      updateEnrollmentUI();
+    })();
+  </script>
+</body>
+</html>
