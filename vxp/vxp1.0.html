@@ -1,0 +1,1236 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VPX Pro — Ultrasonic Acoustic Telemetry & Attendance Engine</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-void: #05070b;
+      --bg-panel: #0b0f17;
+      --bg-elevated: #111827;
+      --border-subtle: rgba(148, 163, 184, 0.12);
+      --border-active: rgba(56, 189, 248, 0.35);
+      --accent-cyan: #00e5ff;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: var(--bg-void);
+      color: #e2e8f0;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.04) 0%, transparent 40%),
+        linear-gradient(to right, rgba(255, 255, 255, 0.015) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.015) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 32px 32px, 32px 32px;
+      margin: 0;
+      overflow-x: hidden;
+    }
+
+    .mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .hw-panel {
+      background: linear-gradient(180deg, rgba(15, 21, 34, 0.92) 0%, rgba(9, 13, 22, 0.96) 100%);
+      border: 1px solid var(--border-subtle);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+    }
+
+    .hw-subpanel {
+      background: rgba(6, 9, 15, 0.75);
+      border: 1px solid rgba(148, 163, 184, 0.1);
+      box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.5);
+    }
+
+    .hw-input {
+      background: #04060a;
+      border: 1px solid rgba(148, 163, 184, 0.18);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .hw-input:focus {
+      outline: none;
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+    }
+
+    /* Hardware Toggle Switch */
+    .toggle-track {
+      width: 40px;
+      height: 22px;
+      background: #0f172a;
+      border: 1px solid rgba(148, 163, 184, 0.25);
+      border-radius: 999px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .toggle-track.active {
+      background: rgba(0, 229, 255, 0.18);
+      border-color: var(--accent-cyan);
+    }
+    .toggle-thumb {
+      width: 16px;
+      height: 16px;
+      background: #64748b;
+      border-radius: 50%;
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    .toggle-track.active .toggle-thumb {
+      transform: translateX(18px);
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+
+    /* LED Status Dot */
+    .led-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+    .led-cyan {
+      background: var(--accent-cyan);
+      box-shadow: 0 0 10px var(--accent-cyan);
+    }
+    .led-emerald {
+      background: var(--accent-emerald);
+      box-shadow: 0 0 10px var(--accent-emerald);
+    }
+    .led-amber {
+      background: var(--accent-amber);
+      box-shadow: 0 0 10px var(--accent-amber);
+    }
+    .led-off {
+      background: #334155;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #05070b;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1e293b;
+      border-radius: 3px;
+    }
+
+    @keyframes scanline {
+      0% { transform: translateY(-100%); }
+      100% { transform: translateY(100%); }
+    }
+    .crt-overlay {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between p-3 sm:p-5 lg:p-7">
+
+  <div class="max-w-[1440px] w-full mx-auto space-y-5">
+
+    <!-- TOP ENGINEERING TELEMETRY BAR -->
+    <header class="hw-panel rounded-2xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
+      <div class="flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500/20 to-emerald-500/10 border border-cyan-400/30 flex items-center justify-center shadow-inner">
+          <i data-lucide="radio" class="w-5 h-5 text-cyan-400"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-2.5">
+            <h1 class="text-lg sm:text-xl font-bold tracking-tight text-white">VPX <span class="text-cyan-400 font-semibold">Pro</span></h1>
+            <span class="text-[10px] mono uppercase tracking-widest px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300 border border-cyan-500/25">
+              DSP Acoustic Engine v2.4
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">Near-Ultrasonic FSK Challenge-Response Telemetry & Zero-Trust Verification</p>
+        </div>
+      </div>
+
+      <!-- Live Hardware Metrics Pill Strip -->
+      <div class="flex flex-wrap items-center gap-3 sm:gap-5 text-xs mono">
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">FS</span>
+          <span id="sampleRateDisplay" class="text-slate-200 font-semibold">48.0 kHz</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">MOD</span>
+          <span class="text-cyan-400 font-semibold">BFSK 20-BAUD</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span class="text-slate-500">CARRIERS</span>
+          <span id="carrierBandDisplay" class="text-emerald-400 font-semibold">18.2 / 18.8 / 19.4 kHz</span>
+        </div>
+        <div class="flex items-center gap-2 bg-slate-950/90 px-3 py-1.5 rounded-lg border border-slate-800/80">
+          <span id="masterClockLed" class="led-dot led-emerald animate-pulse"></span>
+          <span id="utcClock" class="text-slate-300">00:00:00 UTC</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- MAIN DUAL WORKBENCH GRID -->
+    <main class="grid grid-cols-1 xl:grid-cols-12 gap-5">
+
+      <!-- LEFT MODULE: TX / FACULTY SIGNAL GENERATOR (5 Cols) -->
+      <section class="xl:col-span-5 hw-panel rounded-2xl p-5 flex flex-col justify-between space-y-5">
+        <div class="space-y-4">
+          <!-- Module Header -->
+          <div class="flex items-center justify-between border-b border-slate-800/90 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <span id="txLed" class="led-dot led-off"></span>
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">TX-01 // Acoustic Signal Synthesizer</h2>
+            </div>
+            <span id="txStatusBadge" class="text-[11px] mono px-2.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+              STANDBY
+            </span>
+          </div>
+
+          <!-- Session Parameter Inputs -->
+          <div class="grid grid-cols-12 gap-3">
+            <div class="col-span-7">
+              <label class="block text-[11px] mono uppercase tracking-wider text-slate-400 mb-1.5">Course / Section ID</label>
+              <div class="relative">
+                <input id="courseInput" type="text" value="CSE-ML" maxlength="8"
+                  class="w-full hw-input rounded-xl px-3.5 py-2.5 text-sm text-white mono font-semibold tracking-wide uppercase" />
+                <span class="absolute right-3 top-2.5 text-[10px] mono text-slate-500">ASCII</span>
+              </div>
+            </div>
+            <div class="col-span-5">
+              <label class="block text-[11px] mono uppercase tracking-wider text-slate-400 mb-1.5">Dynamic Nonce</label>
+              <div class="flex gap-1.5">
+                <input id="otpInput" type="text" value="4910" maxlength="4"
+                  class="w-full hw-input rounded-xl px-3 py-2.5 text-sm text-cyan-400 font-bold mono tracking-widest text-center" />
+                <button id="rotateOtpBtn" title="Regenerate Nonce"
+                  class="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-300 rounded-xl transition flex items-center justify-center">
+                  <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Voice Gate Module -->
+          <div class="hw-subpanel rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <i data-lucide="mic" class="w-3.5 h-3.5 text-cyan-400"></i>
+                <span class="text-[11px] mono uppercase tracking-wider text-slate-300 font-medium">Biometric Voice Challenge Gate</span>
+              </div>
+              <button id="voiceVerifyBtn"
+                class="text-[11px] mono px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 transition flex items-center gap-1.5">
+                <i data-lucide="audio-waveform" class="w-3 h-3"></i>
+                <span>Capture Phrase</span>
+              </button>
+            </div>
+            <div class="flex items-center justify-between bg-slate-950/90 px-3 py-2 rounded-lg border border-slate-800/80">
+              <span class="text-xs text-slate-400">Expected utterance:</span>
+              <span id="voicePromptBadge" class="mono text-xs text-amber-300 font-semibold">"CSE-ML code 4910"</span>
+            </div>
+            <div id="voiceTranscript" class="text-[11px] mono hidden px-2 py-1 rounded"></div>
+          </div>
+
+          <!-- VISUAL BITSTREAM PACKET & FSK WAVEFORM DIAGRAM -->
+          <div class="hw-subpanel rounded-xl p-3.5 space-y-3">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] mono uppercase tracking-wider text-slate-400">Frame Bit-Map & FSK Modulation</span>
+              <span id="frameDurationText" class="text-[11px] mono text-cyan-400">88 bits • 4.70s</span>
+            </div>
+
+            <!-- Visual Packet Block Diagram -->
+            <div class="grid grid-cols-12 gap-1 text-center mono text-[10px]">
+              <div class="col-span-2 bg-amber-500/15 border border-amber-500/40 text-amber-300 py-1.5 rounded">
+                <div class="font-bold">SYNC</div>
+                <div class="text-[9px] opacity-75">300ms</div>
+              </div>
+              <div class="col-span-2 bg-purple-500/15 border border-purple-500/40 text-purple-300 py-1.5 rounded">
+                <div class="font-bold">0xAA</div>
+                <div class="text-[9px] opacity-75">8b</div>
+              </div>
+              <div class="col-span-2 bg-slate-800/90 border border-slate-600/50 text-slate-300 py-1.5 rounded">
+                <div id="pktLenBox" class="font-bold">LEN:11</div>
+                <div class="text-[9px] opacity-75">8b</div>
+              </div>
+              <div class="col-span-4 bg-cyan-500/15 border border-cyan-500/40 text-cyan-300 py-1.5 rounded truncate px-1">
+                <div id="pktPayloadBox" class="font-bold">CSE-ML|4910</div>
+                <div id="pktPayloadBits" class="text-[9px] opacity-75">88b</div>
+              </div>
+              <div class="col-span-2 bg-emerald-500/15 border border-emerald-500/40 text-emerald-300 py-1.5 rounded">
+                <div id="pktCrcBox" class="font-bold">0x4F</div>
+                <div class="text-[9px] opacity-75">CRC8</div>
+              </div>
+            </div>
+
+            <!-- Live Synthesized FSK Waveform Oscilloscope Canvas -->
+            <div class="relative rounded-lg overflow-hidden border border-slate-800 bg-[#030508]">
+              <canvas id="txWaveformCanvas" width="520" height="84" class="w-full h-[84px] block"></canvas>
+              <div class="crt-overlay absolute inset-0"></div>
+              <div class="absolute bottom-1.5 right-2 text-[10px] mono text-slate-500 bg-slate-950/80 px-1.5 py-0.5 rounded">
+                TX CARRIER ENVELOPE
+              </div>
+            </div>
+
+            <!-- Transmission Progress Sweep -->
+            <div class="space-y-1">
+              <div class="flex justify-between text-[10px] mono text-slate-500">
+                <span>SYMBOL SWEEP</span>
+                <span id="txPercentText">0%</span>
+              </div>
+              <div class="w-full bg-slate-950 h-1.5 rounded-full overflow-hidden border border-slate-800/80">
+                <div id="txProgressBar" class="bg-gradient-to-r from-cyan-400 to-emerald-400 h-full w-0 transition-all duration-75"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- TX Control Deck -->
+        <div class="space-y-3 pt-1">
+          <!-- Hardware Switch for Audible Downshift -->
+          <div class="flex items-center justify-between bg-slate-950/80 px-3.5 py-2.5 rounded-xl border border-slate-800/80">
+            <div>
+              <div class="text-xs font-medium text-slate-200">Audible Band Monitor (-16 kHz Shift)</div>
+              <div class="text-[11px] text-slate-500">Downshifts carrier to 2.2–3.4 kHz for speaker diagnostics</div>
+            </div>
+            <button id="audibleToggleBtn" type="button" role="switch" aria-checked="false" class="toggle-track">
+              <span class="toggle-thumb"></span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-3">
+            <button id="broadcastOnceBtn"
+              class="py-3 px-4 bg-gradient-to-r from-cyan-500 to-sky-500 hover:from-cyan-400 hover:to-sky-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2">
+              <i data-lucide="send" class="w-4 h-4"></i>
+              <span>Emit Burst</span>
+            </button>
+            <button id="loopBroadcastBtn"
+              class="py-3 px-4 bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-cyan-500/30 font-semibold rounded-xl text-xs uppercase tracking-wider transition flex items-center justify-center gap-2">
+              <i data-lucide="repeat" class="w-4 h-4"></i>
+              <span>Auto-TOTP Loop</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT MODULE: RX / REAL-TIME DSP SPECTRUM & TELEMETRY DECODER (7 Cols) -->
+      <section class="xl:col-span-7 hw-panel rounded-2xl p-5 flex flex-col justify-between space-y-5">
+        <div class="space-y-4">
+          <!-- Module Header -->
+          <div class="flex items-center justify-between border-b border-slate-800/90 pb-3.5">
+            <div class="flex items-center gap-2.5">
+              <span id="rxLed" class="led-dot led-off"></span>
+              <h2 class="text-sm font-semibold uppercase tracking-wider text-slate-200">RX-02 // Goertzel Ultrasonic Spectrum Analyzer</h2>
+            </div>
+            <div class="flex items-center gap-2.5">
+              <span id="snrPill" class="text-[11px] mono px-2.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800">
+                SNR: -- dB
+              </span>
+              <span id="rxStatusBadge" class="text-[11px] mono px-2.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800">
+                SENSOR OFFLINE
+              </span>
+            </div>
+          </div>
+
+          <!-- DUAL VISUALIZER: FFT SPECTRUM + WATERFALL SPECTROGRAM -->
+          <div class="hw-subpanel rounded-xl p-3.5 space-y-2.5">
+            <div class="flex items-center justify-between text-[11px] mono">
+              <span class="text-slate-400 uppercase tracking-wider">Ultrasonic Bandpass (17.5 kHz – 20.5 kHz)</span>
+              <div class="flex items-center gap-3 text-[10px]">
+                <span class="flex items-center gap-1 text-amber-400"><span class="w-2 h-2 rounded-full bg-amber-400"></span>SYNC 18.2k</span>
+                <span class="flex items-center gap-1 text-cyan-400"><span class="w-2 h-2 rounded-full bg-cyan-400"></span>BIT-0 18.8k</span>
+                <span class="flex items-center gap-1 text-emerald-400"><span class="w-2 h-2 rounded-full bg-emerald-400"></span>BIT-1 19.4k</span>
+              </div>
+            </div>
+
+            <!-- Real-Time Spectrum + Waterfall Canvas -->
+            <div class="relative rounded-xl overflow-hidden border border-slate-800 bg-[#030508]">
+              <canvas id="spectrumCanvas" width="720" height="190" class="w-full h-[190px] block"></canvas>
+              <div class="crt-overlay absolute inset-0"></div>
+            </div>
+
+            <!-- Goertzel Bank dBFS Meter Gauges -->
+            <div class="grid grid-cols-3 gap-3 pt-1">
+              <!-- Sync Gauge -->
+              <div class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-2.5 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] mono">
+                  <span class="text-amber-400 font-semibold">CH-SYNC (18.2k)</span>
+                  <span id="magSync" class="text-slate-200 font-bold">-100.0 dB</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barSync" class="h-full bg-amber-400 transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Bit 0 Gauge -->
+              <div class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-2.5 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] mono">
+                  <span class="text-cyan-400 font-semibold">CH-ZERO (18.8k)</span>
+                  <span id="magZero" class="text-slate-200 font-bold">-100.0 dB</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barZero" class="h-full bg-cyan-400 transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+
+              <!-- Bit 1 Gauge -->
+              <div class="bg-slate-950/90 border border-slate-800/90 rounded-xl p-2.5 space-y-1.5">
+                <div class="flex justify-between items-center text-[10px] mono">
+                  <span class="text-emerald-400 font-semibold">CH-ONE (19.4k)</span>
+                  <span id="magOne" class="text-slate-200 font-bold">-100.0 dB</span>
+                </div>
+                <div class="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                  <div id="barOne" class="h-full bg-emerald-400 transition-all duration-75" style="width: 0%"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+                    <!-- GRAPHICAL BIT-MATRIX & STATE MACHINE TELEMETRY -->
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <!-- Bit Matrix Visualizer -->
+            <div class="md:col-span-7 hw-subpanel rounded-xl p-3.5 flex flex-col justify-between space-y-2">
+              <div class="flex items-center justify-between text-[11px] mono">
+                <span class="text-slate-400 uppercase">Demodulated Bit-Matrix</span>
+                <span id="bitCountBadge" class="text-slate-500">0 BITS</span>
+              </div>
+              <div id="bitMatrixGrid" class="flex flex-wrap gap-1 min-h-[48px] max-h-[68px] overflow-y-auto p-1.5 bg-slate-950 rounded-lg border border-slate-800/80 content-start">
+                <span class="text-[11px] mono text-slate-600 self-center mx-auto">Awaiting carrier lock...</span>
+              </div>
+            </div>
+
+            <!-- Pipeline State & Verification Stamp -->
+            <div id="verificationCard" class="md:col-span-5 hw-subpanel rounded-xl p-3.5 flex flex-col justify-between border border-slate-800 transition-all">
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] mono uppercase tracking-wider text-slate-400">Pipeline State</span>
+                <span id="rxStateText" class="text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-amber-400 border border-amber-500/20">
+                  IDLE
+                </span>
+              </div>
+
+              <div class="my-2 flex items-center gap-3">
+                <div id="verdictIcon" class="w-9 h-9 rounded-lg bg-slate-900 border border-slate-700 flex items-center justify-center text-slate-500 shrink-0">
+                  <i data-lucide="shield" class="w-4 h-4"></i>
+                </div>
+                <div class="min-w-0">
+                  <div id="attendanceVerdict" class="text-sm font-bold text-slate-200 truncate">
+                    Ready to Capture
+                  </div>
+                  <div id="decodedPayloadDetails" class="text-[11px] mono text-slate-400 truncate">
+                    Zero-trust validation armed
+                  </div>
+                </div>
+              </div>
+
+              <div class="flex items-center justify-between text-[10px] mono text-slate-500 border-t border-slate-800/80 pt-1.5">
+                <span>CRC-8 INTEGRITY</span>
+                <span id="crcStatusLabel">STANDBY</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RX Primary Activation Button -->
+        <button id="toggleMicBtn"
+          class="w-full py-3.5 px-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2.5">
+          <i data-lucide="power" class="w-4 h-4"></i>
+          <span>Engage Ultrasonic Acoustic Sensor</span>
+        </button>
+      </section>
+    </main>
+
+    <!-- BOTTOM DIAGNOSTIC STRIP -->
+    <footer class="hw-panel rounded-xl px-5 py-3 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] mono text-slate-400">
+      <div class="flex items-center gap-2">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span>VPX Pro Acoustic Engine • Raw PCM Pipeline (AGC, EchoCancellation, NoiseSuppression Bypassed)</span>
+      </div>
+      <div class="text-slate-500">
+        VoIP Relay Immune (&gt;18 kHz Cutoff) • Goertzel Sliding DFT
+      </div>
+    </footer>
+
+  </div>
+
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    /**
+     * VPX PRO — ULTRASONIC FSK MODEM & REAL-TIME SPECTRUM ENGINE
+     */
+    const MODEM_CONFIG = {
+      FREQ_SYNC: 18200,
+      FREQ_ZERO: 18800,
+      FREQ_ONE:  19400,
+      DEBUG_SHIFT: 16000,
+      BIT_DURATION_SEC: 0.050,
+      SYNC_DURATION_SEC: 0.300,
+      START_BYTE: 0xAA,
+      MIN_SNR_DB: 9.5
+    };
+
+    let audioCtx = null;
+    let isTransmitting = false;
+    let autoLoopTimer = null;
+    let isAudibleDebug = false;
+
+    let micStream = null;
+    let scriptProcessor = null;
+    let analyserNode = null;
+    let isListening = false;
+
+    // Offscreen Waterfall Buffer Canvas
+    const waterfallBuffer = document.createElement('canvas');
+    waterfallBuffer.width = 720;
+    waterfallBuffer.height = 95;
+    const waterfallCtx = waterfallBuffer.getContext('2d');
+    waterfallCtx.fillStyle = '#030508';
+    waterfallCtx.fillRect(0, 0, waterfallBuffer.width, waterfallBuffer.height);
+
+    // DOM References
+    const courseInput = document.getElementById('courseInput');
+    const otpInput = document.getElementById('otpInput');
+    const rotateOtpBtn = document.getElementById('rotateOtpBtn');
+    const frameDurationText = document.getElementById('frameDurationText');
+    const pktLenBox = document.getElementById('pktLenBox');
+    const pktPayloadBox = document.getElementById('pktPayloadBox');
+    const pktPayloadBits = document.getElementById('pktPayloadBits');
+    const pktCrcBox = document.getElementById('pktCrcBox');
+    const txProgressBar = document.getElementById('txProgressBar');
+    const txPercentText = document.getElementById('txPercentText');
+    const txStatusBadge = document.getElementById('txStatusBadge');
+    const txLed = document.getElementById('txLed');
+    const broadcastOnceBtn = document.getElementById('broadcastOnceBtn');
+    const loopBroadcastBtn = document.getElementById('loopBroadcastBtn');
+    const audibleToggleBtn = document.getElementById('audibleToggleBtn');
+    const carrierBandDisplay = document.getElementById('carrierBandDisplay');
+    const sampleRateDisplay = document.getElementById('sampleRateDisplay');
+    const txWaveformCanvas = document.getElementById('txWaveformCanvas');
+    const txWaveCtx = txWaveformCanvas.getContext('2d');
+
+    const toggleMicBtn = document.getElementById('toggleMicBtn');
+    const rxStatusBadge = document.getElementById('rxStatusBadge');
+    const rxLed = document.getElementById('rxLed');
+    const rxStateText = document.getElementById('rxStateText');
+    const bitMatrixGrid = document.getElementById('bitMatrixGrid');
+    const bitCountBadge = document.getElementById('bitCountBadge');
+    const snrPill = document.getElementById('snrPill');
+    const magSyncEl = document.getElementById('magSync');
+    const magZeroEl = document.getElementById('magZero');
+    const magOneEl = document.getElementById('magOne');
+    const barSync = document.getElementById('barSync');
+    const barZero = document.getElementById('barZero');
+    const barOne = document.getElementById('barOne');
+    const attendanceVerdict = document.getElementById('attendanceVerdict');
+    const verdictIcon = document.getElementById('verdictIcon');
+    const decodedPayloadDetails = document.getElementById('decodedPayloadDetails');
+    const verificationCard = document.getElementById('verificationCard');
+    const crcStatusLabel = document.getElementById('crcStatusLabel');
+    const spectrumCanvas = document.getElementById('spectrumCanvas');
+    const canvasCtx = spectrumCanvas.getContext('2d');
+
+    const voiceVerifyBtn = document.getElementById('voiceVerifyBtn');
+    const voicePromptBadge = document.getElementById('voicePromptBadge');
+    const voiceTranscript = document.getElementById('voiceTranscript');
+
+    // Live UTC Telemetry Clock
+    setInterval(() => {
+      const now = new Date();
+      document.getElementById('utcClock').textContent = now.toISOString().substring(11, 19) + ' UTC';
+    }, 1000);
+
+    function ensureAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass({ sampleRate: 48000 });
+        sampleRateDisplay.textContent = `${(audioCtx.sampleRate / 1000).toFixed(1)} kHz`;
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    // CRC-8 (Polynomial 0x07)
+    function computeCRC8(bytes) {
+      let crc = 0x00;
+      for (let b of bytes) {
+        crc ^= b;
+        for (let i = 0; i < 8; i++) {
+          crc = (crc & 0x80) ? ((crc << 1) ^ 0x07) & 0xFF : (crc << 1) & 0xFF;
+        }
+      }
+      return crc;
+    }
+
+    function buildPacketFrame() {
+      const course = (courseInput.value.trim() || 'CSE').toUpperCase();
+      const otp = (otpInput.value.trim() || '0000').toUpperCase();
+      const payloadStr = `${course}|${otp}`;
+      const encoder = new TextEncoder();
+      const payloadBytes = Array.from(encoder.encode(payloadStr));
+      const crc = computeCRC8(payloadBytes);
+      const frameBytes = [MODEM_CONFIG.START_BYTE, payloadBytes.length, ...payloadBytes, crc];
+      return { payloadStr, payloadBytes, frameBytes, crc };
+    }
+
+    // Draw graphical FSK modulated waveform preview on TX Oscilloscope
+    function renderTxWaveformPreview(frameBytes) {
+      const w = txWaveformCanvas.width;
+      const h = txWaveformCanvas.height;
+      txWaveCtx.fillStyle = '#030508';
+      txWaveCtx.fillRect(0, 0, w, h);
+
+      // Grid lines
+      txWaveCtx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+      txWaveCtx.lineWidth = 1;
+      for (let y = 14; y < h; y += 14) {
+        txWaveCtx.beginPath();
+        txWaveCtx.moveTo(0, y);
+        txWaveCtx.lineTo(w, y);
+        txWaveCtx.stroke();
+      }
+
+      const bits = [];
+      for (let byte of frameBytes) {
+        for (let b = 7; b >= 0; b--) {
+          bits.push((byte >> b) & 1);
+        }
+      }
+
+      // Draw FSK frequency-modulated carrier wave
+      const syncWidth = w * 0.14;
+      const dataWidth = w - syncWidth;
+      const bitStep = dataWidth / Math.max(1, bits.length);
+
+      txWaveCtx.lineWidth = 1.6;
+      let phase = 0;
+
+      // Sync segment (Amber)
+      txWaveCtx.strokeStyle = '#f59e0b';
+      txWaveCtx.beginPath();
+      for (let x = 0; x < syncWidth; x++) {
+        phase += 0.45;
+        const y = h / 2 + Math.sin(phase) * (h * 0.34);
+        if (x === 0) txWaveCtx.moveTo(x, y);
+        else txWaveCtx.lineTo(x, y);
+      }
+      txWaveCtx.stroke();
+
+      // Data bits segment (Cyan for 0, Emerald for 1)
+      for (let i = 0; i < bits.length; i++) {
+        const bit = bits[i];
+        const xStart = syncWidth + i * bitStep;
+        const xEnd = xStart + bitStep;
+        txWaveCtx.strokeStyle = bit === 1 ? '#10b981' : '#00e5ff';
+        txWaveCtx.beginPath();
+        const freqStep = bit === 1 ? 0.95 : 0.58;
+        for (let x = xStart; x <= xEnd; x += 0.5) {
+          phase += freqStep * 0.5;
+          const y = h / 2 + Math.sin(phase) * (h * 0.34);
+          if (x === xStart) txWaveCtx.moveTo(x, y);
+          else txWaveCtx.lineTo(x, y);
+        }
+        txWaveCtx.stroke();
+      }
+    }
+
+    function updatePacketPreview() {
+      const { payloadStr, payloadBytes, frameBytes, crc } = buildPacketFrame();
+      const totalBits = frameBytes.length * 8;
+      const totalDuration = (MODEM_CONFIG.SYNC_DURATION_SEC + totalBits * MODEM_CONFIG.BIT_DURATION_SEC).toFixed(2);
+
+      frameDurationText.textContent = `${totalBits} bits • ${totalDuration}s`;
+      pktLenBox.textContent = `LEN:${payloadBytes.length}`;
+      pktPayloadBox.textContent = payloadStr;
+      pktPayloadBits.textContent = `${payloadBytes.length * 8}b`;
+      pktCrcBox.textContent = `0x${crc.toString(16).toUpperCase().padStart(2, '0')}`;
+      voicePromptBadge.textContent = `"${courseInput.value.trim() || 'CSE'} code ${otpInput.value.trim() || '0000'}"`;
+
+      renderTxWaveformPreview(frameBytes);
+    }
+
+    courseInput.addEventListener('input', updatePacketPreview);
+    otpInput.addEventListener('input', updatePacketPreview);
+
+    rotateOtpBtn.addEventListener('click', () => {
+      otpInput.value = Math.floor(1000 + Math.random() * 9000).toString();
+      updatePacketPreview();
+    });
+
+    // Hardware Toggle for Audible Debug Shift
+    audibleToggleBtn.addEventListener('click', () => {
+      isAudibleDebug = !isAudibleDebug;
+      audibleToggleBtn.classList.toggle('active', isAudibleDebug);
+      audibleToggleBtn.setAttribute('aria-checked', String(isAudibleDebug));
+      carrierBandDisplay.textContent = isAudibleDebug
+        ? '2.2 / 2.8 / 3.4 kHz (DEBUG)'
+        : '18.2 / 18.8 / 19.4 kHz';
+      carrierBandDisplay.className = isAudibleDebug
+        ? 'text-amber-400 font-semibold'
+        : 'text-emerald-400 font-semibold';
+    });
+
+    // Faculty Voice Challenge Verification
+    voiceVerifyBtn.addEventListener('click', () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        voiceTranscript.textContent = 'SpeechRecognition API unavailable in this browser.';
+        voiceTranscript.className = 'text-[11px] mono text-rose-400 bg-rose-950/40 px-2.5 py-1.5 rounded border border-rose-500/30';
+        voiceTranscript.classList.remove('hidden');
+        return;
+      }
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'en-US';
+      recognition.interimResults = false;
+      recognition.maxAlternatives = 1;
+
+      voiceVerifyBtn.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i><span>Listening...</span>`;
+      lucide.createIcons();
+      recognition.start();
+
+      recognition.onresult = (event) => {
+        const spoken = event.results[0][0].transcript;
+        const expectedOtp = otpInput.value.trim();
+        const matched = spoken.replace(/\s+/g, '').includes(expectedOtp);
+        voiceTranscript.classList.remove('hidden');
+        if (matched) {
+          voiceTranscript.className = 'text-[11px] mono text-emerald-300 bg-emerald-950/40 px-2.5 py-1.5 rounded border border-emerald-500/30';
+          voiceTranscript.textContent = `✓ VERIFIED: "${spoken}" — Triggering TX Burst...`;
+          transmitUltrasonicFrame();
+        } else {
+          voiceTranscript.className = 'text-[11px] mono text-rose-300 bg-rose-950/40 px-2.5 py-1.5 rounded border border-rose-500/30';
+          voiceTranscript.textContent = `✗ MISMATCH: Heard "${spoken}", expected code ${expectedOtp}`;
+        }
+        voiceVerifyBtn.innerHTML = `<i data-lucide="audio-waveform" class="w-3 h-3"></i><span>Capture Phrase</span>`;
+        lucide.createIcons();
+      };
+
+      recognition.onerror = () => {
+        voiceVerifyBtn.innerHTML = `<i data-lucide="audio-waveform" class="w-3 h-3"></i><span>Capture Phrase</span>`;
+        lucide.createIcons();
+      };
+    });
+
+    /**
+     * TRANSMITTER: Phase-Continuous Ultrasonic FSK Burst
+     */
+    async function transmitUltrasonicFrame() {
+      if (isTransmitting) return;
+      const ctx = ensureAudioContext();
+      isTransmitting = true;
+
+      const { frameBytes } = buildPacketFrame();
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const fSync = MODEM_CONFIG.FREQ_SYNC - shift;
+      const fZero = MODEM_CONFIG.FREQ_ZERO - shift;
+      const fOne  = MODEM_CONFIG.FREQ_ONE  - shift;
+
+      const bits = [];
+      for (let byte of frameBytes) {
+        for (let b = 7; b >= 0; b--) {
+          bits.push((byte >> b) & 1);
+        }
+      }
+
+      const now = ctx.currentTime + 0.04;
+      const osc = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+
+      osc.type = 'sine';
+      gainNode.gain.setValueAtTime(0.0001, now);
+      gainNode.gain.exponentialRampToValueAtTime(0.88, now + 0.018);
+
+      osc.frequency.setValueAtTime(fSync, now);
+      let cursor = now + MODEM_CONFIG.SYNC_DURATION_SEC;
+
+      for (let i = 0; i < bits.length; i++) {
+        const freq = bits[i] === 1 ? fOne : fZero;
+        osc.frequency.setValueAtTime(freq, cursor);
+        cursor += MODEM_CONFIG.BIT_DURATION_SEC;
+      }
+
+      gainNode.gain.setValueAtTime(0.88, cursor - 0.015);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, cursor + 0.015);
+
+      osc.connect(gainNode);
+      gainNode.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(cursor + 0.02);
+
+      txLed.className = 'led-dot led-cyan animate-ping';
+      txStatusBadge.textContent = 'BROADCASTING';
+      txStatusBadge.className = 'text-[11px] mono px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40';
+
+      const totalMs = (cursor - now) * 1000;
+      const startTime = performance.now();
+
+      const progressInterval = setInterval(() => {
+        const elapsed = performance.now() - startTime;
+        const pct = Math.min(100, (elapsed / totalMs) * 100);
+        txProgressBar.style.width = `${pct}%`;
+        txPercentText.textContent = `${Math.round(pct)}%`;
+        if (pct >= 100) clearInterval(progressInterval);
+      }, 25);
+
+      osc.onended = () => {
+        isTransmitting = false;
+        txLed.className = 'led-dot led-off';
+        txStatusBadge.textContent = 'STANDBY';
+        txStatusBadge.className = 'text-[11px] mono px-2.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800';
+        setTimeout(() => {
+          txProgressBar.style.width = '0%';
+          txPercentText.textContent = '0%';
+        }, 400);
+      };
+    }
+
+    broadcastOnceBtn.addEventListener('click', transmitUltrasonicFrame);
+
+    loopBroadcastBtn.addEventListener('click', () => {
+      if (autoLoopTimer) {
+        clearInterval(autoLoopTimer);
+        autoLoopTimer = null;
+        loopBroadcastBtn.innerHTML = `<i data-lucide="repeat" class="w-4 h-4"></i><span>Auto-TOTP Loop</span>`;
+        loopBroadcastBtn.classList.remove('bg-cyan-950/70', 'border-cyan-400');
+        lucide.createIcons();
+      } else {
+        loopBroadcastBtn.innerHTML = `<i data-lucide="square" class="w-4 h-4"></i><span>Stop Loop</span>`;
+        loopBroadcastBtn.classList.add('bg-cyan-950/70', 'border-cyan-400');
+        lucide.createIcons();
+        const runCycle = () => {
+          otpInput.value = Math.floor(1000 + Math.random() * 9000).toString();
+          updatePacketPreview();
+          transmitUltrasonicFrame();
+        };
+        runCycle();
+        autoLoopTimer = setInterval(runCycle, 6500);
+      }
+    });
+
+    /**
+     * RECEIVER DSP: Goertzel Single-Frequency DFT Detector
+     */
+    function goertzelMagnitude(samples, targetFreq, sampleRate) {
+      const N = samples.length;
+      const k = Math.round((N * targetFreq) / sampleRate);
+      const omega = (2.0 * Math.PI * k) / N;
+      const coeff = 2.0 * Math.cos(omega);
+
+      let q0 = 0, q1 = 0, q2 = 0;
+      for (let i = 0; i < N; i++) {
+        const windowVal = 0.5 * (1 - Math.cos((2 * Math.PI * i) / (N - 1)));
+        q0 = coeff * q1 - q2 + samples[i] * windowVal;
+        q2 = q1;
+        q1 = q0;
+      }
+
+      const real = q1 - q2 * Math.cos(omega);
+      const imag = q2 * Math.sin(omega);
+      const magnitude = Math.sqrt(real * real + imag * imag) / (N / 2);
+      return 20 * Math.log10(magnitude + 1e-12);
+    }
+
+    const rxMachine = {
+      state: 'IDLE',
+      sampleBuffer: [],
+      bitBuffer: [],
+      syncHoldCount: 0,
+      halfBitToggle: false
+    };
+
+    function resetRxMachine(statusLabel = 'IDLE') {
+      rxMachine.state = 'IDLE';
+      rxMachine.bitBuffer = [];
+      rxMachine.syncHoldCount = 0;
+      rxStateText.textContent = statusLabel;
+      rxStateText.className = 'text-[10px] mono px-2 py-0.5 rounded bg-slate-900 text-amber-400 border border-amber-500/20';
+    }
+
+    function renderBitMatrix(bits) {
+      bitCountBadge.textContent = `${bits.length} BITS`;
+      if (bits.length === 0) {
+        bitMatrixGrid.innerHTML = `<span class="text-[11px] mono text-slate-600 self-center mx-auto">Awaiting carrier lock...</span>`;
+        return;
+      }
+      bitMatrixGrid.innerHTML = bits.map((b, idx) => {
+        const isHeader = idx < 16;
+        const colorCls = b === 1
+          ? (isHeader ? 'bg-purple-500/30 border-purple-400/60 text-purple-200' : 'bg-emerald-500/25 border-emerald-400/50 text-emerald-300')
+          : (isHeader ? 'bg-slate-800 border-slate-600 text-slate-400' : 'bg-cyan-500/20 border-cyan-400/40 text-cyan-300');
+        return `<span class="w-4 h-4 rounded-[3px] border text-[9px] mono flex items-center justify-center font-bold ${colorCls}">${b}</span>`;
+      }).join('');
+      bitMatrixGrid.scrollTop = bitMatrixGrid.scrollHeight;
+    }
+
+    function dbToPercent(db) {
+      // Map -95 dB .. -20 dB to 0% .. 100%
+      return Math.max(0, Math.min(100, ((db + 95) / 75) * 100));
+    }
+
+    function processAudioChunk(pcmFloat32, sampleRate) {
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const fSync = MODEM_CONFIG.FREQ_SYNC - shift;
+      const fZero = MODEM_CONFIG.FREQ_ZERO - shift;
+      const fOne  = MODEM_CONFIG.FREQ_ONE  - shift;
+      const fNoise = (MODEM_CONFIG.FREQ_SYNC - 600) - shift;
+
+      const sliceSize = Math.floor(sampleRate * (MODEM_CONFIG.BIT_DURATION_SEC / 2));
+      for (let i = 0; i < pcmFloat32.length; i++) {
+        rxMachine.sampleBuffer.push(pcmFloat32[i]);
+      }
+
+      while (rxMachine.sampleBuffer.length >= sliceSize) {
+        const slice = rxMachine.sampleBuffer.splice(0, sliceSize);
+
+        const dbSync  = goertzelMagnitude(slice, fSync, sampleRate);
+        const dbZero  = goertzelMagnitude(slice, fZero, sampleRate);
+        const dbOne   = goertzelMagnitude(slice, fOne, sampleRate);
+        const dbNoise = goertzelMagnitude(slice, fNoise, sampleRate);
+
+        const peakSignal = Math.max(dbSync, dbZero, dbOne);
+        const snr = peakSignal - dbNoise;
+
+        // Update Telemetry Meters
+        magSyncEl.textContent = `${dbSync.toFixed(1)} dB`;
+        magZeroEl.textContent = `${dbZero.toFixed(1)} dB`;
+        magOneEl.textContent  = `${dbOne.toFixed(1)} dB`;
+
+        barSync.style.width = `${dbToPercent(dbSync)}%`;
+        barZero.style.width = `${dbToPercent(dbZero)}%`;
+        barOne.style.width  = `${dbToPercent(dbOne)}%`;
+
+        snrPill.textContent = `SNR: ${snr.toFixed(1)} dB`;
+        snrPill.className = snr > MODEM_CONFIG.MIN_SNR_DB
+          ? 'text-[11px] mono px-2.5 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-500/40'
+          : 'text-[11px] mono px-2.5 py-0.5 rounded bg-slate-950 text-slate-400 border border-slate-800';
+
+        const isSyncDominant = dbSync > dbZero + 4 && dbSync > dbOne + 4 && snr > MODEM_CONFIG.MIN_SNR_DB;
+
+        if (rxMachine.state === 'IDLE') {
+          if (isSyncDominant) {
+            rxMachine.syncHoldCount++;
+            if (rxMachine.syncHoldCount >= 6) {
+              rxMachine.state = 'SYNC_LOCKED';
+              rxMachine.bitBuffer = [];
+              renderBitMatrix([]);
+              rxStateText.textContent = 'CARRIER LOCK';
+              rxStateText.className = 'text-[10px] mono px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40';
+            }
+          } else {
+            rxMachine.syncHoldCount = Math.max(0, rxMachine.syncHoldCount - 1);
+          }
+        } else if (rxMachine.state === 'SYNC_LOCKED') {
+          if (!isSyncDominant && snr > MODEM_CONFIG.MIN_SNR_DB) {
+            rxMachine.state = 'RECEIVING';
+            rxMachine.halfBitToggle = true;
+            rxStateText.textContent = 'DEMODULATING';
+            rxStateText.className = 'text-[10px] mono px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40';
+            decodeSymbolSlice(dbZero, dbOne, snr);
+          }
+        } else if (rxMachine.state === 'RECEIVING') {
+          rxMachine.halfBitToggle = !rxMachine.halfBitToggle;
+          if (!rxMachine.halfBitToggle) continue;
+
+          if (snr < MODEM_CONFIG.MIN_SNR_DB - 3) {
+            resetRxMachine('CARRIER LOST');
+            continue;
+          }
+          decodeSymbolSlice(dbZero, dbOne, snr);
+        }
+      }
+    }
+
+    function decodeSymbolSlice(dbZero, dbOne, snr) {
+      const bit = dbOne > dbZero ? 1 : 0;
+      rxMachine.bitBuffer.push(bit);
+      renderBitMatrix(rxMachine.bitBuffer);
+
+      if (rxMachine.bitBuffer.length >= 16) {
+        const startByte = bitsToByte(rxMachine.bitBuffer.slice(0, 8));
+        if (startByte !== MODEM_CONFIG.START_BYTE) {
+          resetRxMachine(`SYNC ERR 0x${startByte.toString(16)}`);
+          return;
+        }
+
+        const payloadLen = bitsToByte(rxMachine.bitBuffer.slice(8, 16));
+        if (payloadLen === 0 || payloadLen > 32) {
+          resetRxMachine('LEN ERR');
+          return;
+        }
+
+        const expectedTotalBits = (2 + payloadLen + 1) * 8;
+        if (rxMachine.bitBuffer.length >= expectedTotalBits) {
+          finalizeFrameDecode(payloadLen, snr);
+        }
+      }
+    }
+
+    function bitsToByte(eightBits) {
+      let val = 0;
+      for (let i = 0; i < 8; i++) {
+        val = (val << 1) | eightBits[i];
+      }
+      return val;
+    }
+
+    function finalizeFrameDecode(payloadLen, finalSnr) {
+      const payloadBytes = [];
+      for (let i = 0; i < payloadLen; i++) {
+        const offset = (2 + i) * 8;
+        payloadBytes.push(bitsToByte(rxMachine.bitBuffer.slice(offset, offset + 8)));
+      }
+      const receivedCrc = bitsToByte(rxMachine.bitBuffer.slice((2 + payloadLen) * 8, (3 + payloadLen) * 8));
+      const computedCrc = computeCRC8(payloadBytes);
+
+      const decoder = new TextDecoder();
+      const decodedText = decoder.decode(new Uint8Array(payloadBytes));
+
+      if (receivedCrc === computedCrc) {
+        const [course, otp] = decodedText.split('|');
+        const timestamp = new Date().toLocaleTimeString();
+
+        verificationCard.className = 'md:col-span-5 hw-subpanel rounded-xl p-3.5 flex flex-col justify-between border border-emerald-500/60 bg-emerald-950/20 transition-all';
+        attendanceVerdict.textContent = `VERIFIED // ${course || decodedText}`;
+        attendanceVerdict.className = 'text-sm font-bold text-emerald-300 truncate';
+        verdictIcon.className = 'w-9 h-9 rounded-lg bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-300 shrink-0';
+        verdictIcon.innerHTML = `<i data-lucide="shield-check" class="w-4 h-4"></i>`;
+        decodedPayloadDetails.textContent = `OTP ${otp || '--'} • SNR ${finalSnr.toFixed(1)}dB • ${timestamp}`;
+        decodedPayloadDetails.className = 'text-[11px] mono text-emerald-400/90 truncate';
+        crcStatusLabel.textContent = `PASS (0x${receivedCrc.toString(16).toUpperCase()})`;
+        crcStatusLabel.className = 'text-emerald-400 font-bold';
+        lucide.createIcons();
+        resetRxMachine('LOCKED & VERIFIED');
+      } else {
+        verificationCard.className = 'md:col-span-5 hw-subpanel rounded-xl p-3.5 flex flex-col justify-between border border-rose-500/60 bg-rose-950/20 transition-all';
+        attendanceVerdict.textContent = `REJECTED // CRC Mismatch`;
+        attendanceVerdict.className = 'text-sm font-bold text-rose-300 truncate';
+        verdictIcon.className = 'w-9 h-9 rounded-lg bg-rose-500/20 border border-rose-400 flex items-center justify-center text-rose-300 shrink-0';
+        verdictIcon.innerHTML = `<i data-lucide="shield-alert" class="w-4 h-4"></i>`;
+        decodedPayloadDetails.textContent = `Corrupt frame "${decodedText}"`;
+        decodedPayloadDetails.className = 'text-[11px] mono text-rose-400 truncate';
+        crcStatusLabel.textContent = `FAIL (0x${receivedCrc.toString(16).toUpperCase()})`;
+        crcStatusLabel.className = 'text-rose-400 font-bold';
+        lucide.createIcons();
+        resetRxMachine('CRC ERROR');
+      }
+    }
+
+    /**
+     * MICROPHONE & DUAL SPECTRUM + WATERFALL RENDERER
+     */
+    toggleMicBtn.addEventListener('click', async () => {
+      if (isListening) {
+        stopListening();
+        return;
+      }
+
+      try {
+        const ctx = ensureAudioContext();
+        micStream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
+            channelCount: 1
+          }
+        });
+
+        const source = ctx.createMediaStreamSource(micStream);
+        analyserNode = ctx.createAnalyser();
+        analyserNode.fftSize = 4096;
+        analyserNode.smoothingTimeConstant = 0.25;
+
+        scriptProcessor = ctx.createScriptProcessor(4096, 1, 1);
+        scriptProcessor.onaudioprocess = (event) => {
+          if (!isListening) return;
+          const inputData = event.inputBuffer.getChannelData(0);
+          processAudioChunk(inputData, ctx.sampleRate);
+        };
+
+        source.connect(analyserNode);
+        analyserNode.connect(scriptProcessor);
+        scriptProcessor.connect(ctx.destination);
+
+        isListening = true;
+        resetRxMachine('SCANNING BAND');
+        rxLed.className = 'led-dot led-emerald animate-pulse';
+        rxStatusBadge.textContent = 'SENSOR ACTIVE';
+        rxStatusBadge.className = 'text-[11px] mono px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
+        toggleMicBtn.innerHTML = `<i data-lucide="power-off" class="w-4 h-4"></i><span>Disengage Acoustic Sensor</span>`;
+        toggleMicBtn.className = 'w-full py-3.5 px-5 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-rose-950/50 flex items-center justify-center gap-2.5';
+        lucide.createIcons();
+
+        drawSpectrumAndWaterfall();
+      } catch (err) {
+        alert('Microphone access error: ' + err.message);
+      }
+    });
+
+    function stopListening() {
+      isListening = false;
+      if (scriptProcessor) {
+        scriptProcessor.disconnect();
+        scriptProcessor = null;
+      }
+      if (micStream) {
+        micStream.getTracks().forEach(t => t.stop());
+        micStream = null;
+      }
+      rxLed.className = 'led-dot led-off';
+      rxStatusBadge.textContent = 'SENSOR OFFLINE';
+      rxStatusBadge.className = 'text-[11px] mono px-2.5 py-0.5 rounded bg-slate-900 text-slate-400 border border-slate-800';
+      toggleMicBtn.innerHTML = `<i data-lucide="power" class="w-4 h-4"></i><span>Engage Ultrasonic Acoustic Sensor</span>`;
+      toggleMicBtn.className = 'w-full py-3.5 px-5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-bold rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2.5';
+      lucide.createIcons();
+      resetRxMachine('OFFLINE');
+    }
+
+    function drawSpectrumAndWaterfall() {
+      if (!isListening || !analyserNode || !audioCtx) return;
+      requestAnimationFrame(drawSpectrumAndWaterfall);
+
+      const bufferLength = analyserNode.frequencyBinCount;
+      const freqData = new Uint8Array(bufferLength);
+      analyserNode.getByteFrequencyData(freqData);
+
+      const width = spectrumCanvas.width;
+      const height = spectrumCanvas.height;
+      const topHalfH = 95;
+      const bottomHalfH = 95;
+
+      // Clear Top FFT Spectrum Area
+      canvasCtx.fillStyle = '#030508';
+      canvasCtx.fillRect(0, 0, width, topHalfH);
+
+      // Subtle Horizontal dB Grid Lines
+      canvasCtx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+      canvasCtx.lineWidth = 1;
+      for (let y = 20; y < topHalfH; y += 25) {
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(0, y);
+        canvasCtx.lineTo(width, y);
+        canvasCtx.stroke();
+      }
+
+      const shift = isAudibleDebug ? MODEM_CONFIG.DEBUG_SHIFT : 0;
+      const minFreq = 17500 - shift;
+      const maxFreq = 20500 - shift;
+      const nyquist = audioCtx.sampleRate / 2;
+
+      const startBin = Math.floor((minFreq / nyquist) * bufferLength);
+      const endBin = Math.ceil((maxFreq / nyquist) * bufferLength);
+      const binCount = Math.max(1, endBin - startBin);
+      const sliceWidth = width / binCount;
+
+      // Scroll Waterfall Down by 1px
+      waterfallCtx.drawImage(waterfallBuffer, 0, 1);
+
+      // Draw Smooth Spectrum Curve + Gradient Fill + Top Waterfall Line
+      const grad = canvasCtx.createLinearGradient(0, 0, 0, topHalfH);
+      grad.addColorStop(0, 'rgba(16, 185, 129, 0.55)');
+      grad.addColorStop(0.5, 'rgba(0, 229, 255, 0.25)');
+      grad.addColorStop(1, 'rgba(0, 229, 255, 0.0)');
+
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, topHalfH);
+
+      for (let i = 0; i <= binCount; i++) {
+        const binIdx = Math.min(bufferLength - 1, startBin + i);
+        const val = freqData[binIdx] / 255;
+        const x = i * sliceWidth;
+        const y = topHalfH - val * (topHalfH - 14);
+        canvasCtx.lineTo(x, y);
+
+        // Paint Waterfall Heatmap Pixel Strip
+        const r = val > 0.65 ? 245 : Math.round(val * 30);
+        const g = Math.round(val * 235);
+        const b = val > 0.2 ? Math.round(120 + val * 135) : 15;
+        waterfallCtx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+        waterfallCtx.fillRect(x, 0, Math.ceil(sliceWidth), 1);
+      }
+
+      canvasCtx.lineTo(width, topHalfH);
+      canvasCtx.closePath();
+      canvasCtx.fillStyle = grad;
+      canvasCtx.fill();
+
+      // Draw Crisp Neon Stroke over Spectrum
+      canvasCtx.strokeStyle = '#00e5ff';
+      canvasCtx.lineWidth = 1.8;
+      canvasCtx.beginPath();
+      for (let i = 0; i <= binCount; i++) {
+        const binIdx = Math.min(bufferLength - 1, startBin + i);
+        const val = freqData[binIdx] / 255;
+        const x = i * sliceWidth;
+        const y = topHalfH - val * (topHalfH - 14);
+        if (i === 0) canvasCtx.moveTo(x, y);
+        else canvasCtx.lineTo(x, y);
+      }
+      canvasCtx.stroke();
+
+      // Blit Waterfall History to Bottom Half
+      canvasCtx.drawImage(waterfallBuffer, 0, topHalfH, width, bottomHalfH);
+
+      // Divider Line between FFT and Waterfall
+      canvasCtx.strokeStyle = 'rgba(148, 163, 184, 0.25)';
+      canvasCtx.beginPath();
+      canvasCtx.moveTo(0, topHalfH);
+      canvasCtx.lineTo(width, topHalfH);
+      canvasCtx.stroke();
+
+      // Draw Carrier Crosshairs across both FFT and Waterfall
+      const markers = [
+        { freq: MODEM_CONFIG.FREQ_SYNC - shift, color: '#f59e0b', label: 'SYNC 18.2k' },
+        { freq: MODEM_CONFIG.FREQ_ZERO - shift, color: '#00e5ff', label: 'BIT-0 18.8k' },
+        { freq: MODEM_CONFIG.FREQ_ONE  - shift, color: '#10b981', label: 'BIT-1 19.4k' }
+      ];
+
+      canvasCtx.font = '600 10px "JetBrains Mono", monospace';
+      markers.forEach(m => {
+        const ratio = (m.freq - minFreq) / (maxFreq - minFreq);
+        const mx = ratio * width;
+        canvasCtx.strokeStyle = m.color;
+        canvasCtx.setLineDash([3, 3]);
+        canvasCtx.beginPath();
+        canvasCtx.moveTo(mx, 0);
+        canvasCtx.lineTo(mx, height);
+        canvasCtx.stroke();
+        canvasCtx.setLineDash([]);
+
+        canvasCtx.fillStyle = 'rgba(3, 5, 8, 0.8)';
+        canvasCtx.fillRect(mx + 4, 4, 72, 14);
+        canvasCtx.fillStyle = m.color;
+        canvasCtx.fillText(m.label, mx + 7, 14);
+      });
+
+      // Waterfall Label
+      canvasCtx.fillStyle = 'rgba(3, 5, 8, 0.75)';
+      canvasCtx.fillRect(8, topHalfH + 6, 138, 15);
+      canvasCtx.fillStyle = '#94a3b8';
+      canvasCtx.fillText('WATERFALL HISTORY', 12, topHalfH + 17);
+    }
+
+    // Boot UI
+    updatePacketPreview();
+  </script>
+</body>
+</html>
