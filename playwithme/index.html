@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Neon Labyrinth - 3 Player Race</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #05050a;
+            font-family: 'Orbitron', sans-serif;
+            color: #fff;
+            touch-action: none; /* Prevent browser handling of gestures */
+            user-select: none;
+        }
+
+        /* Aesthetics */
+        .neon-text-cyan { text-shadow: 0 0 5px #0ff, 0 0 10px #0ff, 0 0 20px #0ff; color: #fff; }
+        .neon-text-magenta { text-shadow: 0 0 5px #f0f, 0 0 10px #f0f, 0 0 20px #f0f; color: #fff; }
+        .neon-text-yellow { text-shadow: 0 0 5px #ff0, 0 0 10px #ff0, 0 0 20px #ff0; color: #fff; }
+        
+        .neon-border-cyan { box-shadow: 0 0 10px #0ff, inset 0 0 10px #0ff; border: 2px solid #0ff; }
+        
+        .neon-button {
+            background: rgba(0, 255, 255, 0.1);
+            border: 2px solid #0ff;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.5), inset 0 0 10px rgba(0, 255, 255, 0.3);
+            transition: all 0.1s ease;
+        }
+        .neon-button:active:not(:disabled) {
+            background: #0ff;
+            color: #000;
+            box-shadow: 0 0 20px #0ff, inset 0 0 10px #0ff;
+        }
+        .neon-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            filter: grayscale(100%);
+        }
+
+        /* Glassmorphism */
+        .glass-panel {
+            background: rgba(10, 10, 20, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(0, 255, 255, 0.2);
+            box-shadow: 0 8px 32px 0 rgba(0, 255, 255, 0.15);
+        }
+
+        /* Screen Management */
+        .screen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+        .screen.active { display: flex; }
+
+        /* Canvas */
+        #game-canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at center, #0a0a15 0%, #020205 100%);
+        }
+
+        /* Scanline Overlay */
+        .scanlines {
+            pointer-events: none;
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(transparent 50%, rgba(0, 255, 255, 0.05) 50%);
+            background-size: 100% 4px;
+            z-index: 10;
+        }
+
+        /* Animations */
+        @keyframes pulse-fast {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.02); }
+        }
+        .animate-pulse-custom { animation: pulse-fast 1.5s infinite ease-in-out; }
+    </style>
+</head>
+<body>
+
+    <!-- INIT SCREEN -->
+    <div id="screen-init" class="screen active justify-center items-center p-6 bg-[#05050a] z-50">
+        <h1 class="text-4xl md:text-6xl font-black mb-8 neon-text-cyan text-center tracking-widest animate-pulse-custom">NEON<br>LABYRINTH</h1>
+        <div id="init-status" class="text-[#0ff] text-xl animate-pulse">Establishing Uplink...</div>
+    </div>
+
+    <!-- LOGIN SCREEN -->
+    <div id="screen-login" class="screen justify-center items-center p-6 bg-cover bg-center" style="background-image: radial-gradient(circle at center, #1a1a2e 0%, #05050a 100%);">
+        <div class="glass-panel rounded-3xl p-8 max-w-sm w-full flex flex-col items-center relative overflow-hidden">
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-[#0ff] rounded-full mix-blend-screen filter blur-3xl opacity-20"></div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-[#f0f] rounded-full mix-blend-screen filter blur-3xl opacity-20"></div>
+            
+            <h2 class="text-3xl font-bold mb-2 text-white tracking-widest text-center">JOIN GRID</h2>
+            <p class="text-gray-400 mb-8 text-sm text-center">3 Players Required</p>
+            
+            <input type="text" id="input-name" placeholder="ENTER CODENAME" maxlength="12" 
+                class="w-full bg-black/50 border border-[#0ff]/50 rounded-xl text-[#0ff] text-center text-xl py-3 mb-6 focus:outline-none focus:border-[#0ff] focus:shadow-[0_0_15px_rgba(0,255,255,0.3)] transition-all placeholder-[#0ff]/30">
+            
+            <button id="btn-join" class="neon-button w-full py-4 rounded-xl text-xl font-bold uppercase tracking-widest relative z-10">
+                Connect
+            </button>
+            <div id="login-error" class="text-[#f0f] mt-4 text-sm h-4 text-center font-bold"></div>
+
+            <button id="btn-force-reset" class="mt-8 text-xs text-gray-600 hover:text-gray-400 uppercase tracking-wider underline">Force Reset Lobby</button>
+        </div>
+    </div>
+
+    <!-- LOBBY SCREEN -->
+    <div id="screen-lobby" class="screen justify-center items-center p-6" style="background-image: radial-gradient(circle at center, #1a1a2e 0%, #05050a 100%);">
+        <div class="glass-panel rounded-3xl p-8 max-w-sm w-full flex flex-col items-center">
+            <h2 class="text-3xl font-bold mb-2 text-white tracking-widest text-center">WAITING ROOM</h2>
+            <p id="lobby-count" class="text-[#0ff] mb-8 text-lg text-center animate-pulse">Players: 1 / 3</p>
+            
+            <div id="lobby-players" class="w-full flex flex-col gap-3 mb-8">
+                <!-- Player slots populated here -->
+            </div>
+            
+            <div class="text-gray-400 text-xs text-center">Game will commence automatically when 3 players are connected.</div>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="screen-game" class="screen">
+        <div class="flex-1 relative overflow-hidden bg-black">
+            <canvas id="game-canvas"></canvas>
+            <div class="scanlines"></div>
+            
+            <!-- HUD -->
+            <div class="absolute top-4 left-4 right-4 flex justify-between items-start pointer-events-none z-20">
+                <div id="hud-name" class="text-white font-bold tracking-widest text-shadow">PLAYER 1</div>
+                <div class="text-right">
+                    <div class="text-[#f0f] text-sm font-bold tracking-wider animate-pulse">TARGET:</div>
+                    <div class="text-white text-xs">FIND THE ANOMALY</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Controls -->
+        <div class="h-56 bg-[#05050a] border-t border-white/10 p-4 flex flex-col gap-3 relative z-30 pb-8">
+            <div class="flex justify-center w-full h-20">
+                <button id="btn-forward" class="neon-button w-full max-w-sm rounded-2xl text-2xl font-bold uppercase flex items-center justify-center">
+                    <svg class="w-8 h-8 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
+                    Forward
+                </button>
+            </div>
+            <div class="flex justify-between w-full h-20 max-w-sm mx-auto gap-3">
+                <button id="btn-left" class="neon-button flex-1 rounded-2xl text-lg font-bold uppercase flex items-center justify-center">
+                    <svg class="w-6 h-6 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                    Left
+                </button>
+                <button id="btn-right" class="neon-button flex-1 rounded-2xl text-lg font-bold uppercase flex items-center justify-center">
+                    Right
+                    <svg class="w-6 h-6 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- WIN SCREEN -->
+    <div id="screen-win" class="screen justify-center items-center p-6 bg-black/80 z-50">
+        <div class="scanlines"></div>
+        <div class="glass-panel rounded-3xl p-10 max-w-md w-full flex flex-col items-center relative z-20 shadow-[0_0_50px_rgba(255,0,255,0.3)] border-[#f0f]/50">
+            <h2 class="text-4xl md:text-5xl font-black mb-2 neon-text-magenta text-center tracking-widest">MATCH OVER</h2>
+            <p class="text-gray-300 mb-8 text-center text-sm">The anomaly has been secured.</p>
+            
+            <div class="text-center mb-10 w-full">
+                <div class="text-xs text-gray-400 mb-1 tracking-widest uppercase">Victor</div>
+                <div id="win-winner-name" class="text-3xl font-bold neon-text-cyan truncate px-4">---</div>
+            </div>
+
+            <button id="btn-play-again" class="neon-button w-full py-4 rounded-xl text-lg font-bold uppercase tracking-widest">
+                Return to Grid
+            </button>
+        </div>
+    </div>
+
+<script type="module">
+    // --- FIREBASE IMPORTS ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, doc, setDoc, getDocs, collection, onSnapshot, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    // --- GLOBAL VARIABLES ---
+    let db, auth, currentUser;
+    let appId = 'neon-3p-maze-default';
+    
+    // Game State
+    let myPlayer = null;
+    let otherPlayers = {};
+    let gameState = 'waiting'; // waiting, playing, finished
+    let unsubscribePlayers = null;
+    let unsubscribeState = null;
+    
+    // Canvas & Animation
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let animationId;
+    let lastTime = 0;
+    const CELL_SIZE = 50;
+
+    const COLORS = ['#0ff', '#f0f', '#ff0']; // Cyan, Magenta, Yellow
+    
+    // Map Definition: 1=Wall, 0=Path, 2=Goal, 3=Start
+    const map = [
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1],
+        [1,3,0,0,1,0,0,0,1,0,0,0,0,0,1],
+        [1,1,1,0,1,0,1,0,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,1,0,0,0,1,0,0,0,1],
+        [1,0,1,1,1,1,1,1,1,0,1,0,1,1,1],
+        [1,0,0,0,0,0,1,0,0,0,0,0,1,2,1],
+        [1,1,1,1,1,0,1,0,1,1,1,1,1,1,1],
+        [1,0,0,0,1,0,1,0,0,0,0,0,0,0,1],
+        [1,0,1,0,1,0,1,1,1,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    ];
+
+    let startX = 1, startY = 1;
+    // Find start
+    for(let y=0; y<map.length; y++) {
+        for(let x=0; x<map[0].length; x++) {
+            if(map[y][x] === 3) { startX = x; startY = y; }
+        }
+    }
+
+    // --- DOM ELEMENTS ---
+    const screens = {
+        init: document.getElementById('screen-init'),
+        login: document.getElementById('screen-login'),
+        lobby: document.getElementById('screen-lobby'),
+        game: document.getElementById('screen-game'),
+        win: document.getElementById('screen-win')
+    };
+
+    function showScreen(name) {
+        Object.values(screens).forEach(s => s.classList.remove('active'));
+        screens[name].classList.add('active');
+        if (name === 'game') resizeCanvas();
+    }
+
+    // --- INITIALIZATION ---
+    async function init() {
+        try {
+            appId = typeof __app_id !== 'undefined' ? __app_id : 'neon-3p-maze-default';
+            const firebaseConfig = {
+            apiKey: "AIzaSyBXECIZa45dq-o8Ka4G9Y1N7nll7cyli2U",
+            authDomain: "stuattnd.firebaseapp.com",
+            projectId: "stuattnd",
+            storageBucket: "stuattnd.firebasestorage.app",
+            messagingSenderId: "511533506488",
+            appId: "1:511533506488:web:aca4de3d513915d012f94d",
+            measurementId: "G-9PZZM5LFKX"
+        };
+            
+            if (!firebaseConfig) throw new Error("No Firebase config found");
+
+            const app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            auth = getAuth(app);
+
+            // Auth
+            if (typeof __initial_auth_token !== 'undefined') {
+                await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+                await signInAnonymously(auth);
+            }
+            currentUser = auth.currentUser;
+            
+            setupGlobalListeners();
+            showScreen('login');
+        } catch (error) {
+            console.error("Init Error:", error);
+            document.getElementById('init-status').innerText = "CONNECTION FAILED";
+            document.getElementById('init-status').classList.remove('text-[#0ff]');
+            document.getElementById('init-status').classList.add('text-red-500');
+        }
+    }
+
+    // --- FIREBASE LOGIC ---
+    function getPlayersRef() {
+        return collection(db, 'artifacts', appId, 'public', 'data', 'maze_players');
+    }
+    function getStateRef() {
+        return doc(db, 'artifacts', appId, 'public', 'data', 'maze_state', 'global');
+    }
+
+    function setupGlobalListeners() {
+        if (unsubscribeState) unsubscribeState();
+        
+        unsubscribeState = onSnapshot(getStateRef(), (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                gameState = data.phase; // 'waiting', 'playing', 'finished'
+                
+                if (gameState === 'finished' && myPlayer) {
+                    document.getElementById('win-winner-name').innerText = data.winnerName || "UNKNOWN";
+                    document.getElementById('win-winner-name').style.color = data.winnerColor || "#0ff";
+                    showScreen('win');
+                    cancelAnimationFrame(animationId);
+                }
+                
+                if (gameState === 'playing' && screens.lobby.classList.contains('active')) {
+                    startGame();
+                }
+                
+                if (gameState === 'waiting' && (screens.win.classList.contains('active') || screens.game.classList.contains('active'))) {
+                    // Reset to login if game was reset
+                    resetLocalState();
+                    showScreen('login');
+                }
+            } else {
+                // Initialize state doc if it doesn't exist
+                if(currentUser) {
+                    setDoc(getStateRef(), { phase: 'waiting', winnerName: null });
+                }
+            }
+        }, (err) => console.error("State listener error", err));
+    }
+
+    async function joinGame() {
+        const name = document.getElementById('input-name').value.trim();
+        const errorDiv = document.getElementById('login-error');
+        if (!name) { errorDiv.innerText = "CODENAME REQUIRED"; return; }
+        if (!currentUser) return;
+
+        document.getElementById('btn-join').disabled = true;
+        document.getElementById('btn-join').innerText = "CONNECTING...";
+        errorDiv.innerText = "";
+
+        try {
+            // Get current players to check capacity and assign color
+            const snap = await getDocs(getPlayersRef());
+            if (snap.size >= 3 && gameState !== 'waiting') {
+                errorDiv.innerText = "GRID IS FULL";
+                document.getElementById('btn-join').disabled = false;
+                document.getElementById('btn-join').innerText = "CONNECT";
+                return;
+            }
+
+            // If game was finished but players still exist, force a reset
+            if (gameState === 'finished') {
+                await forceResetLobby();
+            }
+
+            // Determine available color
+            const usedColors = [];
+            snap.forEach(d => usedColors.push(d.data().color));
+            let myColor = COLORS.find(c => !usedColors.includes(c)) || COLORS[0];
+
+            // Create my player profile
+            myPlayer = {
+                uid: currentUser.uid,
+                name: name,
+                color: myColor,
+                x: startX,
+                y: startY,
+                dir: 1, // 0:Up, 1:Right, 2:Down, 3:Left
+                joinedAt: Date.now()
+            };
+
+            // Add self to Firestore
+            await setDoc(doc(getPlayersRef(), currentUser.uid), myPlayer);
+
+            // Listen to lobby changes
+            listenToPlayers();
+            showScreen('lobby');
+            document.getElementById('hud-name').innerText = name;
+            document.getElementById('hud-name').style.color = myColor;
+            document.getElementById('hud-name').style.textShadow = `0 0 10px ${myColor}`;
+
+        } catch (err) {
+            console.error("Join error:", err);
+            errorDiv.innerText = "CONNECTION ERROR";
+            document.getElementById('btn-join').disabled = false;
+            document.getElementById('btn-join').innerText = "CONNECT";
+        }
+    }
+
+    function listenToPlayers() {
+        if (unsubscribePlayers) unsubscribePlayers();
+        
+        unsubscribePlayers = onSnapshot(getPlayersRef(), async (snap) => {
+            const playersDiv = document.getElementById('lobby-players');
+            playersDiv.innerHTML = '';
+            otherPlayers = {};
+            
+            let count = 0;
+            let hostUid = null;
+            let earliestTime = Infinity;
+
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                count++;
+                
+                // Track visual state for lerping
+                if (data.uid === currentUser.uid) {
+                    // Update my internal data just in case, but rely mainly on local input for responsiveness
+                    // Actually, for a fast grid game, snapping is better.
+                } else {
+                    if (!otherPlayers[data.uid]) {
+                        otherPlayers[data.uid] = { ...data, visualX: data.x, visualY: data.y };
+                    } else {
+                        // Update target positions
+                        otherPlayers[data.uid].x = data.x;
+                        otherPlayers[data.uid].y = data.y;
+                        otherPlayers[data.uid].dir = data.dir;
+                    }
+                }
+
+                // Find host (earliest joined) for state management
+                if (data.joinedAt < earliestTime) {
+                    earliestTime = data.joinedAt;
+                    hostUid = data.uid;
+                }
+
+                // Render in lobby
+                if(screens.lobby.classList.contains('active')) {
+                    const slot = document.createElement('div');
+                    slot.className = 'flex items-center justify-between bg-black/40 p-3 rounded border';
+                    slot.style.borderColor = data.color;
+                    slot.innerHTML = `
+                        <span style="color: ${data.color}; text-shadow: 0 0 5px ${data.color}; font-weight:bold;">${data.name}</span>
+                        <span class="text-xs text-white/50">${data.uid === currentUser.uid ? '(YOU)' : 'CONNECTED'}</span>
+                    `;
+                    playersDiv.appendChild(slot);
+                }
+            });
+
+            if(screens.lobby.classList.contains('active')) {
+                document.getElementById('lobby-count').innerText = `Players: ${count} / 3`;
+                
+                // If 3 players and I am the host, transition state to playing
+                if (count === 2 && hostUid === currentUser.uid && gameState === 'waiting') {
+                    // Small delay so everyone sees 3/3
+                    setTimeout(() => {
+                        setDoc(getStateRef(), { phase: 'playing', winnerName: null });
+                    }, 1000);
+                }
+            }
+        });
+    }
+
+    async function forceResetLobby() {
+        try {
+            const snap = await getDocs(getPlayersRef());
+            const deletePromises = [];
+            snap.forEach(d => deletePromises.push(deleteDoc(doc(getPlayersRef(), d.id))));
+            await Promise.all(deletePromises);
+            await setDoc(getStateRef(), { phase: 'waiting', winnerName: null });
+            resetLocalState();
+        } catch (e) { console.error("Reset error", e); }
+    }
+
+    function resetLocalState() {
+        myPlayer = null;
+        otherPlayers = {};
+        if (unsubscribePlayers) { unsubscribePlayers(); unsubscribePlayers = null; }
+        document.getElementById('btn-join').disabled = false;
+        document.getElementById('btn-join').innerText = "CONNECT";
+        document.getElementById('input-name').value = '';
+    }
+
+    // --- GAME LOGIC & CONTROLS ---
+    function startGame() {
+        showScreen('game');
+        lastTime = performance.now();
+        if(animationId) cancelAnimationFrame(animationId);
+        gameLoop(lastTime);
+    }
+
+    async function moveForward() {
+        if (!myPlayer || gameState !== 'playing') return;
+
+        let nx = myPlayer.x;
+        let ny = myPlayer.y;
+
+        if (myPlayer.dir === 0) ny -= 1;
+        if (myPlayer.dir === 1) nx += 1;
+        if (myPlayer.dir === 2) ny += 1;
+        if (myPlayer.dir === 3) nx -= 1;
+
+        if (map[ny] && map[ny][nx] !== 1) {
+            myPlayer.x = nx;
+            myPlayer.y = ny;
+            
+            // Write to Firestore
+            await setDoc(doc(getPlayersRef(), currentUser.uid), {
+                x: myPlayer.x, y: myPlayer.y, dir: myPlayer.dir
+            }, { merge: true });
+
+            // Check Win
+            if (map[ny][nx] === 2) {
+                handleWin();
+            }
+        }
+    }
+
+    async function turn(delta) {
+        if (!myPlayer || gameState !== 'playing') return;
+        myPlayer.dir = (myPlayer.dir + delta + 4) % 4;
+        await setDoc(doc(getPlayersRef(), currentUser.uid), {
+            dir: myPlayer.dir
+        }, { merge: true });
+    }
+
+    async function handleWin() {
+        if(gameState === 'finished') return; // Prevent multiple calls
+        
+        try {
+            // Update Global State
+            await setDoc(getStateRef(), { 
+                phase: 'finished', 
+                winnerName: myPlayer.name,
+                winnerColor: myPlayer.color
+            });
+
+            // Write to permanent records
+            const winnersRef = collection(db, 'artifacts', appId, 'public', 'data', 'secret_finders');
+            await setDoc(doc(winnersRef), {
+                name: myPlayer.name,
+                timestamp: serverTimestamp(),
+                uid: currentUser.uid
+            });
+        } catch (e) { console.error("Win write error", e); }
+    }
+
+    // --- RENDERING ---
+    window.addEventListener('resize', resizeCanvas);
+    function resizeCanvas() {
+        const container = canvas.parentElement;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+    }
+
+    function lerp(start, end, amt) {
+        return (1 - amt) * start + amt * end;
+    }
+
+    function drawMap(offsetX, offsetY) {
+        for(let y = 0; y < map.length; y++) {
+            for(let x = 0; x < map[y].length; x++) {
+                const cx = x * CELL_SIZE + offsetX;
+                const cy = y * CELL_SIZE + offsetY;
+                
+                // Only draw visible elements
+                if (cx < -CELL_SIZE || cx > canvas.width || cy < -CELL_SIZE || cy > canvas.height) continue;
+
+                if (map[y][x] === 1) {
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(cx, cy, CELL_SIZE, CELL_SIZE);
+                    ctx.fillStyle = 'rgba(0, 20, 40, 0.5)';
+                    ctx.fillRect(cx, cy, CELL_SIZE, CELL_SIZE);
+                } 
+                else if (map[y][x] === 2) {
+                    const pulse = Math.sin(performance.now() * 0.005) * 10 + 15;
+                    ctx.shadowBlur = pulse;
+                    ctx.shadowColor = '#f0f';
+                    ctx.fillStyle = 'rgba(255, 0, 255, 0.2)';
+                    ctx.fillRect(cx+10, cy+10, CELL_SIZE-20, CELL_SIZE-20);
+                    ctx.strokeStyle = '#f0f';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(cx+15, cy+15, CELL_SIZE-30, CELL_SIZE-30);
+                    ctx.shadowBlur = 0;
+                }
+                else if (map[y][x] === 0 || map[y][x] === 3) {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                    ctx.beginPath();
+                    ctx.arc(cx + CELL_SIZE/2, cy + CELL_SIZE/2, 2, 0, Math.PI*2);
+                    ctx.fill();
+                }
+            }
+        }
+    }
+
+    function drawPlayer(x, y, dir, color, name, offsetX, offsetY, isMe) {
+        const cx = x * CELL_SIZE + offsetX + CELL_SIZE/2;
+        const cy = y * CELL_SIZE + offsetY + CELL_SIZE/2;
+
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(dir * (Math.PI / 2)); // 0: Up (but our path draws pointing right, let's adjust)
+        
+        // Let's adjust drawing so dir=0 points UP
+        // If dir=0 is Up, rotate by -90 deg (-PI/2) + dir * PI/2.
+        ctx.rotate(-Math.PI / 2);
+
+        ctx.shadowBlur = isMe ? 20 : 10;
+        ctx.shadowColor = color;
+        ctx.fillStyle = color;
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 1;
+
+        // Draw Triangle Arrow pointing RIGHT (which gets rotated based on above)
+        ctx.beginPath();
+        ctx.moveTo(CELL_SIZE/3, 0);
+        ctx.lineTo(-CELL_SIZE/4, CELL_SIZE/4);
+        ctx.lineTo(-CELL_SIZE/6, 0);
+        ctx.lineTo(-CELL_SIZE/4, -CELL_SIZE/4);
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+        
+        ctx.restore();
+
+        // Draw Name
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = color;
+        ctx.font = '10px Orbitron';
+        ctx.textAlign = 'center';
+        ctx.fillText(name, cx, cy - CELL_SIZE/2 - 5);
+    }
+
+    function gameLoop(timestamp) {
+        if (gameState !== 'playing') return;
+        
+        const dt = timestamp - lastTime;
+        lastTime = timestamp;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Center camera on my player
+        // Simple lerp for camera
+        if(!myPlayer.visualX) { myPlayer.visualX = myPlayer.x; myPlayer.visualY = myPlayer.y; }
+        myPlayer.visualX = lerp(myPlayer.visualX, myPlayer.x, 0.2);
+        myPlayer.visualY = lerp(myPlayer.visualY, myPlayer.y, 0.2);
+
+        const offsetX = (canvas.width / 2) - (myPlayer.visualX * CELL_SIZE + CELL_SIZE/2);
+        const offsetY = (canvas.height / 2) - (myPlayer.visualY * CELL_SIZE + CELL_SIZE/2);
+
+        drawMap(offsetX, offsetY);
+
+        // Draw others
+        Object.values(otherPlayers).forEach(p => {
+            p.visualX = lerp(p.visualX || p.x, p.x, 0.1);
+            p.visualY = lerp(p.visualY || p.y, p.y, 0.1);
+            drawPlayer(p.visualX, p.visualY, p.dir, p.color, p.name, offsetX, offsetY, false);
+        });
+
+        // Draw self
+        drawPlayer(myPlayer.visualX, myPlayer.visualY, myPlayer.dir, myPlayer.color, 'YOU', offsetX, offsetY, true);
+
+        animationId = requestAnimationFrame(gameLoop);
+    }
+
+    // --- EVENT LISTENERS ---
+    document.getElementById('btn-join').addEventListener('click', joinGame);
+    document.getElementById('btn-force-reset').addEventListener('click', forceResetLobby);
+    
+    // Controls
+    document.getElementById('btn-forward').addEventListener('click', () => { moveForward(); vibrate(50); });
+    document.getElementById('btn-left').addEventListener('click', () => { turn(-1); vibrate(30); });
+    document.getElementById('btn-right').addEventListener('click', () => { turn(1); vibrate(30); });
+    
+    document.getElementById('btn-play-again').addEventListener('click', () => {
+        forceResetLobby();
+    });
+
+    // Keyboard support for desktop testing
+    window.addEventListener('keydown', (e) => {
+        if(screens.game.classList.contains('active')) {
+            if(e.key === 'ArrowUp' || e.key === 'w') moveForward();
+            if(e.key === 'ArrowLeft' || e.key === 'a') turn(-1);
+            if(e.key === 'ArrowRight' || e.key === 'd') turn(1);
+        }
+    });
+
+    function vibrate(ms) {
+        if(navigator.vibrate) navigator.vibrate(ms);
+    }
+
+    // Start
+    init();
+
+</script>
+</body>
+</html>
